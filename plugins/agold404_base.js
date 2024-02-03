@@ -519,8 +519,8 @@ new cfc(Window_Selectable.prototype).add('processCursorMove',function f(){
 },undefined,false,true).add('updateArrows',function f(){
 	let scy=this._scrollY;
 	const rectBeg=this.itemRect(0);
-	const rectEnd=this.itemRect(this.maxItems());
-	this.downArrowVisible=this.contentsHeight()<rectEnd.y;
+	const rectBtm=this.itemRect(this.maxItems()-this.maxCols());
+	this.downArrowVisible=this.contentsHeight()<rectBtm.y+rectBtm.height;
 	this.upArrowVisible=rectBeg.y<0;
 },undefined,false,true);
 t[0].forEach(info=>Input.keyMapper[info[0]]=info[1]);
