@@ -38,7 +38,7 @@ cancel:()=>TouchInput.isCancelled(),
 	return rtv;
 });
 }
-cf(Game_System.prototype,'initialize',function f(){
+new cfc(Game_System.prototype).add('initialize',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this._rndId=LZString.compressToBase64(''+Date.now()+Math.random()+Math.random()).slice(11);
 	return rtv;
@@ -263,13 +263,13 @@ t._createAllParts_cursor = function(){
 	//this.addChild(this._windowPauseSignSprite);
 };
 //
-cf(cf(cf(cf(Input,'isTexting_set',function f(){
+new cfc(Input).add('isTexting_set',function f(){
 	this._isTexting=true;
-}),'isTexting_clear',function f(){
+},undefined,false,true).add('isTexting_clear',function f(){
 	this._isTexting=false;
-}),'isTexting',function f(){
+},undefined,false,true).add('isTexting',function f(){
 	return this._isTexting;
-}),'_shouldPreventDefault',function f(keyCode){
+},undefined,false,true).add('_shouldPreventDefault',function f(keyCode){
 	if(this.isTexting()) return false;
 	return f.ori.apply(this,arguments);
 });
