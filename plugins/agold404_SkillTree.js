@@ -142,8 +142,39 @@ arr=>arr&&arr.length||0,
 	return this.isTree()?this.isEnabled_tree.apply(this,arguments):this.isEnabled_ori.apply(this,arguments);
 }).add('isEnabled_tree',function f(item){
 	return !!item;
-});
-}
+}).add('refresh',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	if(!this.isTree()) return rtv;
+	// const padding1=this.standardPadding(); // already in-padding view
+	const ctx=this.contents.context;
+	const linkWidth=this.skillTree_linkWidth();
+	const linkColor=this.skillTree_linkColor();
+	ctx.save();
+		ctx.lineWidth=linkWidth;
+		ctx.strokeStyle=linkColor;
+	for(let idx=this._data.length-1;idx-->0;){
+		const item=this.item(idx); if(!item) continue;
+		const prevIdx=this.skillTree_getPrevSkillIdx(idx);
+		if(!(prevIdx>=0)) continue;
+		const rect=this.itemRect(idx);
+		const rect0=this.itemRect(prevIdx);
+		ctx.beginPath();
+		ctx.moveTo(rect0.x+(rect0.width>>1),rect0.y+rect0.height);
+		ctx.lineTo(rect.x+(rect.width>>1),rect.y);
+		ctx.stroke();
+	}
+	ctx.restore();
+	return rtv;
+}).add('skillTree_linkWidth',function f(){
+	return f.tbl[0];
+},[
+4,
+]).add('skillTree_linkColor',function f(){
+	return f.tbl[0];
+},[
+'rgba(234,234,234,0.75)',
+]);
+} // Window_SkillList
 const a=class Window_ItemActions extends Window_Command{
 	initialize(x,y,chMethods){
 		if(chMethods) for(let k in chMethods) this[k]=chMethods[k];
