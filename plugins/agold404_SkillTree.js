@@ -100,19 +100,23 @@ new cfc(p).add('isTree',function f(){
 	return this.lineHeight();
 },undefined,true,false).add('makeItemList',function f(){
 	this._maxCols=undefined;
+	this._skillTree_learnMeta=undefined;
 	return this.isTree()?this.makeItemList_tree():f.ori.apply(this,arguments);
 }).add('makeItemList_tree',function f(){
 	const rtv=this._data=[];
 	if(!this._actor) return rtv;
-	const arrv=this._skillTree=this._actor.getData().skillTree; if(!arrv||!arrv.length) return rtv;
+	const arrv=this._skillTree=this._actor.getData().skillTree;
+	this._skillTree_learnMeta=[];
 	this._maxCols=arrv.length;
+	if(!arrv||!arrv.length) return rtv;
 	const ys=Math.max.apply(null,arrv.map(f.tbl[0]));
 	for(let y=0;y!==ys;++y){
 		for(let x=0,xs=arrv.length;x!==xs;++x){
-			rtv.push($dataSkills[arrv[x]&&arrv[x][y]]||undefined);
+			const info=this.makeItemList_tree_getSkillInfo(arrv,x,y);
+			rtv.push($dataSkills[info.id]||undefined);
+			this._skillTree_learnMeta.push(info);
 		}
 	}
-	
 	return rtv;
 },[
 arr=>arr&&arr.length||0,
@@ -120,7 +124,18 @@ arr=>arr&&arr.length||0,
 	return this._maxCols===undefined?f.tbl[0]:this._maxCols;
 },[
 4,
-]).add('skillTree_getPrevSkillIdx',function f(idx){
+]).add('makeItemList_tree_getSkillInfo',function f(arrv,x,y){
+	arrv=arrv||this._skillTree;
+	if(!arrv) return;
+	const info=arrv[x]&&arrv[x][y];
+	let id=info,cond,consume;
+	if(info instanceof Array){
+		id=info[0];
+		cond=info[1];
+		consume=info[2];
+	}
+	return {id:id,cond:cond,consume:consume,};
+}).add('skillTree_getPrevSkillIdx',function f(idx){
 	const arrv=this._skillTree; if(!arrv) return;
 	if(!this._prevSkills) this._prevSkills=[];
 	if(this._prevSkills._data!==this._data){
@@ -131,7 +146,7 @@ arr=>arr&&arr.length||0,
 		for(let idx=0,y=0,ys=~~((this._data.length+numCols-1)/numCols)||0;y!==ys;++y){
 			for(let x=0,xs=numCols;x!==xs;++x){
 				this._prevSkills[idx]=prevSkills[x];
-				const skill=$dataSkills[arrv[x]&&arrv[x][y]]||undefined;
+				const skill=$dataSkills[this.makeItemList_tree_getSkillInfo(arrv,x,y).id]||undefined;
 				if(skill) prevSkills[x]=idx;
 				++idx;
 			}
@@ -152,7 +167,7 @@ arr=>arr&&arr.length||0,
 	ctx.save();
 		ctx.lineWidth=linkWidth;
 		ctx.strokeStyle=linkColor;
-	for(let idx=this._data.length-1;idx-->0;){
+	for(let idx=this._data.length;idx--;){
 		const item=this.item(idx); if(!item) continue;
 		const prevIdx=this.skillTree_getPrevSkillIdx(idx);
 		if(!(prevIdx>=0)) continue;
@@ -221,15 +236,24 @@ new Set([
 	if(idx===undefined) idx=w.index();
 	const prevIdx=w.skillTree_getPrevSkillIdx(idx);
 	const item=w.item(idx);
-	return item && w._actor && ( prevIdx===undefined || this.itemActionWindow_hasSkill(w.item(prevIdx)) ) && !this.itemActionWindow_hasSkill(item);
+	const cond=w._skillTree_learnMeta[idx].cond;
+	let condOk=true;
+	{
+		const res=eval(cond&&(cond instanceof Array)?cond[0]:cond);
+		condOk=res===undefined||res;
+	}
+	return condOk && item && w._actor && ( prevIdx===undefined || this.itemActionWindow_hasSkill(w.item(prevIdx)) ) && !this.itemActionWindow_hasSkill(item);
 }).add('itemActionWindow_ok',function f(){
 	this.actor().setLastMenuSkill(this.item());
 	this.determineItem();
-}).add('itemActionWindow_learn',function f(){
+}).add('itemActionWindow_learn',function f(idx){
 	const w=this._itemWindow;
-	const item=w.item();
+	if(idx===undefined) idx=w.index();
+	const item=w.item(idx);
 	if(item && w._actor){
 		w._actor.learnSkill(item.id);
+		const consume=w._skillTree_learnMeta[idx].consume;
+		if(consume){ eval(consume); }
 		this._itemWindow.refresh();
 	}
 	this._itemActionWindow.activate();
