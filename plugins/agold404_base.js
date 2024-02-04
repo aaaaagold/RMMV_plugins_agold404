@@ -808,7 +808,7 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 		arr.push('Graphics','PIXI','Sprite','Bitmap',);
 		arr.push('Game_BattlerBase','Game_Battler','Game_Enemy','Game_Actor','Game_Action',);
 		arr.push('Game_CharacterBase','Game_Character','Game_Event','Game_Player',);
-		arr.push('Game_Inpterpreter','Game_Picture','Game_System','Game_Screen','Game_Map',);
+		arr.push('Game_Interpreter','Game_Picture','Game_System','Game_Screen','Game_Map',);
 		arr.push('Window_Base','Window_Message',);
 		arr.push('useDefaultIfIsNaN',);
 		arr.push('getCStyleStringStartAndEndFromString',);
