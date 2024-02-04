@@ -805,8 +805,12 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 		const arr=[];
 		arr.push('AudioManager','BattleManager','ConfigManager','DataManager','ImageManager','SceneManager',);
 		arr.push('Input','TouchInput',);
-		arr.push('Graphics',);
-		arr.push('useDefaultIfIsNaN');
+		arr.push('Graphics','PIXI','Sprite','Bitmap',);
+		arr.push('Game_BattlerBase','Game_Battler','Game_Enemy','Game_Actor','Game_Action',);
+		arr.push('Game_CharacterBase','Game_Character','Game_Event','Game_Player',);
+		arr.push('Game_Inpterpreter','Game_Picture','Game_System','Game_Screen','Game_Map',);
+		arr.push('Window_Base','Window_Message',);
+		arr.push('useDefaultIfIsNaN',);
 		arr.push('getCStyleStringStartAndEndFromString',);
 		arr.push('getPrefixPropertyNames',);
 		arr.push('getTopFrameWindow','chTitle',);
@@ -817,7 +821,7 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 	for(let x=0,arr=arguments,xs=arr.length;x!==xs;++x) w[arr[x]]=w._w[arr[x]];
 };
 
-// ---- ---- ---- ---- 
+// ---- ---- ---- ---- load other files
 
 new cfc(ImageManager).add('otherFiles_getDataMap',function f(){
 	let m=this._otherFiles; if(!m) m=this._otherFiles=new Map();
@@ -890,7 +894,7 @@ new cfc(Scene_Boot.prototype).add('start',function f(){
 	
 },undefined,true,false);
 
-// ---- ---- ---- ---- 
+// ---- ---- ---- ---- js error
 
 (()=>{ let k,r,t;
 
@@ -919,6 +923,33 @@ new cfc(Game_Interpreter.prototype).add('command111',function f(){
 [
 '',
 '條件分歧ㄉ條件打錯ㄌ',
+],
+]).add('command355',function f(){
+	let script=this.currentCommand().parameters[0];
+	while(f.tbl[0].has(this.nextEventCode())){
+		this._index++;
+		script+='\n';
+		script+=this.currentCommand().parameters[0];
+	}
+	try{
+		eval(script);
+	}catch(e){
+		console.warn(f.tbl[1][0],'\n',script);
+		if(script){
+			e.message+='\n\nScript:\n'+script;
+			e.message+=getStr_英文不好齁()+f.tbl[1][1];
+		}
+		e.name+=' in ';
+		e.name+=f.tbl[0];
+		e._msgOri=e.message;
+		throw e;
+	}
+	return true;
+},[
+new Set([355,655,]),
+[
+'Game_Interpreter.prototype.command355',
+' JavaScript 打錯ㄌ',
 ],
 ]);
 
@@ -965,9 +996,11 @@ function f(dataobj){
 },
 ],true,true);
 
-})();
+})(); // js error
 
-// ---- ---- ---- ---- 
+// ---- ---- ---- ---- re-unify
+
+(()=>{ let k,r,t;
 
 new cfc(Game_Actor.prototype).add('getData',function f(){
 	return this.actor();
@@ -977,9 +1010,123 @@ new cfc(Game_Enemy.prototype).add('getData',function f(){
 	return this.enemy();
 },undefined,false,true);
 
+new cfc(Game_Unit.prototype).add('allMembers',function(){
+	return this.members();
+},undefined,false,true);
+
+})(); // re-unify
+
+// ---- ---- ---- ---- gameObj2sprite
+
+(()=>{ let k,r,t;
+
+new cfc(Sprite_Character.prototype).add('setCharacter',function f(){
+	{ const sc=SceneManager._scene; if(sc){
+		if(!sc._chr2sp) sc._chr2sp=new Map();
+		sc._chr2sp.set(arguments[0],this);
+	} }
+	return f.ori.apply(this,arguments);
+}).add('updatePosition',function f(){
+	const chr=this._character;
+	this.position.set(chr.screenX(),chr.screenY());
+	this.z=chr.screenZ();
+},undefined,false,true);
+
+new cfc(Sprite_Battler.prototype).add('setBattler',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	const sc=SceneManager._scene;
+	if(sc){
+		if(!sc._btlr2sp) sc._btlr2sp=new Map();
+		sc._btlr2sp.set(this._battler,this);
+	}
+	return rtv;
+}).add('updatePosition',function f(){
+	this.position.set( this._homeX+this._offsetX , this._homeY+this._offsetY );
+},undefined,false,true);
+
+new cfc(Game_Character.prototype).add('getSprite',function f(){
+	const sc=SceneManager._scene;
+	const m=sc&&sc._chr2sp;
+	return m&&m.get(this);
+},undefined,false,true);
+
+new cfc(Game_Battler.prototype).add('getSprite',function f(){
+	const sc=SceneManager._scene;
+	const m=sc&&sc._btlr2sp;
+	return m&&m.get(this);
+},undefined,false,true);
+
+})(); // gameObj2sprite
+
+// ---- ---- ---- ---- shorthand-interpreter
+
+(()=>{ let k,r,t;
+
+new cfc(Game_Interpreter.prototype).add('getEvt',function f(){
+	// map init ensures '_events' be Array
+	return $gameMap&&$gameMap._events[this._eventId];
+}).add('getCmd',function f(offset){
+	offset|=0;
+	return this._list&&this._list[this._index+offset];
+});
+
+})(); // shorthand-interpreter
+
+// ---- ---- ---- ---- cpevt
+
+(()=>{ let k,r,t;
+
+new cfc(Game_System.prototype).add('cpevt_loadevt',function(mapid){
+	if(!this._cpevt) this._cpevt={ mapid:0 , evts:[] , };
+	if(this._cpevt.mapid!==mapid){
+		this._cpevt.mapid=mapid;
+		this._cpevt.evts.length=0;
+	}
+	for(let x=0,arr=this._cpevt.evts;x!==arr.length;++x) $dataMap.events[arr[x].id]=arr[x];
+	$gameSystem._cpevted=1;
+});
+
+new cfc(Scene_Map.prototype).add('onMapLoaded',function f(){
+	$gameSystem._cpevted=undefined;
+	return f.ori.apply(this,arguments);
+}).add('createDisplayObjects',function f(){
+	if(!$gameSystem._cpevted) $gameSystem.cpevt_loadevt($gameMap._mapId);
+	$gameSystem._cpevted=undefined;
+	return f.ori.apply(this,arguments);
+});
+
+new cfc(Game_Map.prototype).add('setup',function f(mapid){
+	$gameSystem.cpevt_loadevt(mapid);
+	return f.ori.apply(this,arguments);
+}).add('cpevt',function f(evtid,x,y){
+	// return new event's id
+	const evtds=$dataMap.events;
+	if(!evtds[evtid]) return; // no such event
+	let newid=evtds.length|0; while(this._events[newid]) ++newid;
+	{
+		const newobjd=JSON.parse(JSON.stringify(evtds[evtid]));
+		newobjd.id=newid;
+		newobjd.x=x;
+		newobjd.y=y;
+		evtds[newid]=newobjd;
+		$gameSystem._cpevt.evts.push(newobjd);
+	}
+	const newevt=new Game_Event(this._mapId,newid);
+	this._events[newid]=newevt;
+	let sc=SceneManager._scene,sp;
+	if(sc.constructor===Scene_Map && (sp=sc._spriteset)){
+		const spc=new Sprite_Character(newevt);
+		sp._characterSprites.push(spc);
+		sp._tilemap.addChild(spc);
+	}
+	return newid;
+});
+
+})(); // cpevt
+
 // ---- ---- ---- ---- 
 
-Game_Unit.prototype.allMembers=function(){ return this.members(); };
+exposeToTopFrame();
 
 // ---- ---- ---- ---- 
 
