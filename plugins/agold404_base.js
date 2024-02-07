@@ -371,9 +371,21 @@ new cfc(SceneManager).add('isMapOrIsBattle',function f(){
 	this.renderScene();
 	this.requestUpdate();
 },[0.25,],true,true).add('updateScene',function f(){
-	++this._updateSceneCnt; // reset to zero when 'Graphics.frameCount' increase // in 'Graphics.render'
-	return f.ori.apply(this,arguments);
-});
+	if(this._scene){
+		if(!this._sceneStarted && this._scene.isReady()){
+			this._scene.start_before();
+			this._scene.start();
+			this._scene.start_after();
+			this._sceneStarted=true;
+			this.onSceneStart();
+		}
+		if(this.isCurrentSceneStarted()){
+			++this._updateSceneCnt; // reset to zero when 'Graphics.frameCount' increase // in 'Graphics.render'
+			this._scene.update();
+		}
+	}
+},undefined,false,true);
+//
 new cfc(Window_Base.prototype).add('positioning',function f(setting,ref){
 	setting=setting||f.tbl;
 	let x,y,w,h;
@@ -805,7 +817,7 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 		const arr=[];
 		arr.push('AudioManager','BattleManager','ConfigManager','DataManager','ImageManager','SceneManager',);
 		arr.push('Input','TouchInput',);
-		arr.push('Graphics','PIXI','Sprite','Bitmap',);
+		arr.push('Graphics','PIXI','Sprite','Bitmap','WebAudio',);
 		arr.push('Game_BattlerBase','Game_Battler','Game_Enemy','Game_Actor','Game_Action',);
 		arr.push('Game_CharacterBase','Game_Character','Game_Event','Game_Player',);
 		arr.push('Game_Interpreter','Game_Picture','Game_System','Game_Screen','Game_Map',);
@@ -880,19 +892,6 @@ TouchInput._setupEventHandlers = function() {
 	document.addEventListener('touchcancel', this._onTouchCancel.bind(this));
 	document.addEventListener('pointerdown', this._onPointerDown.bind(this));
 };
-
-// ---- ---- ---- ---- 
-
-new cfc(Scene_Boot.prototype).add('start',function f(){
-	this.start_before();
-	const rtv=f.ori.apply(this,arguments);
-	this.start_after();
-	return rtv;
-}).add('start_before',function f(){
-	
-},undefined,true,false).add('start_after',function f(){
-	
-},undefined,true,false);
 
 // ---- ---- ---- ---- js error
 
@@ -1058,7 +1057,7 @@ new cfc(Game_Battler.prototype).add('getSprite',function f(){
 
 })(); // gameObj2sprite
 
-// ---- ---- ---- ---- shorthand-interpreter
+// ---- ---- ---- ---- shorthand
 
 (()=>{ let k,r,t;
 
@@ -1070,7 +1069,175 @@ new cfc(Game_Interpreter.prototype).add('getEvt',function f(){
 	return this._list&&this._list[this._index+offset];
 });
 
-})(); // shorthand-interpreter
+SceneManager.getTilemap=function(){
+	const sc=this._scene;
+	const sps=sc&&sc._spriteset;
+	return sps&&sps._tilemap;
+};
+
+})(); // shorthand
+
+// ---- ---- ---- ---- 支援前場景暫存恢復+確保下個場景要預讀(in initialize)的東西好了 // ImageManager.isReady()
+
+(()=>{ let k,r,t;
+
+new cfc(SceneManager).add('push',function f(sceneClass,shouldRecordCurrentScene){
+	this._stack.push(this._scene.constructor);
+	this.goto(sceneClass,shouldRecordCurrentScene);
+	if(shouldRecordCurrentScene && this._nextScene) this._nextScene._prevScene=this._scene;
+	return this._nextScene && this._nextScene._prevScene;
+},undefined,true,true).add('changeScene',function f(){
+	if(this.isSceneChanging() && !this.isCurrentSceneBusy() && ImageManager.isReady()){
+		let recordedPrevScene;
+		if(this._scene){
+			if(!this._nextScene||!this._nextScene._prevScene){
+				this._scene.terminate_before();
+				this._scene.terminate();
+				this._scene.terminate_after();
+				this._scene.detachReservation();
+			}
+			this._previousClass = this._scene.constructor;
+			recordedPrevScene = this._scene._prevScene;
+		}
+		if(recordedPrevScene && this._nextScene && recordedPrevScene.constructor===this._nextScene.constructor){
+			this._nextScene = null;
+			(this._scene=recordedPrevScene)._active=true;
+		}else{
+			this._scene = this._nextScene;
+			if(this._scene){
+				this._scene.attachReservation();
+				this._scene.create();
+				this._nextScene = null;
+				this._sceneStarted = false;
+				this.onSceneCreate();
+			}
+		}
+		if(this._exiting){
+			if(f.tbl[0]){
+				--f.tbl[0];
+				this.terminate();
+			}
+		}
+	}
+},[
+3, // max call count of 'this.terminate();'
+],true,true);
+
+})(); // 支援前場景暫存恢復+確保下個場景要預讀(in initialize)的東西好了 // ImageManager.isReady()
+
+// ---- ---- ---- ---- scene.start before/after
+
+new cfc(Scene_Base.prototype).add('start_after',function f(){
+}).add('start_before',function f(){
+});
+
+new cfc(Scene_Boot.prototype).add('start_after',function f(){
+	return Scene_Base.prototype.start_after.apply(this,arguments);
+}).add('start_before',function f(){
+	return Scene_Base.prototype.start_before.apply(this,arguments);
+});
+
+// ---- ---- ---- ---- scene.terminate before/after + clean scene child
+
+new cfc(Scene_Base.prototype).add('terminate_after',function f(){
+	if(this.children){ while(this.children.length){
+		const currLen=this.children.length;
+		const sp=this.children.back;
+		if(sp.destroy) sp.destroy();
+		// preventing 'sp.destroy' is modified
+		if(this.children.length===currLen) this.removeChildAt(this.children.length-1);
+	} }
+}).add('terminate_before',function f(){
+});
+
+new cfc(Scene_Boot.prototype).add('terminate_after',function f(){
+	return Scene_Base.prototype.terminate_after.apply(this,arguments);
+}).add('terminate_before',function f(){
+	return Scene_Base.prototype.terminate_before.apply(this,arguments);
+});
+
+// ---- ---- ---- ---- Game_BattlerBase.traitCode2traitKey
+
+new cfc(Scene_Boot.prototype).add('terminate_after',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	const gbb=Game_BattlerBase;
+	let m=Game_BattlerBase.traitCode2traitKey; if(!m) m=Game_BattlerBase.traitCode2traitKey=[];
+	for(let x=0,arr=getPrefixPropertyNames(gbb,'TRAIT_'),xs=arr.length;x!==xs;++x) m[Game_BattlerBase[arr[x]]]=arr[x];
+	return rtv;
+});
+
+// ---- ---- ---- ---- lazy refresh
+
+(()=>{ let k,r,t;
+
+{ const p=SceneManager;
+p._needRefreshes_isRefreshing=false;
+p.NOT_REFRESHED={};
+new cfc(p).add('renderScene',function f(){
+	const sc=this._scene;
+	const set=sc&&sc._needRefreshes;
+	if(set){
+		const set2=sc._needRefreshes_notYet=[];
+		this._needRefreshes_isRefreshing=true;
+		set.slice().forEach(f.tbl[0]);
+		this._needRefreshes_isRefreshing=false;
+		set.uniqueClear();
+		sc._needRefreshes=set2;
+	}
+	return f.ori.apply(this,arguments);
+},[
+// sp=>sp.refresh_do()===SceneManager.NOT_REFRESHED && SceneManager._scene._needRefreshes_notYet, // discard if can't refresh
+sp=>sp.refresh_do(),
+]).add('addRefresh',function f(obj,forcePending){
+	if(!obj||(typeof obj.refresh_do!=='function')) return console.warn('got unsupported obj',obj);
+	const sc=this._scene; if(!sc) return;
+	if(!forcePending&&!f.tbl[0].has(obj.constructor)&&!f.tbl[0].has(obj.parent&&obj.parent.constructor)&&
+		// f.tbl[1].has(sc.constructor)
+		f.tbl[1]===sc.constructor
+		) return obj.refresh_do();
+	// added pending during refreshing
+	if(this._needRefreshes_isRefreshing) return obj.refresh_do();
+	let s=sc._needRefreshes; if(!s) s=sc._needRefreshes=[];
+	s.uniquePush(obj);
+},[
+new Set([
+Sprite_Animation,
+Sprite_Balloon,
+Sprite_Button,
+Sprite_Character,
+Sprite_Destination,
+Sprite_Picture,
+Sprite_Timer,
+Window_ChoiceList,
+Window_EventItem,
+Window_Gold,
+Window_MapName,
+Window_Message,
+Window_NumberInput,
+Window_ScrollText,
+]), // 0: target sprites
+Scene_Map, // since only this scene //new Set([Scene_Map,]), // 1: disable pending refresh scenes
+],true,true);
+}
+
+{ const p=Sprite.prototype;
+p.refresh_do=p._refresh;
+p._refresh=function f(){ SceneManager.addRefresh(this); };
+}
+
+})(); // lazy refresh
+
+// ---- ---- ---- ---- btlr.getParty
+
+new cfc(Game_Battler.prototype).add('getParty',function f(){
+	const func=f.tbl[0].get(this.constructor);
+	return func&&func();
+},[
+new Map([
+[Game_Enemy,()=>$gameTroop,],
+[Game_Actor,()=>$gameParty,],
+]), // 0: 
+]);
 
 // ---- ---- ---- ---- 
 
