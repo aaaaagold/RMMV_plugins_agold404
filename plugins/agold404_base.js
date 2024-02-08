@@ -357,7 +357,12 @@ new cfc(SceneManager).add('isMapOrIsBattle',function f(){
 },new Set([Scene_Map,Scene_Battle])).add('updateMain',function f(){
 	if(Utils.isMobileSafari()){
 		// this.updateInputData(); // already in .update
-		this.changeScene(); this.updateScene();
+		this.changeScene_before();
+		this.changeScene();
+		this.changeScene_after();
+		this.updateScene_before();
+		this.updateScene();
+		this.updateScene_after();
 	}else{
 		const newTime=this._getTimeInMsWithoutMobileSafari();
 		const fTime=Math.min((newTime-this._currentTime)/1000,f.tbl[0]);
@@ -365,12 +370,69 @@ new cfc(SceneManager).add('isMapOrIsBattle',function f(){
 		this._accumulator+=fTime;
 		for(;this._accumulator>=this._deltaTime;this._accumulator-=this._deltaTime){
 			this.updateInputData();
-			this.changeScene(); this.updateScene();
+			this.changeScene_before();
+			this.changeScene();
+			this.changeScene_after();
+			this.updateScene_before();
+			this.updateScene();
+			this.updateScene_after();
 		}
 	}
+	this.renderScene_before();
 	this.renderScene();
+	this.renderScene_after();
 	this.requestUpdate();
-},[0.25,],true,true).add('updateScene',function f(){
+},[0.25,],true,true).add('additionalUpdate_doArr',function f(arr){
+	const rtv=[],popup=[]; // remained funcs
+	const src=arr.slice();
+	arr.length=0;
+	src.forEach(f.tbl[0],rtv);
+	popup.concat_inplace(arr);
+	arr.length=0;
+	arr.concat_inplace(popup).concat_inplace(rtv);
+	return arr;
+},[
+function(f){ if(!f()) this.push(f); },
+]).add('changeScene_before',function f(){
+	this.additionalUpdate_doArr(this.additionalUpdate_changeScene_getBefore());
+}).add('changeScene_after',function f(){
+	this.additionalUpdate_doArr(this.additionalUpdate_changeScene_getAfter());
+}).add('additionalUpdate_changeScene_getBefore',function f(){
+	let rtv=this._additionalUpdate_changeScene_before; if(!rtv) rtv=this._additionalUpdate_changeScene_before=[];
+	return rtv;
+}).add('additionalUpdate_changeScene_getAfter',function f(){
+	let rtv=this._additionalUpdate_changeScene_after; if(!rtv) rtv=this._additionalUpdate_changeScene_after=[];
+	return rtv;
+}).add('additionalUpdate_changeScene_add',function f(func,isAfter){
+	const arr=isAfter?this.additionalUpdate_changeScene_getAfter():this.additionalUpdate_changeScene_getBefore();
+	arr.push(func);
+}).add('updateScene_before',function f(){
+	this.additionalUpdate_doArr(this.additionalUpdate_updateScene_getBefore());
+}).add('updateScene_after',function f(){
+	this.additionalUpdate_doArr(this.additionalUpdate_updateScene_getAfter());
+}).add('additionalUpdate_updateScene_getBefore',function f(){
+	let rtv=this._additionalUpdate_updateScene_before; if(!rtv) rtv=this._additionalUpdate_updateScene_before=[];
+	return rtv;
+}).add('additionalUpdate_updateScene_getAfter',function f(){
+	let rtv=this._additionalUpdate_updateScene_after; if(!rtv) rtv=this._additionalUpdate_updateScene_after=[];
+	return rtv;
+}).add('additionalUpdate_updateScene_add',function f(func,isAfter){
+	const arr=isAfter?this.additionalUpdate_updateScene_getAfter():this.additionalUpdate_updateScene_getBefore();
+	arr.push(func);
+}).add('renderScene_before',function f(){
+	this.additionalUpdate_doArr(this.additionalUpdate_renderScene_getBefore());
+}).add('renderScene_after',function f(){
+	this.additionalUpdate_doArr(this.additionalUpdate_renderScene_getAfter());
+}).add('additionalUpdate_renderScene_getBefore',function f(){
+	let rtv=this._additionalUpdate_renderScene_before; if(!rtv) rtv=this._additionalUpdate_renderScene_before=[];
+	return rtv;
+}).add('additionalUpdate_renderScene_getAfter',function f(){
+	let rtv=this._additionalUpdate_renderScene_after; if(!rtv) rtv=this._additionalUpdate_renderScene_after=[];
+	return rtv;
+}).add('additionalUpdate_renderScene_add',function f(func,isAfter){
+	const arr=isAfter?this.additionalUpdate_renderScene_getAfter():this.additionalUpdate_renderScene_getBefore();
+	arr.push(func);
+}).add('updateScene',function f(){
 	if(this._scene){
 		if(!this._sceneStarted && this._scene.isReady()){
 			this._scene.start_before();
@@ -1238,6 +1300,87 @@ new Map([
 [Game_Actor,()=>$gameParty,],
 ]), // 0: 
 ]);
+
+// ---- ---- ---- ---- Tilemap / Spriteset
+
+(()=>{ let k,r,t;
+
+new cfc(Tilemap.prototype).add('initialize',function(margin) {
+	PIXI.Container.call(this);
+	
+	this._tileWidth = $gameMap?$gameMap.tileWidth():48;
+	this._tileHeight = $gameMap?$gameMap.tileHeight():48;
+	this._margin = margin||Math.max(this._tileWidth,this._tileHeight)||64;
+	this._width = Graphics.width + (this._margin<<1);
+	this._height = Graphics.height + (this._margin<<1);
+	this._mapWidth = 0;
+	this._mapHeight = 0;
+	this._mapData = null;
+	this._layerWidth = 0;
+	this._layerHeight = 0;
+	this._lastTiles = [];
+	
+	/**
+	 * The bitmaps used as a tileset.
+	 *
+	 * @property bitmaps
+	 * @type Array
+	 */
+	this.bitmaps = [];
+	
+	/**
+	 * The origin point of the tilemap for scrolling.
+	 *
+	 * @property origin
+	 * @type Point
+	 */
+	this.origin = new Point();
+	
+	/**
+	 * The tileset flags.
+	 *
+	 * @property flags
+	 * @type Array
+	 */
+	this.flags = [];
+	
+	/**
+	 * The animation count for autotiles.
+	 *
+	 * @property animationCount
+	 * @type Number
+	 */
+	this.animationCount = 0;
+	
+	/**
+	 * Whether the tilemap loops horizontal.
+	 *
+	 * @property horizontalWrap
+	 * @type Boolean
+	 */
+	this.horizontalWrap = false;
+	
+	/**
+	 * Whether the tilemap loops vertical.
+	 *
+	 * @property verticalWrap
+	 * @type Boolean
+	 */
+	this.verticalWrap = false;
+	
+	this._createLayers();
+	this.refresh();
+},undefined,false,true);
+
+new cfc(Spriteset_Base.prototype).add('updatePosition',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.updatePosition_CanvasToneChanger();
+	return rtv;
+}).add('updatePosition_CanvasToneChanger',function f(){
+	const sp=this._toneSprite; if(sp) sp.position.set(-this.x,-this.y);
+});
+
+})(); // Tilemap / Spriteset
 
 // ---- ---- ---- ---- 
 
