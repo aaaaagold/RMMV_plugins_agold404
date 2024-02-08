@@ -11,6 +11,17 @@
 
 // ---- ---- ---- ---- 
 
+{ const f=function getPluginNameViaSrc(src){ if(!src) return '';
+	const key='/js/plugins/';
+	src='/'+src;
+	let idx=src.lastIndexOf(key); if(!(idx>=0)) return '';
+	idx+=key.length;
+	return src.slice(idx,Math.max(src.indexOf('.js',idx),0));
+};
+window[f.name]=f;
+console.log(getPluginNameViaSrc(document.currentScript.src));
+}
+
 { const a=Game_Interpreter,p=a.prototype;
 a.NOP={code:0,indent:0,parameters:[],};
 // prevent being slow due to getting non-exists property
