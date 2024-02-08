@@ -903,10 +903,10 @@ new cfc(ImageManager).add('otherFiles_getDataMap',function f(){
 }).add('otherFiles_getPendedSet',function f(){
 	let s=this._otherFiles_pended; if(!s) s=this._otherFiles_pended=new Set();
 	return s;
-}).add('otherFiles_getData',function f(){
+}).add('otherFiles_getData',function f(path){
 	const m=this.otherFiles_getDataMap();
 	return m.get(path);
-}).add('otherFiles_delData',function f(){
+}).add('otherFiles_delData',function f(path){
 	const m=this.otherFiles_getDataMap(),s=this.otherFiles_getPendedSet();
 	const rtv=m.get(path);
 	m.delete(path);
@@ -1381,6 +1381,158 @@ new cfc(Spriteset_Base.prototype).add('updatePosition',function f(){
 });
 
 })(); // Tilemap / Spriteset
+
+// ---- ---- ---- ---- 全域動畫選項
+
+(()=>{ let k,r,t;
+
+t=[
+[['rotate',0],['scalex',1],['scaley',1],['delay',0],['drate',0],['onTop',false],],
+undefined, // 1: default values // not used
+];
+t[1]=new Map(t[0]);
+new cfc(Game_System.prototype).add('animationOptions_get',function f(){
+	let rtv=this._aniOpt;
+	if(!rtv){
+		rtv=this._aniOpt={};
+		for(let x=0,arr=f.tbl[0],xs=arr.length;x!==xs;++x) rtv[arr[x][0]]=arr[x][1];
+	}
+	return rtv;
+},t,true,true).add('animationOptions_reset',function f(){
+	const opt=this.animationOptions_get();
+	for(let x=0,arr=f.tbl[0],xs=arr.length;x!==xs;++x) opt[arr[x][0]]=arr[x][1];
+	return this;
+},t,true,true).add('animationOptions_setRotate',function f(rotate){
+	const opt=this.animationOptions_get();
+	opt.rotate=rotate;
+	return this;
+},t,true,true).add('animationOptions_setScaleX',function f(scalex){
+	const opt=this.animationOptions_get();
+	opt.scalex=scalex;
+	return this;
+},t,true,true).add('animationOptions_setScaleY',function f(scaley){
+	const opt=this.animationOptions_get();
+	opt.scaley=scaley;
+	return this;
+},t,true,true).add('animationOptions_setDelay',function f(delay){
+	const opt=this.animationOptions_get();
+	opt.delay=delay;
+	return this;
+},t,true,true).add('animationOptions_setDRate',function f(drate){
+	const opt=this.animationOptions_get();
+	opt.drate=drate;
+	return this;
+},t,true,true).add('animationOptions_setOnTop',function f(onTop){
+	const opt=this.animationOptions_get();
+	opt.onTop=onTop;
+	return this;
+},t,true,true).add('animationOptions_set',function f(newOpt){
+	const opt=this.animationOptions_get();
+	for(let x=0,arr=f.tbl[0],xs=arr.length;x!==xs;++x) if(arr[x][0] in newOpt) opt[arr[x][0]]=newOpt[arr[x][0]];
+	return this;
+},t,true,true).add('animationOptions_applyTo',function f(opt,carryingOn){
+	const sysOpt=this.animationOptions_get(),tbl0=f.tbl[0];
+	let rotate=0;
+	let scalex=1;
+	let scaley=1;
+	let delay=0;
+	let drate=0;
+	let onTop=false;
+	if((tbl0[0][0] in sysOpt) && sysOpt.rotate!==0) rotate+=sysOpt.rotate;
+	if((tbl0[1][0] in sysOpt) && sysOpt.scalex!==1) scalex*=sysOpt.scalex;
+	if((tbl0[2][0] in sysOpt) && sysOpt.scaley!==1) scaley*=sysOpt.scaley;
+	if((tbl0[3][0] in sysOpt) && sysOpt.delay !==0) delay +=sysOpt.delay;
+	if((tbl0[4][0] in sysOpt) && sysOpt.drate !==0) drate +=sysOpt.drate;
+	if((tbl0[5][0] in sysOpt) && sysOpt.onTop !==1) onTop  =onTop||sysOpt.onTop;
+	if(carryingOn && (tbl0[0][0] in opt)) opt.rotate+=rotate;
+	else opt.rotate=rotate;
+	if(carryingOn && (tbl0[1][0] in opt)) opt.scalex*=scalex;
+	else opt.scalex=scalex;
+	if(carryingOn && (tbl0[2][0] in opt)) opt.scaley*=scaley;
+	else opt.scaley=scaley;
+	if(carryingOn && (tbl0[3][0] in opt)) opt.delay+=delay;
+	else opt.delay=delay;
+	if(carryingOn && (tbl0[4][0] in opt)) opt.drate+=drate;
+	else opt.drate=drate;
+	opt.onTop=onTop;
+	return this;
+},t,true,true);
+
+
+t=[
+["custom/Animations/AniNote-",".txt","",],
+/^%%%/,
+function f(dataobj){ return f.tbl[0][0]+dataobj.id+f.tbl[0][1]; },
+function f(dataobj){
+	const m=dataobj&&dataobj.name&&dataobj.name.match(f.tbl[1]); if(!m) return;
+	ImageManager.otherFiles_addLoad(f.tbl[2](dataobj));
+},
+function f(dataobj){
+	dataobj.note=ImageManager.otherFiles_getData(f.tbl[2](dataobj))||f.tbl[0][2];
+	DataManager.extractMetadata(dataobj);
+},
+['frameRate',], // 5: meta params
+];
+t.forEach(x=>x&&x.constructor===Function&&(x.tbl=x.ori=t));
+
+new cfc(Scene_Boot.prototype).add('start_before',function f(){
+	this.start_before_aniNote();
+	return f.ori.apply(this,arguments);
+}).add('start_before_aniNote',function f(idx){
+	if(idx===undefined) $dataAnimations.forEach(f.tbl[3]);
+	else if($dataAnimations[idx]) f.tbl[3]($dataAnimations[idx]);
+},t);
+
+
+new cfc(Sprite_Animation.prototype).add('setup',function f(target,ani,mir,dly,opt){
+	// delay and rate
+	if(ani){
+		if(!ani.meta) f.tbl[4](ani);
+		arguments[3]=(ani.meta.dly|0)+(dly|0);
+		const fr=ani.meta[f.tbl[5][0]]|0;
+		if(fr) this._rate=fr;
+		this._rate=Math.max(this._rate+(opt.drate|0),1);
+	}
+	this._opt=opt;
+	return f.ori.apply(this,arguments);
+},t).add('setupRate',none);
+
+new cfc(Game_Character.prototype).add('requestAnimation',function f(aniId,opt){
+	const sp=this.getSprite(); if(!sp) return;
+	const ani=$dataAnimations&&$dataAnimations[aniId]; if(!ani) return;
+	this.startAnimation();
+	return sp.startAnimation(ani,false,0,opt);
+},undefined,false,true);
+
+new cfc(Sprite_Base.prototype).add('startAnimation',function f(ani,mir,dly,opt){
+	opt=opt||{};
+	$gameSystem.animationOptions_applyTo(opt,true);
+	const sp=new Sprite_Animation();
+	sp.setup(this._effectTarget,ani,mir,(opt.delay|0)+(dly|0),opt);
+	this.parent.addChild(sp);
+	this._animationSprites.push(sp);
+	
+	// opt other than delay and rate
+	this.startAnimation_optOthers(opt,sp);
+	
+	return sp;
+},undefined,false,true).add('startAnimation_optOthers',function f(opt,sp){
+	let rotate=0;
+	let scalex=1;
+	let scaley=1;
+	const tbl0=f.tbl[0];
+	if(tbl0[0][0] in opt) rotate+=opt.rotate;
+	if(tbl0[1][0] in opt) scalex*=opt.scalex;
+	if(tbl0[2][0] in opt) scaley*=opt.scaley;
+	// fixed effects
+	if(rotate) sp.rotation=rotate;
+	if(scalex-1||scaley-1) sp.scale.set(scalex,scaley);
+	// dynamic effects
+},[
+Game_System.prototype.animationOptions_get.tbl[0],
+]);
+
+})(); // 全域動畫選項
 
 // ---- ---- ---- ---- 
 
