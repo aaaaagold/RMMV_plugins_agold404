@@ -286,4 +286,63 @@ new cfc(Game_Map.prototype).add('xWithDirection',function f(x,d){
 	return this.roundY(this.yWithDirection(y,d));
 },undefined,false,true);
 
+
+
+t=Game_Character.MOVEROUTE_EMPTY={
+list:[
+{code:Game_Character.ROUTE_END,parameters:[]},
+],
+repeat:false,
+wait:false,
+skippable:true,
+};
+t.list.push(t.list[0]);
+t.list[-1]=t.list[0];
+
+new cfc(Game_Character.prototype).add('turnTo',function f(arg0){
+	if(arg0&&arg0.constructor===String){ const m=arg0.match(f.tbl[0]); if(m){
+		const rev=m[1]!==m[2],evt=(m[2]==='p')?$gamePlayer:this._mvToGetTrgt(m[2]);
+		if(!evt) return;
+		if(rev) this.turnAwayFromCharacter(evt);
+		else this.turnTowardCharacter(evt);
+	} }else{
+		arg0|=0;
+		if(arg0 in f.tbl[1]) this._direction=arg0;
+	}
+},[
+/^evt (-?([0-9]+|p))$/,
+{2:2,4:4,6:6,8:8,},
+],true,true).add('setMoveRouteEmpty',function f(){
+	this._moveRoute=Game_Character.MOVEROUTE_EMPTY;
+	this._moveRouteIndex=-1;
+}).add('_mvToGetTrgt',function f(evtId){
+	if(evtId==='p') return $gamePlayer;
+	else if(evtId==-1) return this;
+	else return $gameMap && $gameMap._events && $gameMap._events[evtId];
+}).add('_mvToLoc',function f(x,y,dir,opt){
+	if(this.x===x && this.y===y){ if(!opt||!opt.repeat--) this.setMoveRouteEmpty(); this.turnTo(dir); }
+	else{ let d=this.findDirTo([[x,y]])||this.findDirectionTo(x,y); this.moveDiagNumpad(d); }
+},undefined,true,true).add('moveToLoc',function f(evtId,x,y,dir,speed,opt){
+	if(speed) this._moveSpeed=speed;
+	const evt=this._mvToGetTrgt(evtId);
+	if(evt){ x+=evt.x; y+=evt.y; }
+	return this.forceMoveRoute({
+		trgt:{x:x,y:y,d:dir,o:opt,},
+		list:f.tbl[0],
+		repeat:true,
+		skippable:true,
+	});
+},[
+[
+//{code:Game_Character.ROUTE_SCRIPT,parameters:['let t=this._moveRoute.trgt; if(this.x===t.x && this.y===t.y){ this._moveRoute.repeat=false; this.turnTo(t.d); }else{ let d=this.findDirTo([[t.x,t.y]])||this.findDirectionTo(t.x,t.y); this.moveDiagNumpad(d); }']},
+{code:Game_Character.ROUTE_SCRIPT,parameters:['let t=this._moveRoute.trgt; this._mvToLoc(t.x,t.y,t.d,t.o);']},
+Game_Character.MOVEROUTE_EMPTY.list[0],
+],
+],true,true).add('move1ToLoc',function f(evtId,x,y,dir,speed,opt){
+	if(speed) this._moveSpeed=speed;
+	const evt=this._mvToGetTrgt(evtId);
+	if(evt){ x+=evt.x; y+=evt.y; }
+	return this._mvToLoc(x,y,dir,opt);
+});
+
 })();
