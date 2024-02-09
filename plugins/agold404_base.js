@@ -178,7 +178,7 @@ const getStr_英文不好齁=t=function f(){
 }; t.ori=undef; t.tbl=[
 '\n\n給看ㄅ懂英文ㄉ人ㄉ台譯版：',
 ];
-const makeDummyWindowProto=t=function f(c,withContents,withCursor){
+const makeDummyWindowProto=window.makeDummyWindowProto=t=function f(c,withContents,withCursor){
 	let tmp;
 	if(c.constructor===Function){
 		tmp=c.prototype;
@@ -1545,7 +1545,195 @@ Game_System.prototype.animationOptions_get.tbl[0],
 
 })(); // 全域動畫選項
 
-// ---- ---- ---- ---- 
+// ---- ---- ---- ---- chr dist
+
+{ const p=Game_Character.prototype;
+p.dist1=function(c){
+	const dx=this.x-c.x,dy=this.y-c.y;
+	return Math.abs(dx)+Math.abs(dy);
+};
+p.dist1_r=function(c){
+	const dx=this._realX-c._realX,dy=this._realY-c._realY;
+	return Math.abs(dx)+Math.abs(dy);
+};
+p.dist2=function(c){
+	const dx=this.x-c.x,dy=this.y-c.y;
+	return dx*dx+dy*dy;
+};
+p.dist2_r=function(c){
+	const dx=this._realX-c._realX,dy=this._realY-c._realY;
+	return dx*dx+dy*dy;
+};
+} // chr dist
+
+// ---- ---- ---- ---- chr appearance
+
+(()=>{ let k,r,t;
+
+new cfc(Game_CharacterBase.prototype).add('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.updateOpacity();
+	this.updateScreenXy();
+	return rtv;
+}).add('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._screenDx=0;
+	this._screenDy=0;
+	this._screenDz=0;
+	return rtv;
+}).add('screenX',function f(){
+	return this._screenDx+f.ori.apply(this,arguments);
+}).add('screenY',function f(){
+	return this._screenDy+f.ori.apply(this,arguments);
+}).add('screenZ',function f(){
+	return this._screenDz+f.ori.apply(this,arguments);
+}).add('setScreenXy',function f(dx,dy,dur,sx,sy,){
+	if((dur|=0) && 0<dur){
+		this._screenXyData={
+		src:[
+			sx===undefined?this._screenDx:sx-this.screenX(),
+			sy===undefined?this._screenDy:sy-this.screenY(),
+		],
+		dst:[dx,dy],
+		dur:0,
+		durDst:dur,
+		};
+	}
+	this.updateScreenXy();
+}).add('updateScreenXy',function f(){
+	if(this._screenXyData && this._screenXyData.dur<this._screenXyData.durDst){
+		const r=++this._screenXyData.dur/this._screenXyData.durDst;
+		this._screenDx=r*(this._screenXyData.dst[0]-this._screenXyData.src[0])+this._screenXyData.src[0];
+		this._screenDy=r*(this._screenXyData.dst[1]-this._screenXyData.src[1])+this._screenXyData.src[1];
+	}else this._screenXyData=undefined;
+}).add('setOpacity',function f(opacity,dur,from){
+	const opacity_ori=this._opacity;
+	const rtv=f.ori.apply(this,arguments);
+	if((dur|=0) && 0<dur){
+		this._opacitySrc=from===undefined?opacity_ori:from;
+		this._opacityDst=opacity;
+		this._opacityDur=0;
+		this._opacityDurDst=dur;
+	}
+	this.updateOpacity();
+	return rtv;
+}).add('updateOpacity',function f(){
+	if(this._opacityDur<this._opacityDurDst){
+		this._opacity=++this._opacityDur/this._opacityDurDst*(this._opacityDst-this._opacitySrc)+this._opacitySrc;
+	}else this._opacityDst=this._opacitySrc=this._opacityDur=this._opacityDurDst=undefined;
+},undefined,true,true);;
+
+})(); // chr appearance
+
+// ---- ---- ---- ---- ImageManager._loadBitmap
+
+(()=>{ let k,r,t;
+
+{ const p=Game_System.prototype;
+k='_bmpRemap_container';
+r=p[k]; (p[k]=function f(){
+	let arr=this._bmpRemap; if(!arr) arr=this._bmpRemap=[];
+	let m=arr._map; if(!m) m=arr._map=new Map(arr.map(f.tbl[0]));
+	return arr;
+}).ori=r;
+p[k].tbl=[
+(x,i)=>[x[0],[i,x[1]]],
+];
+k='bmpRemap_set';
+r=p[k]; (p[k]=function f(ori,mapped){
+	const arr=this._bmpRemap_container();
+	const m=arr._map; // ori -> [idx,mapped,]
+	const info=m.get(ori);
+	if(mapped){
+		// set mapping
+		if(info){
+			const msg="[WARNING]\n img:\n"+ori+"\n is already mapping to:\n"+(info&&info[1]);
+			console.warn(msg);
+			alert(msg);
+		}
+		m.set(ori,[arr.length,mapped,]);
+		arr.push([ori,mapped]);
+	}else if(info){
+		// remove
+		if(info[0]!==arr.length){
+			// move last to here
+			const back=arr[info[0]]=arr.back;
+			m.set(back[0],[info[0],back[1],]);
+		}
+		arr.pop();
+		return m.delete(ori);
+	}
+}).ori=r;
+k='bmpRemap_get';
+r=p[k]; (p[k]=function f(path){
+	const m=this._bmpRemap_container()._map;
+	const rtv=m.get(path);
+	return rtv&&rtv[1]||path;
+}).ori=r;
+k='bmpRemap_clear';
+r=p[k]; (p[k]=function f(path){
+	const arr=this._bmpRemap_container();
+	arr.length=0;
+	const m=arr._map;
+	m.clear();
+}).ori=r;
+}
+
+{ const p=ImageManager;
+(t=p.isDirectPath=function f(fname){
+	return fname && fname.constructor===String && f.tbl.some(p=>fname.match(p));
+}).ori=undefined;
+t.tbl=[/^(data:|\.\/\/)/,];
+p.splitUrlQueryHash=path=>{ if(!path) return ['','',''];
+	const idx_sharp=path.indexOf("#");
+	const rtv=idx_sharp<0?[path,'','',]:[path.slice(0,idx_sharp),'',path.slice(idx_sharp),];
+	const idx_question=rtv[0].indexOf("?");
+	if(idx_question>=0){
+		rtv[1]=rtv[0].slice(idx_question);
+		rtv[0]=rtv[0].slice(0,idx_question);
+	}
+	return rtv;
+}
+k='_loadBitmap';
+r=p[k]; (p[k]=function(isReserve, folder, filename, hue, smooth, reservationId){
+	if(filename){
+		let path;
+		if(this.isDirectPath(filename)) path=filename;
+		else{
+			path = folder + filename.replace(/\n/g,'%0A');
+			const uqh=this.splitUrlQueryHash(path);
+			uqh[0]+='.png'; // 
+			if($gameSystem) uqh[0]=$gameSystem.bmpRemap_get(uqh[0]);
+			path=uqh.join('');
+		}
+		const bitmap = isReserve ? this.reserveNormalBitmap(path, hue || 0, reservationId || this._defaultReservationId) : this.loadNormalBitmap(path, hue || 0);
+		bitmap.smooth = smooth;
+		return bitmap;
+	}else return this.loadEmptyBitmap();
+}).ori=r;
+k='loadBitmap';
+r=p[k]; (p[k]=function(folder, filename, hue, smooth){
+	return this._loadBitmap(false, folder, filename, hue, smooth);
+}).ori=r;
+k='reserveBitmap';
+r=p[k]; (p[k]=function(folder, filename, hue, smooth, reservationId){
+	return this._loadBitmap(true , folder, filename, hue, smooth, reservationId);
+}).ori=r;
+k='loadNormalBitmap';
+r=p[k]; (p[k]=function(path, hue){
+	const key = this._generateCacheKey(path, hue);
+	let bitmap = this._imageCache.get(key);
+	if(!bitmap){
+		this._imageCache.add(key, bitmap = Bitmap.load(path));
+		bitmap.addLoadListener(()=>bitmap.rotateHue(hue));
+	}else if(!bitmap.isReady()) bitmap.decode();
+	return bitmap;
+}).ori=r;
+}
+
+})();
+
+// ---- ---- ---- ---- ImageManager._loadBitmap
 
 exposeToTopFrame();
 

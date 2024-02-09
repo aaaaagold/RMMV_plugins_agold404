@@ -578,6 +578,14 @@ p.scale=function(r){
 };
 }
 
+const xyDist1=window.xyDist1=(a,b)=>{
+	let dx=a.x-b.x,dy=a.y-b.y;
+	return Math.abs(dx)+Math.abs(dy);
+};
+const xyDist2=window.xyDist2=(a,b)=>{
+	let dx=a.x-b.x,dy=a.y-b.y;
+	return dx*dx+dy*dy;
+};
 const useDefaultIfIsNaN=window.useDefaultIfIsNaN=(n,d)=>{
 	const rtv=n-0;
 	return isNaN(rtv)?d:rtv;
