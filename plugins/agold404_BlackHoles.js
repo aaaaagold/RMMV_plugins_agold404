@@ -14,7 +14,13 @@ new cfc(Graphics).add('renderOtherEffects',function f(){
 	return f.ori.apply(this,arguments);
 }).add('renderBlackHolesEffect',function f(){
 	const d=document;
-	if(!f.tbl[1]) d.body.ac(f.tbl[1]=d.ce('canvas').sa('style',this._canvas.ga('style')));
+	if(!f.tbl[1]){
+		const div=d.ce('div').sa('style',this._canvas.ga('style'));
+		div.width=this._canvas.width;
+		div.height=this._canvas.height;
+		d.body.ac(div.ac(f.tbl[1]=d.ce('canvas').sa('style','width:100%;height:100%;')));
+		this.addAsGameCanvas(div);
+	}
 	const dstCanvas=f.tbl[1];
 	const dstCtx=f.tbl[2]||(f.tbl[2]=dstCanvas.getContext('2d'));
 	const dstW=~~(f.tbl[3]*this._canvas.width),dstH=~~(f.tbl[3]*this._canvas.height);
