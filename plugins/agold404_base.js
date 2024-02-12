@@ -1134,6 +1134,11 @@ new cfc(Game_Battler.prototype).add('getSprite',function f(){
 
 (()=>{ let k,r,t;
 
+new cfc(Game_Event.prototype).add('setChrIdxName',function f(chrIdx,chrName){
+	this._characterIndex=chrIdx;
+	this._characterName=chrName;
+});
+
 new cfc(Game_Interpreter.prototype).add('getEvt',function f(){
 	// map init ensures '_events' be Array
 	return $gameMap&&$gameMap._events[this._eventId];
@@ -1425,6 +1430,8 @@ new cfc(Game_System.prototype).add('animationOptions_get',function f(){
 	const opt=this.animationOptions_get();
 	opt.scaley=scaley;
 	return this;
+},t,true,true).add('animationOptions_setScale',function f(scale){
+	return this.animationOptions_setScaleX(scale).animationOptions_setScaleY(scale);
 },t,true,true).add('animationOptions_setDelay',function f(delay){
 	const opt=this.animationOptions_get();
 	opt.delay=delay;
@@ -1588,8 +1595,7 @@ new cfc(Game_CharacterBase.prototype).add('update',function f(){
 }).add('screenZ',function f(){
 	return this._screenDz+f.ori.apply(this,arguments);
 }).add('setScreenXy',function f(dx,dy,dur,sx,sy,){
-	if((dur|=0) && 0<dur){
-		this._screenXyData={
+	if((dur|=0) && 0<dur){ this._screenXyData={
 		src:[
 			sx===undefined?this._screenDx:sx-this.screenX(),
 			sy===undefined?this._screenDy:sy-this.screenY(),
@@ -1597,8 +1603,7 @@ new cfc(Game_CharacterBase.prototype).add('update',function f(){
 		dst:[dx,dy],
 		dur:0,
 		durDst:dur,
-		};
-	}
+	}; }
 	this.updateScreenXy();
 }).add('updateScreenXy',function f(){
 	if(this._screenXyData && this._screenXyData.dur<this._screenXyData.durDst){
@@ -1621,7 +1626,10 @@ new cfc(Game_CharacterBase.prototype).add('update',function f(){
 	if(this._opacityDur<this._opacityDurDst){
 		this._opacity=++this._opacityDur/this._opacityDurDst*(this._opacityDst-this._opacitySrc)+this._opacitySrc;
 	}else this._opacityDst=this._opacitySrc=this._opacityDur=this._opacityDurDst=undefined;
-},undefined,true,true);;
+},undefined,true,true).add('setPosition',function f(x,y){
+	this._x = this._realX = x;
+	this._y = this._realY = y;
+},undefined,true,true);
 
 })(); // chr appearance
 
@@ -1731,11 +1739,135 @@ r=p[k]; (p[k]=function(path, hue){
 }).ori=r;
 }
 
-})();
+})(); // ImageManager._loadBitmap
 
-// ---- ---- ---- ---- ImageManager._loadBitmap
+// ---- ---- ---- ---- auto F3
+
+new cfc(Scene_Boot.prototype).add('start',function f(){
+	const g=Graphics,gw=g.width,gh=g.height;
+if(0){
+	g.hideFps();
+	g._switchFPSMeter();
+	g._switchFPSMeter();
+}
+	const t=window,w=t.innerWidth,h=t.innerHeight;
+	console.log(w,h);
+	if(!g._stretchEnabled && ( gw>w || gh>h || (gw+(gw>>1)<w&&gh+(gh>>1)<h) ) ) Graphics._switchStretchMode();
+	return f.ori.apply(this,arguments);
+});
+
+// ---- ---- ---- ---- rendering
+
+(()=>{ let k,r;
+
+const tuneOpt=function(opt){
+	opt=opt||{};
+	opt.transparent=opt.alpha=!(opt.preserveDrawingBuffer=opt.premultipliedAlpha=opt.depth=opt.stencil=opt.antialias=false);
+	opt.depth=true;
+	opt.powerPreference="low-power";
+	return opt;
+};
+
+{ const p=PIXI.glCore;
+p._tuneOpt=tuneOpt;
+k='createContext';
+r=p[k]; (p[k]=function f(c,opt){
+	return f.ori.call(this,c,this._tuneOpt(opt));
+}).ori=r;
+}
+
+{ const p=Graphics;
+p._effectFuncsOnce=p._effectFuncs=undefined; // Array or false-like
+p.renderOtherEffects=none;
+p._tuneOpt=tuneOpt;
+new cfc(p).add('render',function f(stage){
+	if(this._rendered=--this._skipCount<0){
+		const startTime=Date.now();
+		if(stage){
+			this._renderer.render(stage);
+			if(this._renderer.gl&&this._renderer.gl.flush) this._renderer.gl.flush();
+		}
+		if(this._effectFuncs) this._effectFuncs.slice().forEach(f.tbl[0],this);
+		if(this._effectFuncsOnce){
+			const arr=this._effectFuncsOnce;
+			const funcs=arr.slice();
+			arr.length=0;
+			funcs.forEach(f.tbl[0],this);
+		}
+		this.renderOtherEffects(stage);
+		this._skipCount=Math.min((Date.now()-startTime)>>4,this._maxSkip);
+	}
+	this.frameCount+=SceneManager._updateSceneCnt|0; SceneManager._updateSceneCnt=0|0;
+},[
+function(f){ f.call(this); },
+],undefined,false,true).add('_createRenderer',function(){
+	const log=window.console.log; window.console.log=none;
+	
+	const width=this._width , height=this._height;
+	const options=this._tuneOpt({ view: this._canvas, transparent: true, forceCanvas: this._forceCanvas,
+		depth:false,
+	});
+	try{
+		switch(this._rendererType){
+		case 'canvas':
+			this._renderer=new PIXI.CanvasRenderer(width,height, options);
+			break;
+		case 'webgl':
+			this._renderer=new PIXI.WebGLRenderer(width,height, options);
+			break;
+		default:
+			this._renderer=PIXI.autoDetectRenderer(width,height, options);
+			break;
+		}
+		if(this._renderer && this._renderer.textureGC) this._renderer.textureGC.maxIdle=1;
+	}catch(e){ this._renderer=null; }
+	
+	window.console.log=log;
+},undefined,false,true);
+p.getImageData=function f(x,y,w,h){
+	if(x===undefined) x=0;
+	if(y===undefined) y=0;
+	if(w===undefined) w=this._canvas.width;
+	if(h===undefined) h=this._canvas.height;
+	if(this.isWebGL()){
+		const gl=Graphics._renderer.gl,pixv=new Uint8ClampedArray((w*h)<<2);
+		gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,pixv);
+		return {data:pixv,width:w,height:h};
+	}else return this._canvas.getContext('2d').getImageData(x,y,w,h);
+};
+}
+
+{ const p=PIXI.utils;
+k='isWebGLSupported';
+r=p[k]; (p[k]=function f(){ // PIXI's built-in uses 'failIfMajorPerformanceCaveat' option, which is unreliable
+	let renderer;
+	{
+		const canvas=document.createElement('canvas');
+		let gl;
+		try{
+			gl=canvas.getContext('webgl')||canvas.getContext('experimental-webgl');
+		}catch(e){
+		}
+		if(gl){
+			const debugInfo=gl.getExtension('WEBGL_debug_renderer_info');
+			//const vendor=gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+			renderer=gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+		}
+	}
+	return renderer&&renderer.indexOf(f.trgt)<0&&f.ori.apply(this,arguments);
+}).ori=r;
+p[k].trgt="SwiftShader";
+}
+
+})(); // rendering
+
+// ---- ---- ---- ---- 
+
+(()=>{ let k,r,t;
 
 exposeToTopFrame();
+
+})();
 
 // ---- ---- ---- ---- 
 
