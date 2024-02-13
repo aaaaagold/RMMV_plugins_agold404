@@ -536,7 +536,7 @@ _getCoords(obj){
 	let coords=this._obj2coords.get(obj); if(!coords) this._obj2coords.set(obj,coords=[]);
 	return coords;
 }
-_getBound(obj,r){
+_getBound_rawXy(obj,r){
 	if(r===undefined) r=Math.abs(obj.r);
 	const x0=Math.max(Math.floor(obj.x-r)-this._offsetX,0),y0=Math.max(Math.floor(obj.y-r)-this._offsetY,0),xL=Math.min(Math.ceil(obj.x+r)-this._offsetX,this._width-1),yL=Math.min(Math.ceil(obj.y+r)-this._offsetY,this._height-1);
 	return [x0,y0,xL,yL];
@@ -555,7 +555,7 @@ clear(obj){
 }
 clearBound(obj){
 	const r=Math.abs(obj.r); if(!r) return rtv;
-	const bound=this._getBound(obj,r);
+	const bound=this._getBound_rawXy(obj,r);
 	const x0=bound[0],y0=bound[1],xL=bound[2],yL=bound[3];
 	for(let y=y0;y<=yL;++y){ for(let x=x0;x<=xL;++x){
 		this._getVec(x,y).uniqueClear();
@@ -564,7 +564,7 @@ clearBound(obj){
 add(obj){
 	const coords=this.clear(obj);
 	const r=Math.abs(obj.r); if(!r) return;
-	const bound=this._getBound(obj,r);
+	const bound=this._getBound_rawXy(obj,r);
 	const x0=bound[0],y0=bound[1],xL=bound[2],yL=bound[3];
 	for(let y=y0;y<=yL;++y){ for(let x=x0;x<=xL;++x){
 		coords.push([x,y]);
@@ -574,17 +574,17 @@ add(obj){
 investigate(obj,nearestOnly){
 	const rtv=[];
 	const r=Math.abs(obj.r)||0;
-	const bound=this._getBound(obj,r);
+	const bound=this._getBound_rawXy(obj,r);
 	const x0=bound[0],y0=bound[1],xL=bound[2],yL=bound[3];
 	if(xL<x0||yL<y0) return rtv;
 	if(nearestOnly&=3){
 		const yc=(y0+yL)/2,xc=(x0+xL)/2;
 		const x00=Math.floor(xc),y00=Math.floor(yc),x0L=Math.ceil(xc),y0L=Math.ceil(yc);
-		for(let y=Math.floor(yc),yb=Math.ceil(yc),x_0=Math.floor(xc),xb=Math.ceil(xc);y<=yb;++y){ for(let x=x_0;x<=xb;++x){
+		for(let y=y00;y<=y0L;++y){ for(let x=x00;x<=x0L;++x){
 			const tmp=this._chooseNearest_2(obj,x,y); if(tmp) rtv.uniquePush(tmp);
 		} }
-		if(rtv.length) return rtv;
-		for(let s=1;s<=r;++s){
+		let found=rtv.length;
+		for(let s=1,z=Math.ceil(r);s<=z;++s){
 			const xr0=Math.max(x0,x00-s),xrL=Math.min(xL,x0L+s),yr0=Math.max(y0,y00-s),yrL=Math.min(yL,y0L+s);
 			for(let x=xr0,y=yr0;x!==xrL;++x){
 				const tmp=this._chooseNearest_2(obj,x,y); if(tmp) rtv.uniquePush(tmp);
@@ -598,7 +598,8 @@ investigate(obj,nearestOnly){
 			for(let x=xr0,y=yrL;y!==yr0;--y){
 				const tmp=this._chooseNearest_2(obj,x,y); if(tmp) rtv.uniquePush(tmp);
 			}
-			if(rtv.length) return rtv;
+			if(found) return rtv;
+			found=rtv.length;
 		}
 	}else{
 		for(let y=y0;y<=yL;++y){ for(let x=x0;x<=xL;++x){
@@ -763,6 +764,48 @@ const getUrlParamVal=window.getUrlParamVal=key=>{
 };
 
 })(); // shorthand HTMLElement
+
+
+// jurl
+(()=>{ let k,r,t;
+
+window.jurl=(url, method, header, data, resType, callback, callback_all_h, callback_state4_all_t, callback_all_t, timeout_ms)=>{
+	const argv=[];
+	resType=resType||'';
+	let xhttp=new XMLHttpRequest();
+	if(0<timeout_ms) xhttp.timeout=timeout_ms;
+	xhttp.onreadystatechange=function(){
+		//if(callback_all_h&&callback_all_h.constructor===Function) ; // wtf
+		if((typeof callback_all_h)==="function"){
+			callback_all_h(this,argv);
+		}
+		//if(callback&&callback.constructor===Function) ; // wtf
+		if((typeof callback)==="function"){
+			if(this.readyState===4){
+				let s=this.status.toString();
+				if (s.length===3 && s.slice(0, 1)==='2'){
+					callback(this.response,this,argv);
+				}
+				if((typeof callback_state4_all_t)==="function"){
+					callback_state4_all_t(this,argv);
+				}
+			}
+		}
+		if((typeof callback_all_t)==="function"){
+			callback_all_t(this,argv);
+		}
+	}
+	;
+	xhttp.open(method, url, true);
+	xhttp.responseType=resType;
+	if(header) for(let i in header) xhttp.setRequestHeader(i,header[i]);
+	data=method === "GET" ? undefined : data;
+	argv.push(url,method,header,data,);
+	xhttp.send(data);
+	return xhttp;
+};
+
+})(); // jurl
 
 
 })(); // lib
