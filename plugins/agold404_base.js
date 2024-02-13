@@ -1861,6 +1861,22 @@ p[k].trgt="SwiftShader";
 
 })(); // rendering
 
+// ---- ---- ---- ---- ConfigManager.others
+
+(()=>{ let k,r,t;
+
+new cfc(ConfigManager).add('makeData',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	rtv.others=this.others;
+	return rtv;
+}).add('applyData',function f(config){
+	const rtv=f.ori.apply(this,arguments);
+	this.others=config.others||{};
+	return rtv;
+});
+
+})(); // ConfigManager.others
+
 // ---- ---- ---- ---- 
 
 (()=>{ let k,r,t;
