@@ -508,6 +508,115 @@ window[a.name]=a;
 })(); // LruCache
 
 
+// OccupiedTable
+(()=>{ let k,r,t;
+
+const a=class OccupiedTable{
+constructor(width,height,offsetX,offsetY){
+	this._width=width|=0;
+	this._height=height|=0;
+	if(!width||!height) throw new Error('width and height for '+this.constructor.name+' should be non-zero');
+	this._offsetX=offsetX|=0;
+	this._offsetY=offsetY|=0;
+	
+	this.clearAll();
+}
+clearAll(){
+	for(let y=0,arr=this._tbl=[],ys=this._height;y!==ys;++y) arr.push([]);
+	this._obj2coords=new Map(); // inner coord
+}
+_getVec(x,y){
+	let rtv=this._tbl[y][x]; if(!rtv) rtv=this._tbl[y][x]=[];
+	return rtv;
+}
+_getVec_rawXy(rx,ry){
+	return this._getVec(rx-this._offsetX,ry-this._offsetY);
+}
+_getCoords(obj){
+	let coords=this._obj2coords.get(obj); if(!coords) this._obj2coords.set(obj,coords=[]);
+	return coords;
+}
+_getBound(obj,r){
+	if(r===undefined) r=Math.abs(obj.r);
+	const x0=Math.max(Math.floor(obj.x-r)-this._offsetX,0),y0=Math.max(Math.floor(obj.y-r)-this._offsetY,0),xL=Math.min(Math.ceil(obj.x+r)-this._offsetX,this._width-1),yL=Math.min(Math.ceil(obj.y+r)-this._offsetY,this._height-1);
+	return [x0,y0,xL,yL];
+}
+_chooseNearest_2(obj,x,y){
+	const arr=this._getVec(x,y);
+	const xs=arr.length; if(!xs) return;
+	let tmp=arr[0],d2=xyDist2(obj,tmp); for(let x=1;x!==xs;++x){ let tmpD2=xyDist2(obj,arr[x]); if(tmpD2<d2){ d2=tmpD2; tmp=arr[x]; } }
+	return tmp;
+}
+clear(obj){
+	const coords=this._getCoords(obj);
+	for(let i=0,sz=coords.length;i!==sz;++i) this._getVec(coords[i][0],coords[i][1]).uniquePop(obj);
+	coords.length=0;
+	return coords;
+}
+clearBound(obj){
+	const r=Math.abs(obj.r); if(!r) return rtv;
+	const bound=this._getBound(obj,r);
+	const x0=bound[0],y0=bound[1],xL=bound[2],yL=bound[3];
+	for(let y=y0;y<=yL;++y){ for(let x=x0;x<=xL;++x){
+		this._getVec(x,y).uniqueClear();
+	} }
+}
+add(obj){
+	const coords=this.clear(obj);
+	const r=Math.abs(obj.r); if(!r) return;
+	const bound=this._getBound(obj,r);
+	const x0=bound[0],y0=bound[1],xL=bound[2],yL=bound[3];
+	for(let y=y0;y<=yL;++y){ for(let x=x0;x<=xL;++x){
+		coords.push([x,y]);
+		this._getVec(x,y).uniquePush(obj);
+	} }
+}
+investigate(obj,nearestOnly){
+	const rtv=[];
+	const r=Math.abs(obj.r)||0;
+	const bound=this._getBound(obj,r);
+	const x0=bound[0],y0=bound[1],xL=bound[2],yL=bound[3];
+	if(xL<x0||yL<y0) return rtv;
+	if(nearestOnly&=3){
+		const yc=(y0+yL)/2,xc=(x0+xL)/2;
+		const x00=Math.floor(xc),y00=Math.floor(yc),x0L=Math.ceil(xc),y0L=Math.ceil(yc);
+		for(let y=Math.floor(yc),yb=Math.ceil(yc),x_0=Math.floor(xc),xb=Math.ceil(xc);y<=yb;++y){ for(let x=x_0;x<=xb;++x){
+			const tmp=this._chooseNearest_2(obj,x,y); if(tmp) rtv.uniquePush(tmp);
+		} }
+		if(rtv.length) return rtv;
+		for(let s=1;s<=r;++s){
+			const xr0=Math.max(x0,x00-s),xrL=Math.min(xL,x0L+s),yr0=Math.max(y0,y00-s),yrL=Math.min(yL,y0L+s);
+			for(let x=xr0,y=yr0;x!==xrL;++x){
+				const tmp=this._chooseNearest_2(obj,x,y); if(tmp) rtv.uniquePush(tmp);
+			}
+			for(let x=xrL,y=yr0;y!==yrL;++y){
+				const tmp=this._chooseNearest_2(obj,x,y); if(tmp) rtv.uniquePush(tmp);
+			}
+			for(let y=yrL,x=xrL;x!==xr0;--x){
+				const tmp=this._chooseNearest_2(obj,x,y); if(tmp) rtv.uniquePush(tmp);
+			}
+			for(let x=xr0,y=yrL;y!==yr0;--y){
+				const tmp=this._chooseNearest_2(obj,x,y); if(tmp) rtv.uniquePush(tmp);
+			}
+			if(rtv.length) return rtv;
+		}
+	}else{
+		for(let y=y0;y<=yL;++y){ for(let x=x0;x<=xL;++x){
+			for(let i=0,arr=this._getVec(x,y),sz=arr.length;i!==sz;++i) rtv.uniquePush(arr[i]);
+		} }
+	}
+	return rtv;
+}
+delete(obj){
+	this.clear(obj);
+	this._obj2coords.delete(obj);
+}
+};
+window[a.name]=a;
+
+})(); // OccupiedTable
+
+
 // extend Set
 (()=>{ const p=Set.prototype;
 p.intersect=function(set2){
