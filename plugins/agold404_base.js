@@ -1877,6 +1877,19 @@ new cfc(ConfigManager).add('makeData',function f(){
 
 })(); // ConfigManager.others
 
+// ---- ---- ---- ---- default font
+
+(()=>{ let k,r,t;
+
+new cfc(Bitmap.prototype).add('_makeFontNameText',function f(){
+	this.fontFace=f.tbl[0];
+	return f.ori.apply(this,arguments);
+},[
+"MBR刪節號,Consolas,'Courier New',Courier,微軟正黑體,標楷體,monospace,GameFont",
+]);
+
+})(); // default font
+
 // ---- ---- ---- ---- 
 
 (()=>{ let k,r,t;
