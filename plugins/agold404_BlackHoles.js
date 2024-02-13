@@ -45,8 +45,21 @@ new cfc(Graphics).add('renderOtherEffects',function f(){
 		
 		const r1=info.dur/info.fadeOutFc; if(!(1>=r1)) continue;
 		const r0=1-r1;
-		const holeX=info.holeXyr0.x*r0+info.holeXyr1.x*r1;
-		const holeY=info.holeXyr0.y*r0+info.holeXyr1.y*r1;
+		let refX=0,refY=0,sp;
+		if(!isNaN(opt.evtId)){
+			if(!SceneManager.isScene_map()) continue;
+			const chr=$gameMap._events[opt.evtId]||$gamePlayer;
+			sp=chr&&chr.getSprite(); if(!sp) continue;
+		}else if(opt.btlr){
+			if(!SceneManager.isScene_battle()) continue;
+			sp=opt.btlr.getSprite(); if(!sp) continue;
+		}
+		if(sp){
+			refX=sp.x;
+			refY=sp.y;
+		}
+		const holeX=refX+info.holeXyr0.x*r0+info.holeXyr1.x*r1;
+		const holeY=refY+info.holeXyr0.y*r0+info.holeXyr1.y*r1;
 		const holeR=info.holeXyr0.r*r0+info.holeXyr1.r*r1;
 		const alpha=info.dur>=info.fadeInFc?info.keepFc<info.dur?(info.fadeOutFc-info.dur)/(info.fadeOutFc-info.keepFc):1:info.dur/info.fadeInFc;
 		
@@ -63,17 +76,27 @@ undefined, // 2: ctx
 	if(!(0<dstScale)||!(0<holeR)) return;
 	holeCenterColor=holeCenterColor||f.tbl[0];
 	
-	const r=~~(holeR*dstScale),ox=~~(holeX*dstScale),oy=~~(holeY*dstScale),dstW=dstData.width,srcW=srcData.width,srcH_1=srcData.height-1,isWebGL=this.isWebGL();
-	const r2=r*r,yL=Math.min(oy+r,dstData.height-1),xL=Math.min(ox+r,dstW-1),x0=Math.max(ox-r,0);
-	for(let y=Math.max(oy-r,0);y<=yL;++y){ for(let x=x0;x<=xL;++x){
+	const r=holeR*dstScale,ox=~~(holeX*dstScale),oy=~~(holeY*dstScale),dstW=dstData.width,srcW=srcData.width,srcW_1=srcW-1,srcH_1=srcData.height-1,isWebGL=this.isWebGL();
+	const r2=r*r,yL=Math.min(oy+r,dstData.height-1)|0,xL=Math.min(ox+r,dstW-1)|0,x0=Math.max(ox-r,0)|0;
+	for(let y=Math.max(oy-r,0)|0;y<=yL;++y){ for(let x=x0;x<=xL;++x){
 		const dx=x-ox,dy=y-oy,dist2=dx*dx+dy*dy; if(r2<dist2) continue;
 		const dstIdx=(y*dstW+x)<<2;
 		const rad01=Math.sqrt(dist2/r2);
-		const srcX=(~~(holeX+(dx/rad01)/dstScale)).clamp(0,srcW-1),srcY=(~~(holeY+(dy/rad01)/dstScale)).clamp(0,srcH_1);
+		let dx1=dx/rad01,dy1=dy/rad01;
+		const dstX1=ox+dx1,dstY1=oy+dy1;
+		const dstX1c=dstX1.clamp(0,xL),dstY1c=dstY1.clamp(0,yL);
+		const r1x=(dstX1c-ox)/dx1,r1y=(dstY1c-oy)/dy1;
+		const r1c=Math.min(r1x||Infinity,r1y||Infinity);
+		dx1*=r1c; dy1*=r1c;
+		const dstIdx1=((~~(oy+dy1)).clamp(0,yL)*dstW+(~~(ox+dx1)).clamp(0,xL))<<2;
+		const srcX=(~~(holeX+dx1/dstScale)).clamp(0,srcW_1),srcY=(~~(holeY+dy1/dstScale)).clamp(0,srcH_1);
 		const srcIdx=((isWebGL?srcH_1-srcY:srcY)*srcW+srcX)<<2,p=rad01;
-		const q=1-p,dstR=dstData.data[dstIdx|3]/255,srcR=1-dstR;
-		for(let c=0;c!==3;++c) dstData.data[dstIdx|c]=(dstData.data[dstIdx|c]*dstR+srcData.data[srcIdx|c]*srcR)*p+holeCenterColor[c]*q;
-		dstData.data[dstIdx|3]=(Math.max(dstData.data[dstIdx|3],srcData.data[srcIdx|3])*p+holeCenterColor[3]*q)*alpha;
+		const q=1-p,dstAR1=dstData.data[dstIdx1|3]/255;
+		const srcAR1=1-dstAR1;
+		for(let c=0;c!==4;++c){
+			const srcC=(srcAR1*srcData.data[srcIdx|c]+dstAR1*dstData.data[dstIdx1|c]);
+			dstData.data[dstIdx|c]=(1-alpha)*dstData.data[dstIdx|c]+alpha*(srcC*p+holeCenterColor[c]*q);
+		}
 	} }
 },[
 [0,0,0,255], // 0: default hole center color
