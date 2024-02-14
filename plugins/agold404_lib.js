@@ -721,7 +721,11 @@ const getPrefixPropertyNames=window.getPrefixPropertyNames=(obj,prefix)=>{
 	return rtv;
 };
 const getTopFrameWindow=window.getTopFrameWindow=()=>{
-	let w=window; while(w.parent && w.parent!==w) w=w.parent;
+	let w=window;
+	while(w.parent && w.parent!==w){
+		try{ w.parent._w=w; }catch(e){ break; }
+		w=w.parent;
+	}
 	return w;
 };
 const chTitle=window.chTitle=title=>{

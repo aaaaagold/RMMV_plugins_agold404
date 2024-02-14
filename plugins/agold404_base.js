@@ -1890,6 +1890,40 @@ new cfc(Bitmap.prototype).add('_makeFontNameText',function f(){
 
 })(); // default font
 
+// ---- ---- ---- ---- pretending localStorage is ok
+
+(()=>{ let k,r,t;
+
+new cfc(StorageManager).add('pseudoStorage_getCont',function f(){
+	let rtv=this._pseudoStorage; if(!rtv) rtv=this._pseudoStorage=new Map();
+	return rtv;
+}).add('pseudoStorage_save',function f(key,val){
+	this.pseudoStorage_getCont().set(key+'',val+'');
+}).add('pseudoStorage_load',function f(key){
+	return this.pseudoStorage_getCont().get(key+'')||null;
+}).add('saveToWebStorage',function f(savefileId,json){
+	try{
+		return f.ori.apply(this,arguments);
+	}catch(e){
+		if(e instanceof DOMException){
+			const key=this.webStorageKey(savefileId);
+			const data=LZString.compressToBase64(json);
+			this.pseudoStorage_save(key,data);
+		}
+	}
+}).add('loadFromWebStorage',function f(savefileId){
+	try{
+		return f.ori.apply(this,arguments);
+	}catch(e){
+		if(e instanceof DOMException){
+			const key=this.webStorageKey(savefileId);
+			return LZString.decompressFromBase64(this.pseudoStorage_load(key));
+		}
+	}
+});
+
+})(); // pretending localStorage is ok
+
 // ---- ---- ---- ---- 
 
 (()=>{ let k,r,t;
