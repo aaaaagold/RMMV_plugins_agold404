@@ -53,6 +53,19 @@ new cfc(Game_System.prototype).add('initialize',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this._rndId=LZString.compressToBase64(''+Date.now()+Math.random()+Math.random()).slice(11);
 	return rtv;
+}).add('saveBgs',function f(){
+	this._savedBgs=AudioManager.saveBgs();
+},undefined,false,true).add('replayBgs',function f(){
+	if(this._savedBgs) AudioManager.replayBgs(this._savedBgs);
+},undefined,false,true).add('saveBg',function f(){
+	this.saveBgm();
+	this.saveBgs();
+},undefined,false,true).add('replayBg',function f(immediately){
+	const replayFadeTime=AudioManager._replayFadeTime;
+	if(immediately) AudioManager._replayFadeTime=0;
+	this.replayBgm();
+	this.replayBgs();
+	AudioManager._replayFadeTime=replayFadeTime;
 });
 Game_Timer.prototype.onExpire=()=>{}; // not abort battle
 Game_Troop.prototype.makeUniqueNames=()=>{}; // not set letter
@@ -550,7 +563,7 @@ new cfc(Window_Selectable.prototype).add('processCursorMove',function f(){
 	return this.itemRect(this.index());
 }).add('itemRect_scrollRectInView',function f(rect){
 	let scy=this._scrollY;
-	const maxH=this.contentsHeight();
+	const maxH=this.contentsHeight(); if(!(0<maxH)) return; // initialize
 	const top=rect.y;
 	const btm=rect.y+rect.height;
 	const db=maxH-btm;
@@ -1923,6 +1936,20 @@ new cfc(StorageManager).add('pseudoStorage_getCont',function f(){
 });
 
 })(); // pretending localStorage is ok
+
+// ---- ---- ---- ----  modify update reload
+
+(()=>{ let k,r,t;
+
+new cfc(Scene_Load.prototype).add('reloadMapIfUpdated',function f(){
+	const verId_saved=$gameSystem.versionId();
+	if(!verId_saved){ // ignore if it is diff from $dataSystem.versionId
+		$gamePlayer.reserveTransfer($gameMap.mapId(), $gamePlayer.x, $gamePlayer.y);
+		$gamePlayer.requestMapReload();
+	}
+});
+
+})(); // modify update reload
 
 // ---- ---- ---- ---- 
 
