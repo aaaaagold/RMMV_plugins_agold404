@@ -38,7 +38,7 @@ new cfc(p).add('initialize',function f(){
 },t).add('removeChild',function f(c){
 	const argumentsLength=arguments.length;
 	if(1<argumentsLength) for(let i=0;i!==argumentsLength;++i) this.removeChild(arguments[i]);
-        else{
+	else{
 		if(!c) return null;
 		// not used
 		//var index = this.children.indexOf(child);
@@ -54,12 +54,12 @@ new cfc(p).add('initialize',function f(){
 		
 		//this.onChildrenChange(index); // empty func
 		c.emit('removed',this);
-        }
+	}
 	
         return c;
 },undefined,false,true).add('addChild',function f(c){
 	const argumentsLength=arguments.length;
-        if(1<argumentsLength) for(let i=0;i!==argumentsLength;++i) this.addChild(arguments[i]);
+	if(1<argumentsLength) for(let i=0;i!==argumentsLength;++i) this.addChild(arguments[i]);
 	else{
 		if(!c) return null;
 		// if the child has a parent then lets remove it as PixiJS objects can only exist in one place
