@@ -55,6 +55,7 @@ window[a.name]=a;
 (()=>{ const p=Array.prototype;
 Object.defineProperties(p,{
 back:{
+	set:function(rhs){ const len=this.length; return len?(this[len-1]=rhs):undefined; },
 	get:function(){ return this[this.length-1]; },
 	configurable: true},
 });
