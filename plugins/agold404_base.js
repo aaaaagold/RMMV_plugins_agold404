@@ -1411,6 +1411,46 @@ new cfc(Spriteset_Base.prototype).add('updatePosition',function f(){
 
 })(); // Tilemap / Spriteset
 
+// ---- ---- ---- ---- refine Sprite_Animation
+
+(()=>{ let k,r,t;
+
+Sprite_Animation._createdPosition3AnimationsInTheFrame=new Set();
+
+new cfc(SceneManager).add('updateScene',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.createdPosition3AnimationInTheFrame_reset();
+	return rtv;
+}).add('createdPosition3AnimationInTheFrame_reset',function f(){
+	Sprite_Animation._createdPosition3AnimationsInTheFrame.clear();
+}).add('createdPosition3AnimationInTheFrame_add',function f(dataobj){
+	const s=Sprite_Animation._createdPosition3AnimationsInTheFrame;
+	const sz=s.size;
+	if(dataobj&&dataobj.position===3){
+		s.add(dataobj);
+		return s.size-sz;
+	}
+	return -1;
+}).add('createdPosition3AnimationInTheFrame_has',function f(dataobj){
+	return Sprite_Animation._createdPosition3AnimationsInTheFrame.has(dataobj);
+});
+
+new cfc(Sprite_Animation.prototype).add('update',function f(){
+	Sprite.prototype.update.call(this);
+	this.updateMain();
+	this.updateFlash();
+	this.updateScreenFlash();
+	this.updateHiding();
+},undefined,false,true).add('createSprites',function f(){
+	if(SceneManager.createdPosition3AnimationInTheFrame_add(this._animation)){
+		this.createCellSprites(); 
+		this.createScreenFlashSprite();
+	}
+	this._duplicated=undefined;
+});
+
+})(); // refine Sprite_Animation
+
 // ---- ---- ---- ---- 全域動畫選項
 
 (()=>{ let k,r,t;
