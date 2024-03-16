@@ -69,6 +69,13 @@ info=>{
 	if(faceName) ImageManager.loadFace(faceName);
 },
 ]);
+new cfc(a).add('enableShortcutScenes_add',function f(...constructors){
+	for(let x=0,xs=constructors.length;x!==xs;++x) f.tbl[0].add(constructors[x]);
+	return this;
+},enableShortcutScenes).add('enableShortcutScenes_del',function f(c){
+	for(let x=0,xs=constructors.length;x!==xs;++x) f.tbl[0].delete(constructors[x]);
+	return this;
+},enableShortcutScenes);
 }
 
 {
