@@ -56,4 +56,8 @@ new cfc(Game_Map.prototype).add('setup',function f(mapid){
 	return newid;
 });
 
+new cfc(Game_Event.prototype).add('update',function f(){
+	return this.event()&&f.ori.apply(this,arguments);
+});
+
 })();
