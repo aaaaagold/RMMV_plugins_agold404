@@ -49,10 +49,11 @@ new cfc(Game_Temp.prototype).add('popupMsg',function f(msg,opt){
 	const root=this._popupMsg_getCont(opt); if(!root) return;
 	msg+='';
 	const lines=msg.split('\n');
-	const wnd=new Window_PopupMsg(lines.length);
+	const wnd=new Window_PopupMsg(lines.length,opt);
 	wnd.width=root._maxWidth;
 	wnd.setText(msg);
 	root.addChild(wnd);
+	return wnd;
 },[
 {loc:"UR",},
 ]).add('_popupMsg_getCont',function f(opt){
