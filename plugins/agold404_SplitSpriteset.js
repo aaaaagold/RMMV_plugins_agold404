@@ -3,13 +3,16 @@
  * @plugindesc Splitting Spriteset
  * @author agold404
  * @help SceneManager.splittedRenderedSpriteset_start(dur,holdDur,ptx,pty,slope,width,height,endFlashDur,endFlashColor);
+ * SceneManager.splittedRenderedSpriteset_gen(order,dur,holdDur,ptx,pty,slope,width,height,endFlashDur,endFlashColor);
  * 
  * SceneManager.splittedRenderedSpriteset_start(33,16,444,222,3,123/3,123,16,[0,0,0,255]);
+ * SceneManager.splittedRenderedSpriteset_gen(4,33,16,444,222,3,123/3,123,16,[0,0,0,255]);
  * 
  * This plugin can be renamed as you want.
  */
 
 (()=>{ let k,r,t;
+
 const p=Spriteset_Base.prototype,pp=Sprite.prototype;
 new cfc(p).add('renderCanvas',p.renderCanvas===pp.renderCanvas?function(renderer){
 	return this._renderCanvas_split(Sprite.prototype.renderCanvas,arguments);
@@ -33,6 +36,7 @@ new Float32Array([
 	-1, -4,-4,
 	 1,  4, 4,
 ]), // 0-3: point template
+document.ce('canvas'), // 0-4: Canvas Mode tmpc
 ], // 0:
 [
 {
@@ -43,14 +47,33 @@ bindBuffer:['ARRAY_BUFFER','ELEMENT_ARRAY_BUFFER',],
 ];
 t[1][0].getParameter=t[1][0].bindBuffer.map(s=>(s+'_BINDING'));
 new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
+	const rtv=renderFunc.apply(this,argv);
+	this._renderCanvas_splitTest(renderFunc,argv);
+	this._renderCanvas_splits(renderFunc,argv);
+	return rtv;
+},undefined,true,true).add('_renderCanvas_splitTest',function f(renderFunc,argv){
+	return this._renderCanvas_split1(this._render_splitInfo_getTest(),renderFunc,argv);
+},undefined,true,true).add('_renderCanvas_splits',function f(renderFunc,argv){
+	const arr=this._render_splitInfo_getCont(),PI_2=Math.PI*0.5;
+	for(let x=0,xs=arr.length;x!==xs;++x){
+		const info=arr[x];
+		const r=Math.sin(Math.min(1,info.dur/info.durMax)*PI_2);
+		this._renderCanvas_split1({pt:info.pt,slope:info.slope,width:r*info.widthMax,height:r*info.heightMax,},renderFunc,argv);
+	}
+},undefined,true,true).add('_renderCanvas_split1',function f(opt,renderFunc,argv){
+	// return -1 if fail
+	opt=opt||{};
+	if(!f.tbl[0]) f.tbl[0]={x:Graphics.boxWidth>>1,y:Graphics.boxHeight>>1,};
+	const pt=opt.pt||f.tbl[0],slope=opt.slope||0,width=opt.width||0,height=opt.height||0;
+	if(!width&&!height) return -1;
+	
 	const renderer=argv[0];
 	const ctx=renderer.context;
-	const c=ctx.canvas;
-	
-	if(!f.tbl[0]) f.tbl[0]={x:Graphics.boxWidth>>1,y:Graphics.boxHeight>>1,};
-	const pt=this._splitPoint||f.tbl[0],slope=this._splitSlope||0,width=this._splitWidth||0,height=this._splitHeight||0;
-	
-	if(!width&&!height) return renderFunc.apply(this,argv);
+	const c=ctx.canvas,tmpc=f.tbl[4];
+	tmpc.width=c.width; tmpc.height=c.height;
+	const tmpctx=tmpc.getContext('2d');
+	tmpctx.drawImage(c,0,0);
+	c.height=c.height; // clear
 	
 	const isInf=1/slope===0;
 	const points=isInf?
@@ -66,7 +89,7 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 			if(0<points.back[1]) points.push([Graphics.boxWidth,0]);
 			if(0<points[0][1]) points.push([0,0]);
 		}
-		this._renderCanvas_clipByPath(ctx,points,-width,-height,renderFunc,argv);
+		this._renderCanvas_clipByPath(ctx,tmpctx,points,-width,-height,renderFunc,argv);
 	}
 	{
 		points.length=2;
@@ -78,24 +101,26 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 			if(points.back[1]<Graphics.boxHeight) points.push([Graphics.boxWidth,Graphics.boxHeight]);
 			if(points[0][1]<Graphics.boxHeight) points.push([0,Graphics.boxHeight]);
 		}
-		this._renderCanvas_clipByPath(ctx,points,width,height,renderFunc,argv);
+		this._renderCanvas_clipByPath(ctx,tmpctx,points,width,height,renderFunc,argv);
 	}
-},t[0],true,true).add('_renderCanvas_clipByPath',function f(ctx,points,dx,dy,renderFunc,argv){
-	const x0=this.x,y0=this.y;
+},t[0],true,true).add('_renderCanvas_clipByPath',function f(ctx,tmpctx,points,dx,dy,renderFunc,argv){
+	// save before clipping
 	ctx.save();
-	ctx.transform.apply(ctx,ctx._postTransform_split=[1,0,0,1,dx,dy,]);
+	ctx.transform.apply(ctx,[1,0,0,1,dx,dy,]);
 	ctx.beginPath();
 	ctx.moveTo(points[0][0],points[0][1]);
 	for(let i=1,sz=points.length;i!==sz;++i) ctx.lineTo(points[i][0],points[i][1]);
 	ctx.clip();
-	renderFunc.apply(this,argv);
+	ctx.drawImage(tmpctx.canvas,0,0);
 	//ctx.resetTransform(); // restored by ctx.restore();
-	ctx._postTransform_split=undefined;
+	// restore clipping
 	ctx.restore();
 }).add('_renderWebGL_split',function f(renderFunc,argv){
 	const gl=argv&&argv[0]&&argv[0].gl; if(!gl) return;
+	const rtv=renderFunc.apply(this,argv);
 	const oldShaderInfo=this._renderWebGL_split_saveShader(gl);
-	const rtv=this._renderWebGL_split_applySplitShader(gl,renderFunc,argv);
+	this._renderWebGL_split_applySplitShaderTest(gl,renderFunc,argv);
+	this._renderWebGL_split_applySplitShaders(gl,renderFunc,argv);
 	this._renderWebGL_split_restoreShader(gl,oldShaderInfo);
 	return rtv;
 }).add('_renderWebGL_split_saveShader',function f(gl){
@@ -109,7 +134,7 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 	const cnt=info.ACTIVE_ATTRIBUTES=gl.getProgramParameter(prog,gl.ACTIVE_ATTRIBUTES);
 	for(let i=0;i!==cnt;++i){
 		const attr=gl.getActiveAttrib(prog,i);
-		if(!attr){ info.getVertexAttrib.push(); continue; }
+		if(!attr){ info.getVertexAttrib.push(undefined); continue; }
 		const vertexAttrs=[],idx=gl.getAttribLocation(prog,attr.name);
 		vertexAttrs.push(vertexAttrs._idx=idx);
 		for(let x=0,arr=f.tbl[0].getVertexAttrib,xs=arr.length;x!==xs;++x) vertexAttrs.push(gl.getVertexAttrib(idx,gl[arr[x]]));
@@ -117,10 +142,20 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 		info.getVertexAttrib.push(vertexAttrs);
 	}
 	return info;
-},t[1]).add('_renderWebGL_split_applySplitShader',function f(gl,renderFunc,argv){
+},t[1],true,true).add('_renderWebGL_split_applySplitShaderTest',function f(gl,renderFunc,argv){
+	return this._renderWebGL_split_applySplitShader1(this._render_splitInfo_getTest(),gl,renderFunc,argv);
+},t[1],true,true).add('_renderWebGL_split_applySplitShaders',function f(gl,renderFunc,argv){
+	const arr=this._render_splitInfo_getCont(),PI_2=Math.PI*0.5;
+	for(let x=0,xs=arr.length;x!==xs;++x){
+		const info=arr[x];
+		const r=Math.sin(Math.min(1,info.dur/info.durMax)*PI_2);
+		this._renderWebGL_split_applySplitShader1({pt:info.pt,slope:info.slope,width:r*info.widthMax,height:r*info.heightMax,},gl,renderFunc,argv);
+	}
+},t[1],true,true).add('_renderWebGL_split_applySplitShader1',function f(opt,gl,renderFunc,argv){
+	opt=opt||{};
 	if(!f.tbl[0]) f.tbl[0]={x:Graphics.boxWidth>>1,y:Graphics.boxHeight>>1,_W2:2.0/Graphics.boxWidth,_H2:-2.0/Graphics.boxHeight,r:Graphics.boxHeight/Graphics.boxWidth};
-	const pt=this._splitPoint||f.tbl[0],slope=-this._splitSlope||0,width=this._splitWidth||0,height=this._splitHeight||0;
-	if(!width&&!height) return renderFunc.apply(this,argv);
+	const pt=opt.pt||f.tbl[0],slope=-opt.slope||0,width=opt.width||0,height=opt.height||0;
+	if(!width&&!height) return;
 	
 	const shaderInfo=this._renderWebGL_split_getSplitShader(gl); if(!shaderInfo) return;
 	
@@ -165,8 +200,6 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 			// ab_points=new Float32Array([[-4,y0-dy*3],[4,y1+dy*3],[0,-4],[0,4]].flat());
 		}
 	}
-	
-	renderFunc.apply(this,argv);
 	
 	gl.bindTexture(gl.TEXTURE_2D,shaderInfo.texture);
 	const refc=Graphics._canvas;
@@ -241,14 +274,52 @@ texture:undefined,
 enabled:false,
 }
 ]).add('_renderWebGL_split_restoreShader',function f(gl,info){
+	if(!info) return;
 	gl.useProgram(info.CURRENT_PROGRAM);
 	for(let arr=f.tbl[0].bindBuffer,x=arr.length;x--;) gl.bindBuffer(gl[arr[x]], info.getParameter[x], gl.STATIC_DRAW);
 	for(let i=0,arrv=info.getVertexAttrib,sz=arrv.length;i!==sz;++i) if(arrv[i]) gl.vertexAttribPointer.apply(gl,arrv[i]);
-},t[1]);
-
-new cfc(CanvasRenderingContext2D.prototype).add('setTransform',function f(){
+},t[1],undefined,true,true);
+new cfc(p).add('_render_splitInfo_getTest',function f(){
+	return ({pt:this._splitPoint,slope:this._splitSlope,width:this._splitWidth,height:this._splitHeight,});
+},undefined,true,true).add('render_splitInfo_add',function f(order,dur,holdDur,ptx,pty,slope,width,height,endFlashDur,endFlashColor){
+	const info={
+		order:order,
+		dur:0,
+		durMax:dur,
+		durTotal:dur+holdDur,
+		pt:{x:ptx,y:pty},
+		slope:slope,
+		widthMax:width,
+		heightMax:height,
+		endFlashDur:endFlashDur,
+		endFlashColor:Array.from(endFlashColor||[]),
+		shouldReset:false,
+	};
+	if(!(0<info.durMax)||!(0<info.durTotal)) return;
+	this._render_splitInfo_getCont().push(info);
+	return info;
+},undefined,true,true).add('_render_splitInfo_getCont',function f(){
+	let rtv=this._splitInfos; if(!rtv) rtv=this._splitInfos=[];
+	return rtv;
+},undefined,true,true).add('_render_splitInfo_getSorted',function f(){
+	return this._render_splitInfo_getCont().sort(f.tbl[0]);
+},[
+(a,b)=>a.order-b.order,
+],true,true).add('render_splitInfo_clear',function f(){
+	this._render_split_getInfos().length=0;
+},undefined,true,true).add('update_splitInfo',function f(){
+	const cont=this._render_splitInfo_getSorted(),keep=[];
+	for(let x=0,xs=cont.length;x!==xs;++x){
+		const info=cont[x];
+		if(info.shouldReset) continue;
+		if(info.dur<info.durTotal) ++info.dur;
+		else{ info.shouldReset=true; $gameScreen.startFlash(info.endFlashColor,info.endFlashDur); }
+		keep.push(info);
+	}
+	if(keep.length!==cont.length){ cont.length=0; cont.concat_inplace(keep); }
+},undefined,true,true).add('update',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	if(this._postTransform_split) this.transform.apply(this,this._postTransform_split);
+	this.update_splitInfo();
 	return rtv;
 });
 
@@ -264,7 +335,11 @@ new cfc(SceneManager).add('splittedRenderedSpriteset_start',function f(dur,holdD
 	sps._splitWidthMax=width;
 	sps._splitHeightMax=height;
 	sps._splitEndFlashDur=endFlashDur;
-	sps._splitEndFlashColor=endFlashColor;
+	sps._splitEndFlashColor=Array.from(endFlashColor||[]);
+},undefined,true,true).add('splittedRenderedSpriteset_gen',function f(order,dur,holdDur,ptx,pty,slope,width,height,endFlashDur,endFlashColor){
+	const sc=this._scene;
+	const sps=sc&&sc._spriteset; if(!sps) return;
+	return sps.render_splitInfo_add.apply(sps,arguments);
 }).add('splittedRenderedSpriteset_update',function f(){
 	const sc=this._scene;
 	const sps=sc&&sc._spriteset; if(!sps) return;
@@ -284,4 +359,5 @@ new cfc(SceneManager).add('splittedRenderedSpriteset_start',function f(dur,holdD
 	this.splittedRenderedSpriteset_update();
 	return rtv;
 });
+
 })();
