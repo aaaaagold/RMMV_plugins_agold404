@@ -167,6 +167,11 @@ new cfc(Sprite.prototype).add('isInScreen_local',function(){
 new cfc(Graphics).add('isInScreen_rect',function(rect){
 	return !(rect.x>=this.boxWidth || rect.x+rect.width<0 || rect.y>=this.boxHeight || rect.y+rect.height<0);
 });
+new cfc(Sprite_Character.prototype).add('renderWebGL',function f(){
+	return this.isInScreen_local()&&f.ori.apply(this,arguments);
+}).add('renderCanvas',function f(){
+	return this.isInScreen_local()&&f.ori.apply(this,arguments);
+});
 //
 let t;
 if(Utils.isOptionValid('test')){
