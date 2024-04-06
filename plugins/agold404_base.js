@@ -714,25 +714,25 @@ new cfc(DataManager).add('isSkill',function f(item){
 	return this.onLoad_before_map.apply(this,arguments);
 },undefined,true,true).add('_onLoad_after_map',function f(obj,name,src){
 	return this.onLoad_after_map.apply(this,arguments);
-},undefined,true,true).add('onLoad_before_map',function f(obj){
+},undefined,true,true).add('onLoad_before_map',function f(obj,name,src){
 	// dummy
-},undefined,true,true).add('onLoad_after_map',function f(obj){
+},undefined,true,true).add('onLoad_after_map',function f(obj,name,src){
 	// dummy
 },undefined,true,true).add('_onLoad_before_skill',function f(obj,name,src){
 	return this.onLoad_before_skill.apply(this,arguments);
-},undefined,true,true).add('_onLoad_after_skill',function f(obj){
+},undefined,true,true).add('_onLoad_after_skill',function f(obj,name,src){
 	return this.onLoad_after_skill.apply(this,arguments);
 },undefined,true,true).add('onLoad_before_skill',function f(obj,name,src){
 	// dummy
-},undefined,true,true).add('onLoad_after_skill',function f(obj){
+},undefined,true,true).add('onLoad_after_skill',function f(obj,name,src){
 	// dummy
 },undefined,true,true).add('_onLoad_before_tileset',function f(obj,name,src){
 	return this.onLoad_before_tileset.apply(this,arguments);
 },undefined,true,true).add('_onLoad_after_tileset',function f(obj,name,src){
 	return this.onLoad_after_tileset.apply(this,arguments);
-},undefined,true,true).add('onLoad_before_tileset',function f(obj){
+},undefined,true,true).add('onLoad_before_tileset',function f(obj,name,src){
 	// dummy
-},undefined,true,true).add('onLoad_after_tileset',function f(obj){
+},undefined,true,true).add('onLoad_after_tileset',function f(obj,name,src){
 	// dummy
 },undefined,true,true);
 { const p=DataManager;
@@ -1147,18 +1147,38 @@ new cfc(Game_Battler.prototype).add('getSprite',function f(){
 
 (()=>{ let k,r,t;
 
+new cfc(Game_Character.prototype).add('jumpTo',function f(x,y){
+	this.jump(x-this.x,y-this.y);
+	return this;
+},undefined,true,true).add('frontPos',function f(){
+	const d=this.direction();
+	return {
+		x:$gameMap.roundXWithDirection(this.x,d),
+		y:$gameMap.roundYWithDirection(this.y,d),
+	};
+},undefined,true,true).add('jumpFront',function f(dist){
+	let dx=0,dy=0;
+	if(0<(dist|=0)){
+		const xy=this.frontPos();
+		dx+=(xy.x-this.x)*dist;
+		dy+=(xy.y-this.y)*dist;
+	}
+	this.jump(dx,dy);
+	return this;
+});
+
 new cfc(Game_Event.prototype).add('setChrIdxName',function f(chrIdx,chrName){
 	this._characterIndex=chrIdx;
 	this._characterName=chrName;
-});
+},undefined,true,true);
 
 new cfc(Game_Interpreter.prototype).add('getEvt',function f(){
 	// map init ensures '_events' be Array
 	return $gameMap&&$gameMap._events[this._eventId];
-}).add('getCmd',function f(offset){
+},undefined,true,true).add('getCmd',function f(offset){
 	offset|=0;
 	return this._list&&this._list[this._index+offset];
-});
+},undefined,true,true);
 
 SceneManager.getTilemap=function(){
 	const sc=this._scene;
@@ -1976,6 +1996,86 @@ new cfc(StorageManager).add('pseudoStorage_getCont',function f(){
 });
 
 })(); // pretending localStorage is ok
+
+// ---- ---- ---- ----  map evt fast search table
+
+(()=>{ let k,r,t;
+
+new cfc(Game_Character.prototype).add('getPosKey',function(dx,dy){
+	dx=dx-0||0;
+	dy=dy-0||0;
+	return $gameMap?$gameMap.getPosKey(dx+this.x,dy+this.y):undefined;
+});
+
+new cfc(Game_Map.prototype).add('getPosKey',function f(x,y){
+	return $dataMap&&x-0+((y*$dataMap.width)<<2)+$dataMap.width;
+}).add('update',function f(){
+	this.update_locTbl();
+	return f.ori.apply(this,arguments);
+}).add('update_locTbl',function f(){
+	const evts=this._events; if(!evts) return;
+	{ let s=evts._set; if(s) s.clear(); else s=evts._set=new Set(); }
+	let c=evts.coords,m; if(!c) c=evts.coords=[]; // [pri] -> Map()
+	for(let p=7;p-->=0;){
+		m=c[p];
+		if(m) m.clear();
+		else m=evts.coords[p]=new Map();
+	}
+	evts.forEach(f.tbl[0],this);
+},[
+function(evt,i,a){
+	const evtd=evt&&evt.event(); if(!evtd) return;
+	a._set.add(evt);
+	this.update_locTbl_addEvt(evt,a.coords[-1]);
+	const meta=evtd.meta;
+	if(meta.startedByAny) this.update_locTbl_addEvt(evt,a.coords[evt._priorityType]);
+},
+]).add('update_locTbl_addEvt',function f(evt,coord){
+	if(!coord) return;
+	const key=evt.getPosKey();
+	let arr=coord.get(key); if(!arr) coord.set(key,arr=[]);
+	arr.uniquePush(evt);
+}).add('update_locTbl_delEvt',function f(evt,coord,x,y){
+	if(!coord) return;
+	const key=this.getPosKey(x,y);
+	const arr=coord.get(key); if(!arr) return;
+	arr.uniquePop(evt);
+}).add('update_locTbl_chkEvtErr',function f(evt){
+	return !this._events||this._events._set&&!this._events._set.has(evt);
+}).add('update_locTbl_addEvt_overall',function f(evt){
+	if(this.update_locTbl_chkEvtErr(evt)) return;
+	this.update_locTbl_addEvt(evt,this._events.coords&&this._events.coords[-1]);
+}).add('update_locTbl_delEvt_overall',function f(evt,x,y){
+	if(this.update_locTbl_chkEvtErr(evt)) return;
+	this.update_locTbl_delEvt(evt,this._events.coords&&this._events.coords[-1],x,y);
+}).add('eventsXy',function f(x,y){
+	const coord=this._events&&this._events.coords&&this._events.coords[-1];
+	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
+},[
+[],
+]).add('eventsXyNt',function f(x,y){
+	return this.eventsXy(x,y).filter(f.tbl[0]);
+},[
+evt=>!evt.isThrough(),
+]);
+
+new cfc(Game_Event.prototype).add('moveStraight',function f(d){
+	const x=this.x,y=this.y;
+	const rtv=f.ori.apply(this,arguments);
+	if(this.isMovementSucceeded()){
+		// edit location table of $gameMap
+		if($gameMap){
+			$gameMap.update_locTbl_delEvt_overall(this,x,y);
+			$gameMap.update_locTbl_addEvt_overall(this);
+		}
+		this.moveSuccOn(x,y,d);
+	}else this.moveFailOn(x,y,d);
+	return rtv;
+}).add('moveFailOn',function f(lastX,lastY,moveDirection){
+}).add('moveSuccOn',function f(lastX,lastY,moveDirection){
+});
+
+})(); // map evt fast search table
 
 // ---- ---- ---- ----  modify update reload
 
