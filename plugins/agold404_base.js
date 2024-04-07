@@ -2006,10 +2006,17 @@ new cfc(StorageManager).add('pseudoStorage_getCont',function f(){
 
 (()=>{ let k,r,t;
 
+DataManager._def_normalPriority=1;
+
 new cfc(Game_Character.prototype).add('getPosKey',function(dx,dy){
 	dx=dx-0||0;
 	dy=dy-0||0;
 	return $gameMap?$gameMap.getPosKey(dx+this.x,dy+this.y):undefined;
+},undefined,false,true).add('isCollidedWithEvents',function f(x,y){
+	const evts=$gameMap.eventsXyNtNp(x,y);
+	return !!evts.length;
+},undefined,false,true).add('isNormalPriority',function f(){
+	return DataManager._def_normalPriority===this._priorityType;
 });
 
 new cfc(Game_Map.prototype).add('getPosKey',function f(x,y){
@@ -2020,11 +2027,24 @@ new cfc(Game_Map.prototype).add('getPosKey',function f(x,y){
 }).add('update_locTbl',function f(){
 	const evts=this._events; if(!evts) return;
 	{ let s=evts._set; if(s) s.clear(); else s=evts._set=new Set(); }
-	let c=evts.coords,m; if(!c) c=evts.coords=[]; // [pri] -> Map()
+	let c=evts.coords,m; if(!c) c=evts.coords=[]; // [pri] -> Map() // pri=-1 is all pri
+	let ntc=evts.coordsNt; if(!ntc) ntc=evts.coordsNt=[]; // [pri] -> Map()
+	const npval=DataManager._def_normalPriority;
+	let setNpval=false;
 	for(let p=7;p-->=0;){
+		if(npval===p) setNpval=true;
+		
 		m=c[p];
 		if(m) m.clear();
-		else m=evts.coords[p]=new Map();
+		else m=c[p]=new Map();
+		
+		m=ntc[p];
+		if(m) m.clear();
+		else m=ntc[p]=new Map();
+	}
+	if(!setNpval){
+		m=c[npval]; if(m) m.clear(); else m=c[npval]=new Map();
+		m=ntc[npval]; if(m) m.clear(); else m=ntc[npval]=new Map();
 	}
 	evts.forEach(f.tbl[0],this);
 },[
@@ -2032,36 +2052,46 @@ function(evt,i,a){
 	const evtd=evt&&evt.event(); if(!evtd) return;
 	a._set.add(evt);
 	this.update_locTbl_addEvt(evt,a.coords[-1]);
-	const meta=evtd.meta;
-	if(meta.startedByAny) this.update_locTbl_addEvt(evt,a.coords[evt._priorityType]);
+	this.update_locTbl_addEvt(evt,a.coords[evt._priorityType]);
+	const isThrough=evt.isThrough();
+	if(!isThrough){
+		this.update_locTbl_addEvt(evt,a.coordsNt[-1]);
+		this.update_locTbl_addEvt(evt,a.coordsNt[evt._priorityType]);
+	}
 },
 ]).add('update_locTbl_addEvt',function f(evt,coord){
 	if(!coord) return;
 	const key=evt.getPosKey();
 	let arr=coord.get(key); if(!arr) coord.set(key,arr=[]);
-	arr.uniquePush(evt);
+	return arr.uniquePush(evt);
 }).add('update_locTbl_delEvt',function f(evt,coord,x,y){
 	if(!coord) return;
 	const key=this.getPosKey(x,y);
 	const arr=coord.get(key); if(!arr) return;
-	arr.uniquePop(evt);
+	return arr.uniquePop(evt);
 }).add('update_locTbl_chkEvtErr',function f(evt){
 	return !this._events||this._events._set&&!this._events._set.has(evt);
 }).add('update_locTbl_addEvt_overall',function f(evt){
 	if(this.update_locTbl_chkEvtErr(evt)) return;
-	this.update_locTbl_addEvt(evt,this._events.coords&&this._events.coords[-1]);
+	return this.update_locTbl_addEvt(evt,this._events.coords&&this._events.coords[-1]);
 }).add('update_locTbl_delEvt_overall',function f(evt,x,y){
 	if(this.update_locTbl_chkEvtErr(evt)) return;
-	this.update_locTbl_delEvt(evt,this._events.coords&&this._events.coords[-1],x,y);
+	return this.update_locTbl_delEvt(evt,this._events.coords&&this._events.coords[-1],x,y);
 }).add('eventsXy',function f(x,y){
 	const coord=this._events&&this._events.coords&&this._events.coords[-1];
 	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
 },[
 [],
 ]).add('eventsXyNt',function f(x,y){
-	return this.eventsXy(x,y).filter(f.tbl[0]);
+	const coord=this._events&&this._events.coordsNt&&this._events.coordsNt[-1];
+	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
 },[
-evt=>!evt.isThrough(),
+[],
+]).add('eventsXyNtNp',function f(x,y){ // normal priority
+	const coord=this._events&&this._events.coordsNt&&this._events.coordsNt[DataManager._def_normalPriority];
+	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
+},[
+[],
 ]);
 
 new cfc(Game_Event.prototype).add('moveStraight',function f(d){
