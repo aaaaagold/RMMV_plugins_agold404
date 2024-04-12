@@ -29,9 +29,9 @@ a.dir_turn=[
 	[],
 ];
 new cfc(a.prototype).add('canPass',function f(x,y,d){
-	return d&1?this.canPassDiagonally(Game_CharacterBase.dir_h[d],Game_CharacterBase.dir_v[d]):f.ori.apply(this,arguments);
+	return d?d&1?this.canPassDiagonally(x,y,Game_CharacterBase.dir_h[d],Game_CharacterBase.dir_v[d]):f.ori.apply(this,arguments):false;
 }).add('moveStraight',function f(d){
-	return d&1?this.moveDiagonally(Game_CharacterBase.dir_h[d],Game_CharacterBase.dir_v[d]):f.ori.apply(this,arguments);
+	return d?d&1?this.moveDiagonally(Game_CharacterBase.dir_h[d],Game_CharacterBase.dir_v[d]):f.ori.apply(this,arguments):undefined;
 }).add('moveDiagonally',function f(horz,vert){
 	const dir0=this.direction();
 	const rtv=this.canPassDiagonally(this._x, this._y, horz, vert)?4:(!!this.canPass(this._x,this._y,horz))|((!!this.canPass(this._x,this._y,vert))<<1);
@@ -343,6 +343,10 @@ Game_Character.MOVEROUTE_EMPTY.list[0],
 	const evt=this._mvToGetTrgt(evtId);
 	if(evt){ x+=evt.x; y+=evt.y; }
 	return this._mvToLoc(x,y,dir,opt);
+});
+
+new cfc(Game_Player.prototype).add('moveStraight',function f(d){
+	return d&1?this.moveDiagonally(Game_CharacterBase.dir_h[d],Game_CharacterBase.dir_v[d]):f.ori.apply(this,arguments);
 });
 
 })();
