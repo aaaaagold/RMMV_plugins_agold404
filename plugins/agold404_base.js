@@ -685,59 +685,62 @@ new cfc(DataManager).add('isSkill',function f(item){
 	return item && $dataWeapons.uniqueHas(item);
 }).add('isArmor',function f(item){
 	return item && $dataArmors.uniqueHas(item);
-}).add('loadDataFile',function(name,src,directSrc,mimeType,method,data){
+}).add('loadDataFile',function f(name,src,msg,directSrc,mimeType,method,data){
 	method=method||'GET';
 	mimeType=mimeType||'application/json';
 	const xhr=new XMLHttpRequest();
 	src=directSrc?src:('data/'+src);
 	xhr.open(method,src);
 	xhr.overrideMimeType(mimeType);
-	xhr.onload = function() {
-		if (xhr.status < 400) {
-			window[name] = JSON.parse(xhr.responseText);
-			DataManager.onLoad(window[name],name,src);
-		}
-	};
-	xhr.onerror = this._mapLoader || function() {
-		DataManager._errorUrl = DataManager._errorUrl || src;
-	};
+	xhr.onload = f.tbl[0].bind(xhr,name,src,msg);
+	xhr.onerror = this._mapLoader || f.tbl[1].bind(xhr,src);
 	window[name] = null;
 	xhr.send(data);
 	return xhr;
-},undefined,true,true).add('onLoad',function f(obj,name,src){
+},[
+function(name,src,msg,e) {
+	if (this.status < 400) {
+		window[name] = JSON.parse(this.responseText);
+		DataManager.onLoad(window[name],name,src,msg);
+	}
+}, // 0: onload
+function(src,e) {
+	DataManager._errorUrl = DataManager._errorUrl || src;
+}, // 1: onerror
+],true,true).add('onLoad',function f(obj,name,src,msg){
 	this.onLoad_before.apply(this,arguments);
 	const rtv=f.ori.apply(this,arguments);
 	this.onLoad_after.apply(this,arguments);
 	return rtv;
-},undefined,true).add('onLoad_before',function f(obj,name,src){
+},undefined,true).add('onLoad_before',function f(obj,name,src,msg){
 	const func=f.tbl.get(name);
 	return func && func.apply(this,arguments);
-},undefined,true).add('onLoad_after',function f(obj,name,src){
+},undefined,true).add('onLoad_after',function f(obj,name,src,msg){
 	const func=f.tbl.get(name);
 	return func && func.apply(this,arguments);
-},undefined,true).add('_onLoad_before_map',function f(obj,name,src){
+},undefined,true).add('_onLoad_before_map',function f(obj,name,src,msg){
 	return this.onLoad_before_map.apply(this,arguments);
-},undefined,true,true).add('_onLoad_after_map',function f(obj,name,src){
+},undefined,true,true).add('_onLoad_after_map',function f(obj,name,src,msg){
 	return this.onLoad_after_map.apply(this,arguments);
-},undefined,true,true).add('onLoad_before_map',function f(obj,name,src){
+},undefined,true,true).add('onLoad_before_map',function f(obj,name,src,msg){
 	// dummy
-},undefined,true,true).add('onLoad_after_map',function f(obj,name,src){
+},undefined,true,true).add('onLoad_after_map',function f(obj,name,src,msg){
 	// dummy
-},undefined,true,true).add('_onLoad_before_skill',function f(obj,name,src){
+},undefined,true,true).add('_onLoad_before_skill',function f(obj,name,src,msg){
 	return this.onLoad_before_skill.apply(this,arguments);
-},undefined,true,true).add('_onLoad_after_skill',function f(obj,name,src){
+},undefined,true,true).add('_onLoad_after_skill',function f(obj,name,src,msg){
 	return this.onLoad_after_skill.apply(this,arguments);
-},undefined,true,true).add('onLoad_before_skill',function f(obj,name,src){
+},undefined,true,true).add('onLoad_before_skill',function f(obj,name,src,msg){
 	// dummy
-},undefined,true,true).add('onLoad_after_skill',function f(obj,name,src){
+},undefined,true,true).add('onLoad_after_skill',function f(obj,name,src,msg){
 	// dummy
-},undefined,true,true).add('_onLoad_before_tileset',function f(obj,name,src){
+},undefined,true,true).add('_onLoad_before_tileset',function f(obj,name,src,msg){
 	return this.onLoad_before_tileset.apply(this,arguments);
-},undefined,true,true).add('_onLoad_after_tileset',function f(obj,name,src){
+},undefined,true,true).add('_onLoad_after_tileset',function f(obj,name,src,msg){
 	return this.onLoad_after_tileset.apply(this,arguments);
-},undefined,true,true).add('onLoad_before_tileset',function f(obj,name,src){
+},undefined,true,true).add('onLoad_before_tileset',function f(obj,name,src,msg){
 	// dummy
-},undefined,true,true).add('onLoad_after_tileset',function f(obj,name,src){
+},undefined,true,true).add('onLoad_after_tileset',function f(obj,name,src,msg){
 	// dummy
 },undefined,true,true);
 { const p=DataManager;
@@ -911,8 +914,9 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 		arr.push('Graphics','PIXI','Sprite','Bitmap','WebAudio',);
 		arr.push('Game_BattlerBase','Game_Battler','Game_Enemy','Game_Actor','Game_Action',);
 		arr.push('Game_CharacterBase','Game_Character','Game_Event','Game_Player',);
-		arr.push('Game_Interpreter','Game_Picture','Game_System','Game_Screen','Game_Map',);
+		arr.push('Game_Interpreter','Game_Picture','Game_System','Game_Screen','Game_Map','Game_Party',);
 		arr.push('Window_Base','Window_Message',);
+		arr.push('Scene_Base','Scene_Map','Scene_Menu','Scene_Item','Scene_Skill','Scene_Options',);
 		arr.push('useDefaultIfIsNaN',);
 		arr.push('getCStyleStringStartAndEndFromString',);
 		arr.push('getPrefixPropertyNames',);
@@ -1105,6 +1109,35 @@ new cfc(Game_Unit.prototype).add('allMembers',function(){
 },undefined,false,true);
 
 })(); // re-unify
+
+// ---- ---- ---- ---- event page note
+
+(()=>{ let k,r,t;
+
+new cfc(DataManager).add('onLoad_before_map',function f(obj,name,src,msg){
+	const rtv=f.ori.apply(this,arguments);
+	this.onload_addMapEvtPgNote.apply(this,arguments);
+	return rtv;
+}).add('onload_addMapEvtPgNote',function f(obj,name,src,msg){
+	obj.events.forEach(f.tbl[0]);
+},[
+evtd=>{ if(!evtd) return;
+	for(let pgi=0,pgs=evtd.pages,pgsz=pgs.length;pgi!==pgsz;++pgi){
+		const pg=pgs[pgi],noteLines=[];
+		for(let isNote=false,li=0,L=pg.list,lsz=L.length;li!==lsz;++li){
+			const cmd=L[li];
+			if(cmd.code===108){
+				if(cmd.parameters[0]==="@NOTE") isNote=true;
+			}else if(cmd.code===408){
+			}else isNote=false;
+			if(isNote) noteLines.push(cmd.parameters[0]);
+		}
+		pg.note=noteLines.join('\n');
+	}
+},
+],false,true);
+
+})(); // event page note
 
 // ---- ---- ---- ---- gameObj2sprite
 
@@ -2002,29 +2035,78 @@ new cfc(StorageManager).add('pseudoStorage_getCont',function f(){
 
 })(); // pretending localStorage is ok
 
-// ---- ---- ---- ----  map evt fast search table
+// ---- ---- ---- ----  map evt search table
 
 (()=>{ let k,r,t;
 
 DataManager._def_normalPriority=1;
 
 new cfc(Game_Character.prototype).add('getPosKey',function(dx,dy){
-	dx=dx-0||0;
-	dy=dy-0||0;
-	return $gameMap?$gameMap.getPosKey(dx+this.x,dy+this.y):undefined;
+	return $gameMap?$gameMap.getPosKey((dx|0)+(this.x|0),(dy|0)+(this.y|0)):undefined;
 },undefined,false,true).add('isCollidedWithEvents',function f(x,y){
-	const evts=$gameMap.eventsXyNtNp(x,y);
-	return !!evts.length;
+	return !!$gameMap.eventsXyNtNp(x,y).length;
 },undefined,false,true).add('isNormalPriority',function f(){
 	return DataManager._def_normalPriority===this._priorityType;
 });
 
 new cfc(Game_Map.prototype).add('getPosKey',function f(x,y){
-	return $dataMap&&x-0+((y*$dataMap.width)<<2)+$dataMap.width;
+	return $dataMap&&(0|x)+$dataMap.width*((y<<2)|2);
 }).add('update',function f(){
 	this.update_locTbl();
 	return f.ori.apply(this,arguments);
 }).add('update_locTbl',function f(){
+	// called once per frame
+	
+	this._locTbl_updated_fllwrs=false;
+	this._locTbl_updated_evts=false;
+	
+	this.update_locTbl_fllwrs(true);
+	this.update_locTbl_evts(true);
+	// only call update table when needed. just clean here
+}).add('update_locTbl_fllwrs',function f(clearOnly){
+	if(this._locTbl_updated_fllwrs) return;
+	
+	const followers=$gamePlayer&&$gamePlayer.followers();
+	const fllwrs=followers&&followers._data; if(!fllwrs) return;
+	{ let s=fllwrs._set; if(s) s.clear(); else s=fllwrs._set=new Set(); }
+	let ntc=fllwrs.coordsNt,m; if(!ntc) ntc=fllwrs.coordsNt=[]; // [pri] -> Map() // pri=-1 is all pri
+	const npval=DataManager._def_normalPriority;
+	let setNpval=false;
+	for(let p=7;p-->=0;){
+		if(npval===p) setNpval=true;
+		
+		m=ntc[p];
+		if(m) m.clear();
+		else m=ntc[p]=new Map();
+	}
+	if(!setNpval){
+		m=ntc[npval]; if(m) m.clear(); else m=ntc[npval]=new Map();
+	}
+	if(clearOnly) return;
+	
+	this._locTbl_updated_fllwrs=true;
+	if($gamePlayer&&!$gamePlayer.isThrough()) fllwrs.forEach(f.tbl[0],this);
+},[
+function(fllwr,i,a){
+	if(!fllwr.isVisible()) return;
+	a._set.add(fllwr);
+	this.update_locTbl_addFllwr(fllwr,a.coordsNt[-1]);
+	this.update_locTbl_addFllwr(fllwr,a.coordsNt[fllwr._priorityType]);
+},
+]).add('update_locTbl_addFllwr',function f(fllwr,coord){
+	if(!coord) return;
+	const key=fllwr.getPosKey();
+	let arr=coord.get(key); if(!arr) coord.set(key,arr=[]);
+	return arr.push(fllwr);
+}).add('update_locTbl_delFllwr',function f(fllwr,coord,x,y){
+	throw new Error('not supported');
+}).add('update_locTbl_chkFllwrErr',function f(fllwr){
+	const followers=$gamePlayer&&$gamePlayer.followers();
+	const fllwrs=followers&&followers._data;
+	return !fllwrs||fllwrs._set&&!fllwrs._set.has(fllwr);
+}).add('update_locTbl_evts',function f(clearOnly){
+	if(this._locTbl_updated_evts) return;
+	
 	const evts=this._events; if(!evts) return;
 	{ let s=evts._set; if(s) s.clear(); else s=evts._set=new Set(); }
 	let c=evts.coords,m; if(!c) c=evts.coords=[]; // [pri] -> Map() // pri=-1 is all pri
@@ -2046,15 +2128,17 @@ new cfc(Game_Map.prototype).add('getPosKey',function f(x,y){
 		m=c[npval]; if(m) m.clear(); else m=c[npval]=new Map();
 		m=ntc[npval]; if(m) m.clear(); else m=ntc[npval]=new Map();
 	}
+	if(clearOnly) return;
+	
+	this._locTbl_updated_evts=true;
 	evts.forEach(f.tbl[0],this);
 },[
 function(evt,i,a){
-	const evtd=evt&&evt.event(); if(!evtd) return;
+	if(!evt||!evt.event()) return;
 	a._set.add(evt);
 	this.update_locTbl_addEvt(evt,a.coords[-1]);
 	this.update_locTbl_addEvt(evt,a.coords[evt._priorityType]);
-	const isThrough=evt.isThrough();
-	if(!isThrough){
+	if(!evt.isThrough()){
 		this.update_locTbl_addEvt(evt,a.coordsNt[-1]);
 		this.update_locTbl_addEvt(evt,a.coordsNt[evt._priorityType]);
 	}
@@ -2062,34 +2146,59 @@ function(evt,i,a){
 ]).add('update_locTbl_addEvt',function f(evt,coord){
 	if(!coord) return;
 	const key=evt.getPosKey();
-	let arr=coord.get(key); if(!arr) coord.set(key,arr=[]);
-	return arr.uniquePush(evt);
+	let cont=coord.get(key); if(!cont) coord.set(key,cont=[]);
+	return cont.uniquePush(evt);
 }).add('update_locTbl_delEvt',function f(evt,coord,x,y){
 	if(!coord) return;
 	const key=this.getPosKey(x,y);
-	const arr=coord.get(key); if(!arr) return;
-	return arr.uniquePop(evt);
+	const cont=coord.get(key); if(!cont) return;
+	return cont.uniquePop(evt);
 }).add('update_locTbl_chkEvtErr',function f(evt){
 	return !this._events||this._events._set&&!this._events._set.has(evt);
 }).add('update_locTbl_addEvt_overall',function f(evt){
 	if(this.update_locTbl_chkEvtErr(evt)) return;
-	return this.update_locTbl_addEvt(evt,this._events.coords&&this._events.coords[-1]);
+	const coords=this._events.coords; if(!coords) return;
+	this.update_locTbl_addEvt(evt,coords[-1]);
+	this.update_locTbl_addEvt(evt,coords[evt._priorityType]);
+	if(!evt.isThrough()){
+		const coordsNt=this._events.coordsNt;
+		this.update_locTbl_addEvt(evt,coordsNt[-1]);
+		this.update_locTbl_addEvt(evt,coordsNt[evt._priorityType]);
+	}
 }).add('update_locTbl_delEvt_overall',function f(evt,x,y){
 	if(this.update_locTbl_chkEvtErr(evt)) return;
-	return this.update_locTbl_delEvt(evt,this._events.coords&&this._events.coords[-1],x,y);
+	const coords=this._events.coords; if(!coords) return;
+	this.update_locTbl_delEvt(evt,coords[-1],x,y);
+	this.update_locTbl_delEvt(evt,coords[evt._priorityType],x,y);
+	if(!evt.isThrough()){
+		const coordsNt=this._events.coordsNt;
+		this.update_locTbl_delEvt(evt,this._events.coordsNt[-1],x,y);
+		this.update_locTbl_delEvt(evt,this._events.coordsNt[evt._priorityType],x,y);
+	}
 }).add('eventsXy',function f(x,y){
+	this.update_locTbl_evts();
 	const coord=this._events&&this._events.coords&&this._events.coords[-1];
 	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
 },[
 [],
 ]).add('eventsXyNt',function f(x,y){
+	this.update_locTbl_evts();
 	const coord=this._events&&this._events.coordsNt&&this._events.coordsNt[-1];
 	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
 },[
 [],
 ]).add('eventsXyNtNp',function f(x,y){ // normal priority
+	this.update_locTbl_evts();
 	const coord=this._events&&this._events.coordsNt&&this._events.coordsNt[DataManager._def_normalPriority];
 	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
+},[
+[],
+]);
+
+new cfc(Game_Followers.prototype).add('isSomeoneCollided',function f(x,y){
+	$gameMap.update_locTbl_fllwrs();
+	const key=$gameMap&&$gameMap.getPosKey(x,y);
+	return !!(this._data.coordsNt&&this._data.coordsNt[DataManager._def_normalPriority].get(key)||f.tbl[0]).length;
 },[
 [],
 ]);
@@ -2108,9 +2217,22 @@ new cfc(Game_Event.prototype).add('moveStraight',function f(d){
 	return rtv;
 }).add('moveFailOn',function f(lastX,lastY,moveDirection){
 }).add('moveSuccOn',function f(lastX,lastY,moveDirection){
+}).add('setPriorityType',function f(pri){
+	const pri0=this._priorityType,x=this.x,y=this.y;
+	const rtv=f.ori.apply(this,arguments);
+	if(pri0===this._priorityType||!$gameMap) return rtv;
+	const coords=$gameMap._events.coords; if(!coords) return rtv;
+	$gameMap.update_locTbl_delEvt(this,coords[pri0],x,y);
+	$gameMap.update_locTbl_addEvt(this,coords[this._priorityType]);
+	if(!this.isThrough()){
+		const coordsNt=$gameMap._events.coordsNt;
+		$gameMap.update_locTbl_delEvt(this,coordsNt[pri0],x,y);
+		$gameMap.update_locTbl_addEvt(this,coordsNt[this._priorityType]);
+	}
+	return rtv;
 });
 
-})(); // map evt fast search table
+})(); // map evt search table
 
 // ---- ---- ---- ----  modify update reload
 
