@@ -58,6 +58,8 @@ new cfc(Game_Map.prototype).add('setup',function f(mapid){
 
 new cfc(Game_Event.prototype).add('update',function f(){
 	return this.event()&&f.ori.apply(this,arguments);
+}).add('findProperPageIndex',function f(){
+	return this.event()?f.ori.apply(this,arguments):-1;
 });
 
 })();
