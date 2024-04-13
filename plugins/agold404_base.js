@@ -1133,6 +1133,7 @@ evtd=>{ if(!evtd) return;
 			if(isNote) noteLines.push(cmd.parameters[0]);
 		}
 		pg.note=noteLines.join('\n');
+		DataManager.extractMetadata(pg);
 	}
 },
 ],false,true);
@@ -1208,7 +1209,11 @@ new cfc(Game_Character.prototype).add('jumpTo',function f(x,y){
 new cfc(Game_Event.prototype).add('setChrIdxName',function f(chrIdx,chrName){
 	this._characterIndex=chrIdx;
 	this._characterName=chrName;
-},undefined,true,true);
+},undefined,true,true).add('setupPageSettings',function f(){
+	const rtv=this.page();
+	f.ori.apply(this,arguments);
+	return rtv;
+},undefined,true);
 
 new cfc(Game_Interpreter.prototype).add('getEvt',function f(){
 	// map init ensures '_events' be Array
