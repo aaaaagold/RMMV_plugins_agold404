@@ -767,6 +767,21 @@ const getUrlParamVal=window.getUrlParamVal=key=>{
 	if(r===undefined) r=ImageManager._parseQs_uqh(h0,1)[key];
 	return r;
 };
+const addUrlParamVal_qs=window.addUrlParamVal_qs=(key,val,isSetToTop)=>{
+	const loc=isSetToTop?getTopFrameWindow().location:location;
+	let newHref=loc.pathname;
+	newHref+="?"; if(loc.search) newHref+=loc.search;
+	newHref+=(loc.search&&newHref.slice(-1)!=="&"?"&":"")+key; if(val!==undefined) newHref+='='+val;
+	newHref+="#"; if(loc.hash) newHref+=loc.hash;
+	loc.href=newHref;
+};
+const addUrlParamVal_hash=window.addUrlParamVal_hash=(key,val,isSetToTop)=>{
+	const loc=isSetToTop?getTopFrameWindow().location:location;
+	let newHash=loc.hash;
+	if(newHash&&newHash.slice(-1)!=="&") newHash+="&";
+	newHash+=key; if(val!==undefined) newHash+='='+val;
+	loc.hash=newHash;
+};
 
 })(); // shorthand HTMLElement
 
