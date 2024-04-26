@@ -1939,6 +1939,9 @@ function(f){ f.call(this); },
 	}catch(e){ this._renderer=null; }
 	
 	window.console.log=log;
+	if(!this._renderer) this._createRenderer_onFail();
+},undefined,false,true).add('_createRenderer_onFail',function f(){
+	if(this._rendererType==='auto') addUrlParamVal_qs('canvas');
 },undefined,false,true);
 p.getImageData=function f(x,y,w,h){
 	if(x===undefined) x=0;
