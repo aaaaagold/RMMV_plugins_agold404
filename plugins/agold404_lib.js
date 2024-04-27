@@ -330,7 +330,6 @@ p.kvPop=function(k){
 			const lt=func_cmp3;
 			this._lt=(lt&&lt.constructor===Function)?(a,b)=>lt(a,b)<0:f.ori;
 		}
-		this._searchTbl=new Map();
 		if(arr&&arr.constructor===Array){
 			if(inPlace){
 				arr.push(arr[0]);
@@ -371,6 +370,13 @@ p.kvPop=function(k){
 				return rhs;
 			},
 		configurable: false},
+		_searchTbl: {
+			get:function(){
+				if(!this.__searchTbl||this.__searchTbl.constructor!==Map) this._buildSearchTbl(this.__searchTbl=new Map());
+				return this.__searchTbl;
+			},
+			set:function(rhs){return this.__searchTbl=rhs;},
+		configurable: true},
 		length: {
 			get:function(){return this._data.length-1;},
 		configurable: false}
@@ -405,10 +411,14 @@ p.kvPop=function(k){
 		}
 		return idx;
 	};
+	w.Heap.prototype._buildSearchTbl=function(m){
+		m=m||this._searchTbl;
+		const arr=this._data; for(let x=arr.length;--x;) m.set(arr[x],x);
+	};
 	w.Heap.prototype.makeHeap=function(){
 		const arr=this._data;
+		this._buildSearchTbl();
 		for(let x=arr.length;--x;) this._sink(x);
-		for(let x=arr.length;--x;) this._searchTbl.set(arr[x],x);
 	};
 	w.Heap.prototype.push=function(rhs){
 		const arr=this._data;
