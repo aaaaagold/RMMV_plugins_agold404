@@ -1978,6 +1978,38 @@ r=p[k]; (p[k]=function f(){ // PIXI's built-in uses 'failIfMajorPerformanceCavea
 p[k].trgt="SwiftShader";
 }
 
+new cfc(Graphics).add('_webgl_saveShader',function f(){
+	const gl=this._renderer&&this._renderer.gl; if(!gl) return;
+	const info={
+		getParameter:[],getVertexAttrib:[],
+		getVertexAttrib:[],
+	};
+	for(let x=0,arr=f.tbl[0].getParameter,xs=arr.length;x!==xs;++x) info.getParameter.push(gl.getParameter(gl[arr[x]]));
+	const prog=info.CURRENT_PROGRAM=gl.getParameter(gl.CURRENT_PROGRAM);
+	// get attribute infos
+	const cnt=info.ACTIVE_ATTRIBUTES=gl.getProgramParameter(prog,gl.ACTIVE_ATTRIBUTES);
+	for(let i=0;i!==cnt;++i){
+		const attr=gl.getActiveAttrib(prog,i);
+		if(!attr){ info.getVertexAttrib.push(undefined); continue; }
+		const vertexAttrs=[],idx=gl.getAttribLocation(prog,attr.name);
+		vertexAttrs.push(vertexAttrs._idx=idx);
+		for(let x=0,arr=f.tbl[0].getVertexAttrib,xs=arr.length;x!==xs;++x) vertexAttrs.push(gl.getVertexAttrib(idx,gl[arr[x]]));
+		vertexAttrs.push(vertexAttrs._offset=gl.getVertexAttribOffset(idx,gl.VERTEX_ATTRIB_ARRAY_POINTER));
+		info.getVertexAttrib.push(vertexAttrs);
+	}
+	return info;
+},t=[
+{
+getVertexAttrib:['VERTEX_ATTRIB_ARRAY_SIZE','VERTEX_ATTRIB_ARRAY_TYPE','VERTEX_ATTRIB_ARRAY_NORMALIZED','VERTEX_ATTRIB_ARRAY_STRIDE',],
+bindBuffer:['ARRAY_BUFFER','ELEMENT_ARRAY_BUFFER',],
+}, // 0: 
+],true,true).add('_webgl_restoreShader',function f(gl,info){
+	if(!info) return;
+	gl.useProgram(info.CURRENT_PROGRAM);
+	for(let arr=f.tbl[0].bindBuffer,x=arr.length;x--;) gl.bindBuffer(gl[arr[x]], info.getParameter[x], gl.STATIC_DRAW);
+	for(let i=0,arrv=info.getVertexAttrib,sz=arrv.length;i!==sz;++i) if(arrv[i]) gl.vertexAttribPointer.apply(gl,arrv[i]);
+},t,true,true);
+
 })(); // rendering
 
 // ---- ---- ---- ---- ConfigManager.others
