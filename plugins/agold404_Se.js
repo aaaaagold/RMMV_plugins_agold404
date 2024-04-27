@@ -2,7 +2,13 @@
 /*:
  * @plugindesc overwrite AudioManager.playSe, stopSe, StaticSe
  * @author agold404
- * @help .
+ * @help se echo api: 
+ * 
+ * $gameSystem.seEcho_opt_set({delayFrame:21,nextVolRate:0.875});
+ * $gameSystem.seEcho_opt_clear();
+ * $gameSystem.seEcho_echos_clear();
+ * 
+ * AudioManager.playSe({name:"Attack3",pitch:100,volume:100,});
  * 
  * This plugin can be renamed as you want.
  */
@@ -62,5 +68,68 @@ maxSameCntInSameFrame,
 });
 
 setInterval(()=>AudioManager.seCurrentFrame_clear(),1.0/64);
+
+new cfc(Game_System.prototype).add('seEcho_opt_clear',function(){
+	this._seEcho_opt=undefined;
+}).add('seEcho_opt_set',function f(opt){
+	this._seEcho_opt={
+		delayFrame:Math.max(opt&&opt.delayFrame,1)||f.tbl[0].delayFrame,
+		minVol:opt&&opt.minVol||f.tbl[0].minVol,
+		nextVolRate:opt&&opt.nextVolRate||f.tbl[0].nextVolRate,
+	};
+},[
+{
+delayFrame:4,
+minVol:1.0/128,
+nextVolRate:0.75,
+},
+]).add('seEcho_opt_get',function f(){
+	return this._seEcho_opt;
+}).add('seEcho_opt_getDelayFrame',function f(opt){
+	opt=opt||this._seEcho_opt;
+	return opt&&opt.delayFrame;
+}).add('seEcho_opt_getMinVol',function f(opt){
+	opt=opt||this._seEcho_opt;
+	return opt&&opt.minVol;
+}).add('seEcho_opt_getNextVolRate',function f(opt){
+	opt=opt||this._seEcho_opt;
+	return opt&&opt.nextVolRate;
+}).add('seEcho_echos_getCont',function f(){
+	let c=this._seEcho_echos; if(!c) c=this._seEcho_echos=new Heap(f.tbl[0]);
+	if(c.constructor!==Heap){
+		c=Object.assign(new Heap(),c);
+		c._searchTbl=new Map();
+		c.makeHeap();
+	}
+	return c;
+},[
+(a,b)=>a._echoFrame-b._echoFrame, // 0: cmp3
+]).add('seEcho_echos_add',function f(se){
+	const opt=se._echoOpt||this.seEcho_opt_get(); if(!opt) return;
+	const info=Object.assign({},se);
+	info._echoOpt=opt;
+	info.volume*=this.seEcho_opt_getNextVolRate(opt); if(!(info.volume>=this.seEcho_opt_getMinVol(opt))) return;
+	info._echoFrame=(se._echoFrame||Graphics.frameCount)+this.seEcho_opt_getDelayFrame(opt); if(!info._echoFrame) return;
+	this.seEcho_echos_getCont().push(info);
+	return info;
+}).add('seEcho_echos_clear',function f(){
+	this.seEcho_echos_getCont().clear();
+}).add('seEcho_echos_play',function f(){
+	for(const h=this.seEcho_echos_getCont(),currFrame=Graphics.frameCount;h.length&&currFrame>=h.top._echoFrame;){
+		const curr=h.top; h.pop();
+		AudioManager.playSe(curr); // will add an echo
+	}
+});
+const p=AudioManager;
+new cfc(p).add('playSe',function f(se){
+	$gameSystem&&$gameSystem.seEcho_echos_add(se);
+	return f.ori.apply(this,arguments);
+});
+p.playSe_ori=p.playSe.ori;
+new cfc(SceneManager).add('updateScene',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	$gameSystem&&$gameSystem.seEcho_echos_play();
+	return rtv;
+});
 
 })();
