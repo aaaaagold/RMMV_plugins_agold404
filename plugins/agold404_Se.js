@@ -103,7 +103,7 @@ nextVolRate:0.75,
 	}
 	return c;
 },[
-(a,b)=>a._echoFrame-b._echoFrame, // 0: cmp3
+(a,b)=>b._echoFrame-a._echoFrame, // 0: cmp3 for max heap
 ]).add('seEcho_echos_add',function f(se){
 	const opt=se._echoOpt||this.seEcho_opt_get(); if(!opt) return;
 	const info=Object.assign({},se);
