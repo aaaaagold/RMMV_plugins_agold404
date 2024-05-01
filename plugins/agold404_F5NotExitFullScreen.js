@@ -9,7 +9,7 @@
 
 (()=>{ let k,r,t;
 
-if(window!==getTopFrameWindow()) return;
+if(window!==getTopFrameWindow()||!Utils.isNwjs()) return;
 
 const cssInner="position:fixed; left:0px; top:0px; width:100%; height:100%; margin: 0px; border: 0px solid black; padding: 0px;";
 const cssHere="background-color:black; overflow:hidden;";
