@@ -905,7 +905,12 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 		w.exposeToTopFrame=f;
 		const arr=f.tbl=f.tbl||getPrefixPropertyNames(window,'$data'); arr.uniquePop('$dataMap');
 		arr.uniquePush('$dataMap','$gameTemp','$gameSystem','$gameScreen','$gameTimer','$gameMessage','$gameSwitches','$gameVariables','$gameSelfSwitches','$gameActors','$gameParty','$gameTroop','$gameMap','$gamePlayer',);
-		arr.forEach(key=>key&&Object.defineProperty(w,key,{ get:function(){ return window[key]; }, configurable: true }));
+		arr.forEach(key=>{ if(!key) return;
+			try{
+				Object.defineProperty(w,key,{ get:function(){ return window[key]; }, configurable: true });
+			}catch(e){
+			}
+		});
 	}
 	{
 		const arr=[];
@@ -2292,7 +2297,12 @@ new cfc(Scene_Load.prototype).add('reloadMapIfUpdated',function f(){
 
 (()=>{ let k,r,t;
 
-exposeToTopFrame();
+new cfc(SceneManager).add('run',function f(){
+	setTimeout(exposeToTopFrame,f.tbl[0]);
+	return f.ori.apply(this,arguments);
+},[
+1024,
+]);
 
 })();
 
