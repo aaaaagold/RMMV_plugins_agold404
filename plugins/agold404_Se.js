@@ -67,7 +67,7 @@ maxSameCntInSameFrame,
 	this._seCurrentFrame.clear();
 });
 
-setInterval(()=>AudioManager.seCurrentFrame_clear(),1.0/64);
+setInterval((function(){ this.seCurrentFrame_clear(); }).bind(AudioManager),1000/64);
 
 new cfc(Game_System.prototype).add('seEcho_opt_clear',function(){
 	this._seEcho_opt=undefined;
