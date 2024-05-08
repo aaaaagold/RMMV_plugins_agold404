@@ -97,7 +97,7 @@ nextVolRate:0.75,
 }).add('seEcho_echos_getCont',function f(){
 	let c=this._seEcho_echos; if(!c) c=this._seEcho_echos=new Heap(f.tbl[0]);
 	if(c.constructor!==Heap){
-		c=Object.assign(new Heap(),c);
+		c=Object.assign(new Heap(f.tbl[0]),c);
 		c._searchTbl=new Map();
 		c.makeHeap();
 	}
