@@ -933,6 +933,24 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 	for(let x=0,arr=arguments,xs=arr.length;x!==xs;++x) w[arr[x]]=w._w[arr[x]];
 };
 
+// ---- ---- ---- ----  PluginManager
+
+(()=>{ let k,r,t;
+
+new cfc(PluginManager).add('setParameters',function f(key,params){
+	return this._parameters[key]=params;
+},undefined,false,false).add('parameters',function f(key){
+	return this._parameters[key] || f.tbl[0][key] || (f.tbl[0][key]={});
+},[
+{}, // 0: common defaults
+],false,false);
+
+PluginManager._parameters={};
+window.$pluginsMap=$plugins.map(plugin=>[plugin.name,plugin]);
+$plugins.forEach(plugin=>plugin.status&&PluginManager.setParameters(plugin.name, plugin.parameters));
+
+})(); // PluginManager
+
 // ---- ---- ---- ---- load other files
 
 new cfc(ImageManager).add('otherFiles_getDataMap',function f(){
