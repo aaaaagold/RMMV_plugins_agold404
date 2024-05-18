@@ -476,6 +476,29 @@ function(f){ if(!f()) this.push(f); },
 		}
 	}
 },undefined,false,true);
+// refine Window_Base
+new cfc(Window_Base.prototype).add('updateTone',function f(){
+	const tone=$gameSystem&&$gameSystem.windowTone()||f.tbl[0];
+	this.setTone(tone[0], tone[1], tone[2]);
+},[0,0,0,0],true,true).add('drawTextEx',function f(text, x, y, _3, _4, out_textState){
+	// return dx
+	const textState=out_textState||{};
+	if(isNaN(textState.index-=0)) textState.index=0;
+	if(isNaN(textState.x-=0)) textState.x=x-0||0;
+	if(isNaN(textState.y-=0)) textState.y=y-0||0;
+	if(isNaN(textState.left-=0)) textState.left=textState.x;
+	textState.right=Math.max(textState.right||0,textState.left);
+	if(!text) return 0;
+	textState.text=this.convertEscapeCharacters(text);
+	textState.height=this.calcTextHeight(textState,false);
+	this.resetFontSettings();
+	for(const len=textState.text.length;textState.index<len;) this.processCharacter(textState);
+	return textState.x-x;
+},undefined,true,true).add('processNormalCharacter',function f(textState){
+	const rtv=f.ori.apply(this,arguments);
+	textState.right=Math.max(textState.right,textState.x);
+	return rtv;
+});
 //
 new cfc(Window_Base.prototype).add('positioning',function f(setting,ref){
 	setting=setting||f.tbl;
@@ -932,6 +955,45 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 	}
 	for(let x=0,arr=arguments,xs=arr.length;x!==xs;++x) w[arr[x]]=w._w[arr[x]];
 };
+// Window_Text
+{ const a=class Window_Text extends Window_Base{
+	_refreshBack(){ if(this._windowBackSprite) Window_Base.prototype._refreshBack.apply(this,arguments); }
+	_refreshFrame(){ if(this._windowFrameSprite) Window_Base.prototype._refreshFrame.apply(this,arguments); }
+	standardPadding(){ return 0; }
+};
+window[a.name]=a;
+const p=a.prototype;
+makeDummyWindowProto(p);
+Object.defineProperty(Window.prototype, 'backOpacity', {
+	set:function(value){
+		const sp=this._windowBackSprite;
+		if(sp) sp.alpha=value.clamp(0,255)/255;
+		return value;
+	},get:function(){
+		const sp=this._windowBackSprite;
+		return sp?sp.alpha*255:0;
+	}, configurable: true
+});
+new cfc(p).add('_createAllParts',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.windowStyle_adjust();
+	return rtv;
+}).add('windowStyle_adjust',function f(){
+	return this.windowStyle_setTextOnly();
+}).add('windowStyle_setTextOnly',function f(){
+	let t,k;
+	for(let x=0,arr=f.tbl[0],xs=arr.length;x!==xs;++x){
+		// not setting following properties to `undefined` for capability
+		t=this[arr[x]];
+		t.parent && t.parent.removeChild(t);
+	}
+},[
+[
+'_windowFrameSprite',
+'_windowBackSprite',
+], // 0: keys
+]);
+}
 
 // ---- ---- ---- ----  PluginManager
 
@@ -1202,6 +1264,18 @@ new cfc(Game_Battler.prototype).add('getSprite',function f(){
 	const m=sc&&sc._btlr2sp;
 	return m&&m.get(this);
 },undefined,false,true);
+
+new cfc(SceneManager).add('getSprite',function f(obj){
+	const sc=this._scene;
+	const func=f.tbl[0].get(sc&&sc.constructor);
+	const m=func&&func(sc);
+	return m&&m.get(obj);
+},[
+new Map([
+[Scene_Map,sc=>sc._chr2sp],
+[Scene_Battle,sc=>sc._btlr2sp],
+]), // 0: constructor -> spritesMap
+]);
 
 })(); // gameObj2sprite
 
