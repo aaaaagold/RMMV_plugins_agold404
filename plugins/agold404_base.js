@@ -1283,25 +1283,101 @@ new Map([
 
 (()=>{ let k,r,t;
 
-new cfc(Game_Character.prototype).add('jumpTo',function f(x,y){
-	this.jump(x-this.x,y-this.y);
-	return this;
-},undefined,true,true).add('frontPos',function f(){
+t=[
+({
+2:4,
+4:8,
+8:6,
+6:2,
+}), // 0: rightPos remap
+({
+'f':{
+2:2,
+4:4,
+6:6,
+8:8,
+}, // 1-f
+'b':{
+2:8,
+4:6,
+6:4,
+8:2,
+}, // 1-b
+'l':{
+2:6,
+4:2,
+6:8,
+8:4,
+}, // 1-l
+'r':{
+2:4,
+4:8,
+6:2,
+8:6,
+}, // 1-r
+}), // 1: facingAfterJump
+];
+
+new cfc(Game_Character.prototype).add('jumpTo',function f(x,y,facingAfterJump){
 	const d=this.direction();
-	return {
-		x:$gameMap.roundXWithDirection(this.x,d),
-		y:$gameMap.roundYWithDirection(this.y,d),
-	};
-},undefined,true,true).add('jumpFront',function f(dist){
+	this.jump(x-this.x,y-this.y);
+	this._jump_remapDir_facingAfterJump(d,facingAfterJump);
+	return this;
+},t,true,true).add('frontPos',function f(xy,y){
+	let x;
+	if(typeof xy==='number') x=xy;
+	else if(xy){ x=xy.x; y=xy.y; }
+	else{ x=this.x; y=this.y; }
+	const d=this.direction();
+	return ({
+		x:$gameMap.roundXWithDirection(x,d),
+		y:$gameMap.roundYWithDirection(y,d),
+	});
+},undefined,true,true).add('rightPos',function f(xy,y){
+	let x;
+	if(typeof xy==='number') x=xy;
+	else if(xy){ x=xy.x; y=xy.y; }
+	else{ x=this.x; y=this.y; }
+	const d=this.rightPos_dirRemap(this.direction());
+	return ({
+		x:$gameMap.roundXWithDirection(x,d),
+		y:$gameMap.roundYWithDirection(y,d),
+	});
+},undefined,true,true).add('rightPos_dirRemap',function f(d){
+	return f.tbl[0][d]||d;
+},t,true,true).add('jumpFront',function f(dist,facingAfterJump){
 	let dx=0,dy=0;
-	if(0<(dist|=0)){
+	if((dist|=0)){
 		const xy=this.frontPos();
 		dx+=(xy.x-this.x)*dist;
 		dy+=(xy.y-this.y)*dist;
 	}
+	const d=this.direction();
 	this.jump(dx,dy);
+	this._jump_remapDir_facingAfterJump(d,facingAfterJump);
 	return this;
-});
+},t,true,true).add('jumpFacingRelative',function f(leftRight,backFront,facingAfterJump,refChr){
+	// -+ , -+
+	let dx=0,dy=0;
+	const ref=refChr||this;
+	if((leftRight|=0)){
+		const xy=ref.rightPos();
+		dx+=(xy.x-ref.x)*leftRight;
+		dy+=(xy.y-ref.y)*leftRight;
+	}
+	if((backFront|=0)){
+		const xy=ref.frontPos();
+		dx+=(xy.x-ref.x)*backFront;
+		dy+=(xy.y-ref.y)*backFront;
+	}
+	const d=this.direction();
+	this.jumpTo(dx+ref.x,dy+ref.y);
+	this._jump_remapDir_facingAfterJump(d,facingAfterJump);
+	return this;
+},t,true,true).add('_jump_remapDir_facingAfterJump',function f(d,facingAfterJump){
+	if(facingAfterJump in f.tbl[1]) this._direction=f.tbl[1][facingAfterJump][d];
+	else if(facingAfterJump in f.tbl[0]) this._direction=facingAfterJump;
+},t,true,true);
 
 new cfc(Game_Event.prototype).add('setChrIdxName',function f(chrIdx,chrName){
 	this._characterIndex=chrIdx;
