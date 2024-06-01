@@ -160,10 +160,24 @@ new cfc(Sprite.prototype).add('isInScreen_local',function(){
 	const xo=this.x,yo=this.y,ws=this.width*sx,hs=this.height*sy;
 	let x=xo-ws*a.x,xe=x+ws; if(xe<x){ let t=x; x=xe; xe=t; }
 	let y=yo-hs*a.y,ye=y+hs; if(ye<y){ let t=y; y=ye; ye=t; }
+	const ext=this.isInScreen_local_getExt();
+	if(ext){
+		x-=ext.l; xe+=ext.r;
+		y-=ext.u; ye+=ext.d;
+	}
 	if(x>=Graphics._boxWidth||xe<0||y>=Graphics._boxHeight||ye<0) return; // out-of-bound
 	
 	return true;
-});
+}).add('isInScreen_local_getExt',function f(){
+	return f.tbl[0];
+},[
+{
+l:0|0,
+r:0|0,
+u:0|0,
+d:0|0,
+},
+]);
 new cfc(Graphics).add('isInScreen_rect',function(rect){
 	return !(rect.x>=this.boxWidth || rect.x+rect.width<0 || rect.y>=this.boxHeight || rect.y+rect.height<0);
 });
@@ -498,6 +512,9 @@ new cfc(Window_Base.prototype).add('updateTone',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	textState.right=Math.max(textState.right,textState.x);
 	return rtv;
+}).add('measure_drawTextEx',function f(text, x, y, _3, _4, out_textState){
+	// reserved for auto-line-break or something automatically changed by window size
+	return this.drawTextEx.apply(this,arguments);
 });
 //
 new cfc(Window_Base.prototype).add('positioning',function f(setting,ref){
@@ -992,7 +1009,40 @@ new cfc(p).add('_createAllParts',function f(){
 '_windowFrameSprite',
 '_windowBackSprite',
 ], // 0: keys
-]);
+]).add('setText',function f(styledText,isFixedWindowSize,isAppending,isForcedRedraw){
+	// text having something like `\{` , `\}` , ...
+	
+	// skip if same
+	if(!isForcedRedraw && !isAppending && this._lastText===styledText) return;
+	
+	// modes
+	if(isAppending){
+		this._lastText+=styledText;
+		styledText=this._lastText;
+	}else this._lastText=styledText;
+	
+	// take use of y
+	if(styledText) styledText+='\n';
+	
+	const wt=this;
+	// const stdpad=wt.standardPadding(); // is 0
+	const txtpad=wt.textPadding(),textState={};
+	const measure=wt.measure_drawTextEx(styledText,0,0,undefined,undefined,textState);
+	
+	const width=Math.max(0,1+~~textState.right);
+	const widthp=width+(txtpad<<1);
+	if(!isFixedWindowSize){
+		wt.width=widthp;
+		wt.height=textState.y;
+	}
+	const w=wt.width;
+	const h=wt.height;
+	wt.position.set(-(w>>>1),-h);
+	wt.createContents();
+	wt.drawTextEx(styledText,txtpad,0);
+	//console.log(measure,textState); // debug
+	return this;
+});
 }
 
 // ---- ---- ---- ----  PluginManager
@@ -1077,6 +1127,26 @@ TouchInput._setupEventHandlers = function() {
 
 (()=>{ let k,r,t;
 
+new cfc(DataManager).add('getDebugInfo',function f(){
+	const sc=SceneManager._scene;
+	return ({
+		sc:sc,
+		scCtor:sc.constructor,
+		mapId:$gameMap&&$gameMap._mapId,
+		xy:$gamePlayer&&({x:$gamePlayer.x,y:$gamePlayer.y}),
+		xyReal:$gamePlayer&&({x:$gamePlayer._realX,y:$gamePlayer._realY}),
+	});
+}).add('getDebugInfoStr',function f(){
+	const res=[];
+	const info=this.getDebugInfo();
+	const scName=info.scCtor&&info.scCtor.name;
+	res.push("scene: "+scName);
+	res.push("mapId: "+info.mapId);
+	res.push("xy: "+JSON.stringify(info.xy||null));
+	res.push("xyReal: "+JSON.stringify(info.xyReal||null));
+	return res.joni(' ; ');
+});
+
 new cfc(Game_Interpreter.prototype).add('command111',function f(){
 	// interpreter branch
 	if(this._params[0]===12){
@@ -1087,7 +1157,8 @@ new cfc(Game_Interpreter.prototype).add('command111',function f(){
 			if(this && this._params){
 				console.warn(this._params);
 				e.message+='\n\nScript:\n'+this._params[1];
-				e.message+=getStr_英文不好齁()+f.tbl[1][1];
+				//e.message+=getStr_英文不好齁()+f.tbl[1][1];
+				e.message+='\n'+DataManager.getDebugInfoStr()+'\n';
 			}
 			e.name+=' in Game_Interpreter.prototype.command111';
 			e._msgOri=e.message;
@@ -1116,7 +1187,8 @@ new cfc(Game_Interpreter.prototype).add('command111',function f(){
 		console.warn(f.tbl[1][0],'\n',script);
 		if(script){
 			e.message+='\n\nScript:\n'+script;
-			e.message+=getStr_英文不好齁()+f.tbl[1][1];
+			//e.message+=getStr_英文不好齁()+f.tbl[1][1];
+			e.message+='\n'+DataManager.getDebugInfoStr()+'\n';
 		}
 		e.name+=' in ';
 		e.name+=f.tbl[0];
@@ -1147,7 +1219,8 @@ new cfc(Game_Action.prototype).add('evalDamageFormula',function f(target){
 			if(item && item.damage){
 				console.warn(item.damage.formula);
 				e.message+='\n\nDamage Formula:\n'+item.damage.formula;
-				e.message+=getStr_英文不好齁()+f.tbl[1][1];
+				//e.message+=getStr_英文不好齁()+f.tbl[1][1];
+				e.message+='\n'+DataManager.getDebugInfoStr()+'\n';
 			}
 			e.name+=' in damage formula of '+f.tbl[2](item);
 			e._msgOri=e.message;

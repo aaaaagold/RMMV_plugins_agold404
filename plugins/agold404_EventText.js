@@ -51,9 +51,8 @@ new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 	this.setChrTextv(chr.getTextv());
 	return rtv;
 }).add('setChrTextv',function f(arr){
-	if(arr){
-		arr=arr.slice(); arr.push(""); // take use of y
-	}else arr=f.tbl[0];
+	if(arr) arr=arr.slice();
+	else arr=f.tbl[0];
 	return this.setChrTxt(arr.join('\n'));
 },[
 [], // 0: empty textv
@@ -64,18 +63,7 @@ new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 		c.addChild(wt=this._textWnd=new Window_Text(0,0,1,1));
 		this.addChild(c);
 	}
-	// const stdpad=wt.standardPadding(); // is 0
-	const txtpad=wt.textPadding(),textState={};
-	const measure=wt.drawTextEx(txt,0,0,undefined,undefined,textState);
-	
-	const width=Math.max(0,1+~~textState.right);
-	const widthp=width+(txtpad<<1);
-	const w=wt.width=widthp;
-	const h=wt.height=textState.y;
-	wt.position.set(-(w>>>1),-h);
-	wt.createContents();
-	wt.drawTextEx(txt,txtpad,0);
-	//console.log(measure,textState); // debug
+	wt.setText(txt);
 	return this;
 }).add('update',function f(){
 	const rtv=f.ori.apply(this,arguments);
