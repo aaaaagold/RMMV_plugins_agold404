@@ -1539,10 +1539,41 @@ new cfc(Scene_Base.prototype).add('start_after',function f(){
 });
 
 new cfc(Scene_Boot.prototype).add('start_after',function f(){
+	// TBD
+	// next scene might be: test battle, test map
+	// ALL $data* and its elements should not be changed
+	// only creating search tables here
 	return Scene_Base.prototype.start_after.apply(this,arguments);
 }).add('start_before',function f(){
-	return Scene_Base.prototype.start_before.apply(this,arguments);
-});
+	// TBD
+	// change contents of elelments in $data* 
+	// change $data* 
+	const rtv=Scene_Base.prototype.start_before.apply(this,arguments);
+	this.modData();
+	this.createSearchTables(true);
+	return rtv;
+}).add('createSearchTables',function f(isRegenAll){
+	// consider some data is changed after last call
+	// TODO
+}).add('modData',function f(){
+	this.modTraits();
+	this.modEffects(); // consider passive skill traits referrer to a state 
+}).add('modTraits',function f(){
+	// order: editor menu
+	$dataActors  .forEach(this.modTrait1);
+	$dataClasses .forEach(this.modTrait1);
+	//$dataSkills  .forEach(this.modTrait1);
+	//$dataItems   .forEach(this.modTrait1);
+	$dataWeapons .forEach(this.modTrait1);
+	$dataArmors  .forEach(this.modTrait1);
+	$dataEnemies .forEach(this.modTrait1);
+	$dataTroops  .forEach(this.modTrait1);
+	$dataStates  .forEach(this.modTrait1);
+}).add('modTrait1',none).add('modEffects',function f(){
+	// order: editor menu
+	$dataSkills  .forEach(this.modEffect1);
+	$dataItems   .forEach(this.modEffect1);
+}).add('modEffect1',none);
 
 // ---- ---- ---- ---- scene.terminate before/after + clean scene child
 
