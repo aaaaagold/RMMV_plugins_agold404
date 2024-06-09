@@ -1356,6 +1356,13 @@ new Map([
 
 (()=>{ let k,r,t;
 
+if(!window.addEnum) window.addEnum=function(key){
+	if(this[key]) return;
+	this._enumMax|=0;
+	this[key]=++this._enumMax;
+	return this;
+};
+
 t=[
 ({
 2:4,
