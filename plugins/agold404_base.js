@@ -2003,11 +2003,15 @@ new cfc(Game_CharacterBase.prototype).add('update',function f(){
 		dst:[dx,dy],
 		dur:0,
 		durDst:dur,
-	}; }
+	}; }else{
+		this._screenXyData=undefined;
+		this._screenDx=dx|0;
+		this._screenDy=dy|0;
+	}
 	this.updateScreenXy();
 }).add('updateScreenXy',function f(){
 	if(this._screenXyData && this._screenXyData.dur<this._screenXyData.durDst){
-		const r=++this._screenXyData.dur/this._screenXyData.durDst;
+		const r=++this._screenXyData.dur/this._screenXyData.durDst; // dur is casted to int32 in 'setScreenXy' 
 		this._screenDx=r*(this._screenXyData.dst[0]-this._screenXyData.src[0])+this._screenXyData.src[0];
 		this._screenDy=r*(this._screenXyData.dst[1]-this._screenXyData.src[1])+this._screenXyData.src[1];
 	}else this._screenXyData=undefined;
@@ -2018,13 +2022,13 @@ new cfc(Game_CharacterBase.prototype).add('update',function f(){
 		this._opacitySrc=from===undefined?opacity_ori:from;
 		this._opacityDst=opacity;
 		this._opacityDur=0;
-		this._opacityDurDst=dur;
 	}
+	this._opacityDurDst=dur;
 	this.updateOpacity();
 	return rtv;
 }).add('updateOpacity',function f(){
 	if(this._opacityDur<this._opacityDurDst){
-		this._opacity=++this._opacityDur/this._opacityDurDst*(this._opacityDst-this._opacitySrc)+this._opacitySrc;
+		this._opacity=++this._opacityDur/this._opacityDurDst*(this._opacityDst-this._opacitySrc)+this._opacitySrc; // dur is casted to int32 in 'setOpacity' 
 	}else this._opacityDst=this._opacitySrc=this._opacityDur=this._opacityDurDst=undefined;
 },undefined,true,true).add('setPosition',function f(x,y){
 	this._x = this._realX = x;
