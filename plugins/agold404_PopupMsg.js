@@ -46,6 +46,7 @@ new cfc(p).add('update',function f(){
 new cfc(Game_Temp.prototype).add('popupMsg',function f(msg,opt){
 	// opt = {loc:"LU/LD/RU/RD/UL/DL/UR/DR"}
 	opt=opt||f.tbl[0];
+	if(!opt.loc) opt=Object.assign({loc:f.tbl[0].loc,},opt);
 	const root=this._popupMsg_getCont(opt); if(!root) return;
 	msg+='';
 	const lines=msg.split('\n');
@@ -72,7 +73,9 @@ new cfc(Game_Temp.prototype).add('popupMsg',function f(msg,opt){
 	let rtv=$gameTemp._popupMsgs;
 	if(!rtv){
 		rtv=$gameTemp._popupMsgs=new Sprite();
+		rtv._dontDestroyWhenSceneTerminated=true;
 		const rmc=f.tbl[0].removeChild; if(rmc) rtv.removeChild=rmc;
+		//const destroy=f.tbl[0].destroy; if(rmc) rtv.destroy=destroy;
 	}
 	const sc=SceneManager._scene; if(sc && sc!==rtv.parent) sc.addChild(sc._popupMsgs=rtv);
 	if(loc){
@@ -106,6 +109,9 @@ addChild:function f(c){
 	return Sprite.prototype.addChildAt.call(this,c,0);
 },
 removeChild:function (c){
+	return;
+}, // disabled
+destroy:function (c){
 	return;
 }, // disabled
 },
