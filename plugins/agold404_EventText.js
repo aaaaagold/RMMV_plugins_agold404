@@ -61,10 +61,18 @@ new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 	if(!wt){
 		const c=new PIXI.Container();
 		c.addChild(wt=this._textWnd=new Window_Text(0,0,1,1));
+		wt._character=this._character;
 		this.addChild(c);
 	}
 	wt.setText(txt);
 	return this;
+}).add('setCharacter',function f(chr){
+	const rtv=f.ori.apply(this,arguments);
+	if(this._textWnd){
+		this._textWnd._character=chr;
+		this._textWnd._lastText && this._textWnd.reApplyText(false);
+	}
+	return rtv;
 }).add('update',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.updateText();
@@ -72,6 +80,12 @@ new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 }).add('updateText',function f(){
 	const p=this._textWnd&&this._textWnd.parent; if(!p) return;
 	p.y=-this.height*this.anchor.y;
+},undefined,true,true).add('getTextWindow',function f(){
+	return this._textWnd;
+},undefined,true,true).add('reApplyWindowText',function f(){
+	const wnd=this.getTextWindow();
+	if(wnd) wnd.reApplyText(false);
+	return this;
 });
 
 new cfc(Game_Event.prototype).add('setupPageSettings',function f(){
