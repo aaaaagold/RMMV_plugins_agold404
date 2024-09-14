@@ -69,7 +69,17 @@ a.dir_dy,
 },[
 a.dir_dyx2dir,
 a.dir_turn,
-]);
+]).add('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._canDiag=true;
+	return rtv;
+}).add('canPassDiagonally',function f(x,y,h,v){
+	return h&&v&&!this.canDiag_get()?false:f.ori.apply(this,arguments);
+}).add('canDiag_set',function f(val){
+	return this._canDiag=val;
+},undefined,true,true).add('canDiag_get',function f(){
+	return this._canDiag;
+});
 }
 
 { const a=Game_Character;
@@ -189,7 +199,7 @@ chr=>[chr.x,chr.y],
 			if(!$gameMap.isValid(newx,newy)) continue;
 			const newIdx=newy*mapWidth+newx;
 			if( pushed[newIdx]>3 || 
-				!(tileOnly?$gameMap.isPassable(newx,newy,10-dir):this.canPass(newx,newy,10-dir)) // reversed search
+				!(tileOnly?this.isMapPassable(newx,newy,10-dir):this.canPass(newx,newy,10-dir)) // reversed search
 				){
 				pushed[newIdx]|=0; ++pushed[newIdx];
 				continue;
@@ -321,7 +331,17 @@ new cfc(Game_Character.prototype).add('turnTo',function f(arg0){
 	else return $gameMap && $gameMap._events && $gameMap._events[evtId];
 }).add('_mvToLoc',function f(x,y,dir,opt){
 	if(this.x===x && this.y===y){ if(!opt||!opt.repeat--) this.setMoveRouteEmpty(); this.turnTo(dir); }
-	else{ let d=this.findDirTo([[x,y]])||this.findDirectionTo(x,y); this.moveDiagNumpad(d); }
+	else{
+		let randOnNSteps=(opt&&opt.randOnNSteps);
+		if(randOnNSteps&&1<randOnNSteps.length) randOnNSteps=randOnNSteps[0]-0+~~((randOnNSteps[1]-randOnNSteps[0])*Math.random());
+		let isRandSteps=false;
+		if(!isNaN(randOnNSteps-=0)){
+			opt._randOnNSteps|=0;
+			isRandSteps=opt._randOnNSteps++>=randOnNSteps;
+		}
+		if(isRandSteps){ opt._randOnNSteps=0; this.moveRandom(); }
+		else{ let d=this.findDirTo([[x,y]],undefined,opt)||this.findDirectionTo(x,y); this.moveDiagNumpad(d); }
+	}
 },undefined,true,true).add('moveToLoc',function f(evtId,x,y,dir,speed,opt){
 	if(speed) this._moveSpeed=speed;
 	const evt=this._mvToGetTrgt(evtId);
