@@ -841,6 +841,7 @@ function(xhr,url,putCacheOnly){ if(xhr.status<400) this._onXhrLoad(xhr,url,undef
 	}
 	if(putCacheOnly) return;
 	if(cache[1]) return f.tbl[0].call(this,undefined,cache[1]),array;
+	if(array===cache[0]) array=array.slice();
 	this._readLoopComments(new Uint8Array(array));
 	WebAudio._context.decodeAudioData(array,f.tbl[0].bind(this,cache));
 	return array;
