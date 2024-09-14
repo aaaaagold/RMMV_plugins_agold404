@@ -155,7 +155,7 @@ undefined,
 	if(!isCalcH) this.contents.clear();
 	const fh1=this.fittingHeight(1),lh=this.lineHeight();
 	const ch=this.contentsHeight(),yInit=isCalcH?0:-this._scrollTxtY;
-	const textState={x:undefined,left:undefined,y:yInit,height:0,};
+	const textState={x:undefined,left:undefined,y:yInit,height:0,isMeasureOnly:isCalcH};
 	let clean=true,dy=0;
 	for(let x=0;x!==arr.length;++x){
 		if(x){
@@ -168,12 +168,13 @@ undefined,
 		if(textState.y+arr[x].height<0||(isCalcH&&arr[x].height!==undefined)){
 			// skip
 			textState.y+=arr[x].height+nameFieldHeight;
+			//console.log('skip',arr[x].height,nameFieldHeight); // debug
 		}else{
 			clean=false;
 			const face=arr[x].face;
 			$gameMessage._faceName=face.name;
 			this.resetFontSettings();
-			const y=(isCalcH?0:textState.y)+nameFieldHeight;
+			const y=textState.y+nameFieldHeight;
 			if(!isCalcH && hasNameField){
 				let ga,ctx;
 				if(ctx=this.contents.context){
@@ -185,7 +186,7 @@ undefined,
 				this.drawText(arr[x].nameField,f.tbl[0].x+f.tbl[0].nfDx,y-lh);
 			}
 			if(!isCalcH && face.name) this.drawFace(face.name, face.idx, f.tbl[0].x, y);
-			;
+			textState.index=0;
 			this.drawTextEx(arr[x].txt,
 				textState.x=textState.left=this.newLineX(),y,
 				0,0,textState,
@@ -193,11 +194,14 @@ undefined,
 			// calcTextHeight(txt,false) called when '\n' ; returns 1 line height at a time
 			arr[x].height=(textState.y+=textState.height)-y;
 			if(face.name) textState.y=(arr[x].height=Math.max(arr[x].height,Window_Base._faceHeight))+y;
+			//console.log('not skip',arr[x].height,nameFieldHeight); // debug
 		}
+		//console.log('',textState.y); // debug
 		dy+=arr[x].height+nameFieldHeight;
 	}
 	if(isCalcH && !clean && this.contents) this.contents.clear();
 	$gameMessage._faceName=bak_faceName;
+	//console.log('isCalcH',isCalcH,yInit,dy); // debug
 	return dy;
 },[
 {x:0,nfDx:16,nfIcon:83,nfIconMulAlpha:0.75,nfIconDx:-16},
