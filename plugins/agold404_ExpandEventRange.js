@@ -26,11 +26,6 @@ new cfc(Game_Event.prototype).add('getPosKeys',function f(dx,dy){
 	return page;
 }).add('getExpandRange',function f(){
 	return this._expandRange;
-}).add('isCollidedWithEvents',function f(x,y){
-	const er=this.getExpandRange(); if(!(0<er)) return f.ori.apply(this,arguments);
-	const evts=$gameMap.eventsXyNt(x,y);
-	if(1===evts.length&&!evts.uniqueHas(this)||1<evts.length) return true;
-	return false;
 }).add('isNearTheScreen',function f(){
 	return (f.tbl[0] in this.event().meta)||f.ori.apply(this,arguments);
 },t=[
