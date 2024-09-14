@@ -17,13 +17,13 @@
 
 const maxSameCntInSameFrame=2;
 
-AudioManager._seBuffers=new Queue(64);
+AudioManager._seBuffers=new Queue(64); // only used for stopSe
 AudioManager._seCurrentFrame=new Map();
 AudioManager._staticBufferMap=new Map();
 new cfc(AudioManager).add('playSe',function f(se){
 	const n=se&&se.name;
 	if(n){
-		if(!this.seCurrentFrame_add(n)) return;
+		//if(!this.seCurrentFrame_add(n)) return; // wait until actual played
 		if(this._seBuffers.constructor!==Queue) this._seBuffers=new Queue(this._seBuffers);
 		const q=this._seBuffers;
 		while(q.length && q[0] && (q[0].isError()||( q[0].isReady()&&!q[0].isPlaying() )) ) q.pop();
@@ -32,12 +32,15 @@ new cfc(AudioManager).add('playSe',function f(se){
 		buffer.play(false);
 		this._seBuffers.push(buffer);
 	}
-},undefined,false,true).add('stopSe',function f(){
+},undefined,true,true).add('updateSeParameters',function f(buffer,se){
+	buffer.setSeId(se.name);
+	return f.ori.apply(this,arguments);
+}).add('stopSe',function f(){
 	this._seBuffers.forEach(f.tbl[0]);
 	this._seBuffers.length=0;
 },[
 function(buffer){ buffer.stop(); },
-],false,true).add('playStaticSe',function f(se){
+],true,true).add('playStaticSe',function f(se){
 	const buffer=this.loadStaticSe(se);
 	if(buffer){
 		buffer.stop();
@@ -66,8 +69,24 @@ maxSameCntInSameFrame,
 ],false,true).add('seCurrentFrame_clear',function f(){
 	this._seCurrentFrame.clear();
 });
+new cfc(WebAudio.prototype).add('_startPlaying',function f(isLoop,offset){
+	if(!this._checkNotSeOrPlayable()) return;
+	return f.ori.apply(this,arguments);
+}).add('_checkNotSeOrPlayable',function f(){
+	if(this._seId&&!AudioManager.seCurrentFrame_add(this._seId)) return false;
+	return true;
+},undefined,true,true).add('setSeId',function f(id){
+	this._seId=id;
+},undefined,true,true);
 
-setInterval((function(){ this.seCurrentFrame_clear(); }).bind(AudioManager),1000/64);
+new cfc(SceneManager).add('updateManagers',function f(){
+	this.updateManagers_audio();
+	return f.ori.apply(this,arguments);
+}).add('updateManagers_audio',t=function f(){
+	AudioManager.seCurrentFrame_clear();
+},undefined,true,true);
+setInterval(t,1000/64);
+
 
 new cfc(Game_System.prototype).add('seEcho_opt_clear',function(){
 	this._seEcho_opt=undefined;
