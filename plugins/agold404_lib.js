@@ -665,6 +665,7 @@ p.rf=function(i){
 	while(arr.length>i) this.rc(arr[arr.length-1]);
 	return this;
 };
+p.ra=function(a){ this.removeAttribute(a); return this; };
 p.ga=p.getAttribute;
 p.sa=function(a,v){ this.setAttribute(a,v); return this; };
 }
@@ -834,6 +835,22 @@ window.jurl=(url, method, header, data, resType, callback, callback_all_h, callb
 	xhttp.send(data);
 	return xhttp;
 };
+
+})(); // jurl
+
+// getProperty
+(()=>{ let k,r,t;
+
+const getPropertyValue=window.getPropertyValue=function f(obj,key,defaultVal){
+	if(obj&&(key in obj)) return obj[key];
+	else return defaultVal;
+};
+
+})(); // jurl
+
+// empty
+(()=>{ let k,r,t;
+
 
 })(); // jurl
 
