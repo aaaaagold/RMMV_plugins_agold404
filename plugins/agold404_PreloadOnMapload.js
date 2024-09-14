@@ -43,7 +43,7 @@ t.bsR, // 1: \r -> ''
 		ende=obj.note.indexOf(f.tbl[0][1],idx); if(ende<0) ende=obj.note.length;
 		paths.concat_inplace(obj.note.slice(idx+f.tbl[0][0].length,ende).replace(f.tbl[1][0],f.tbl[1][1]).split('\n'));
 	}
-	const rplc=f.tbl[3-!!Decrypter.hasEncryptedAudio];
+	const rplc=f.tbl[2];
 	while(paths.length){
 		const s=paths.pop();
 		if(!s||S.has(s)) continue;
@@ -53,8 +53,7 @@ t.bsR, // 1: \r -> ''
 },[
 ['<preloadAudios>','</preloadAudios>'], // 0: start , end 
 t.bsR, // 1: \r -> ''
-[/\.ogg$/,'.rpgmvo'], // 2: replace ext
-[/\.rpgmvo$/,'.ogg'], // 3: replace ext
+[/\.rpgmvo$/,'.ogg'], // 2: replace ext
 ]);
 
 })();
