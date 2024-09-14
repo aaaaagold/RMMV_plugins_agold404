@@ -45,7 +45,7 @@ cancel:()=>TouchInput.isCancelled(),
 },
 ]).add('setupChild',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	if(this._childInterpreter) this._childInterpreter._parentInterpreter=this._childInterpreter;
+	if(this._childInterpreter) this._childInterpreter._parentInterpreter=this;
 	return rtv;
 });
 }
@@ -825,7 +825,7 @@ new cfc(WebAudio.prototype).add('_load',function f(url,noerr,putCacheOnly){
 		url=Decrypter.extToEncryptExt(url);
 		xhr._needDecrypt=true;
 	}
-	const cache=this._getCache(url); if(cache) return !(this._putCacheOnly||putCacheOnly)&&this._onXhrLoad(undefined,url,cache.slice());
+	const cache=this._getCache(url); if(cache) return !(this._putCacheOnly||putCacheOnly)&&this._onXhrLoad(undefined,url,cache);
 	xhr.open('GET',url);
 	xhr.responseType='arraybuffer';
 	xhr.onload=f.tbl[0].bind(this,xhr,url,this._putCacheOnly||putCacheOnly);
@@ -833,18 +833,20 @@ new cfc(WebAudio.prototype).add('_load',function f(url,noerr,putCacheOnly){
 	xhr.send();
 },[
 function(xhr,url,putCacheOnly){ if(xhr.status<400) this._onXhrLoad(xhr,url,undefined,putCacheOnly); },
-],false,true).add('_onXhrLoad',function f(xhr,url,arrayBuffer,putCacheOnly){
-	let array=arrayBuffer||xhr&&xhr.response;
-	if(!arrayBuffer){
+],false,true).add('_onXhrLoad',function f(xhr,url,cache,putCacheOnly){
+	let array=cache&&cache[0]||xhr&&xhr.response;
+	if(!cache){
 		if(xhr._needDecrypt && Decrypter.hasEncryptedAudio && !ImageManager.isDirectPath(url)) array=Decrypter.decryptArrayBuffer(array);
-		this._setCache(url,array.slice());
+		this._setCache(url,cache=[array.slice(),]);
 	}
 	if(putCacheOnly) return;
+	if(cache[1]) return f.tbl[0].call(this,undefined,cache[1]),array;
 	this._readLoopComments(new Uint8Array(array));
-	WebAudio._context.decodeAudioData(array,f.tbl[0].bind(this));
+	WebAudio._context.decodeAudioData(array,f.tbl[0].bind(this,cache));
 	return array;
 },[
-function(buffer){
+function(cacheObj,buffer){
+	if(cacheObj) cacheObj[1]=buffer;
 	this._buffer=buffer;
 	this._totalTime=buffer.duration;
 	if(this._loopLength>0&&this._sampleRate>0){
@@ -860,8 +862,9 @@ function(buffer){
 	this._noerr=noerr;
 	this._putCacheOnly=putCacheOnly;
 	return f.ori.apply(this,arguments);
-}).add('_setCache',function f(url,arrayBuffer){
-	this.getCacheCont().setCache(url,arrayBuffer,arrayBuffer.byteLength);
+}).add('_setCache',function f(url,cacheObj){
+	// cacheObj = [arrayBuffer,decodedBuffer]
+	this.getCacheCont().setCache(url,cacheObj,cacheObj[0].byteLength);
 },undefined,false,true).add('_getCache',function f(url){
 	return this.getCacheCont().getCache(url);
 },undefined,false,true).add('getCacheCont',function f(){
@@ -2895,6 +2898,122 @@ Input.keyMapper[18]='alter';
 for(let x=96;x<=105;++x) delete Input.keyMapper[x]; // num pad when num lock on
 
 })(); // modify key map
+
+// ---- ---- ---- ---- Game_Interpreter.requestImages
+
+(()=>{ let k,r,t;
+
+new cfc(Game_Interpreter).add('requestImages',function f(list,rtv){
+	if(list) list.forEach(f.tbl[0].bind(rtv=rtv||{}));
+},t=[
+function f(command){
+	// bind to rtv
+	const func=f.tbl[command.code];
+	return func&&f.tbl[command.code](command.parameters,this);
+}, // 0: forEach
+{
+101:params=>ImageManager.requestFace(params[0]), // Show Text
+117:(params,rtv)=>{
+	const commonEvent=$dataCommonEvents[params[0]];
+	if(commonEvent){
+		if(!rtv.commonEvtIdSet) rtv.commonEvtIdSet=new Set();
+		if(!rtv.commonEvtIdSet.has(params[0])){
+			rtv.commonEvtIdSet.add(params[0]);
+			Game_Interpreter.requestImages(commonEvent.list,rtv);
+		}
+	}
+}, // Common Event
+129:param=>{
+	const actor=$gameActors.actor(params[0]);
+	if(actor && params[1]===0){
+		const name=actor.characterName();
+		ImageManager.requestCharacter(name);
+	}
+}, // Change Party Member
+205:function f(params){
+	if(params[1]) params[1].list.forEach(f.tbl[205]);
+}, // Set Movement Route
+212:params=>{
+	if(params[1]){
+		const animation=$dataAnimations[params[1]];
+		ImageManager.requestAnimation(animation.animation1Name, animation.animation1Hue);
+		ImageManager.requestAnimation(animation.animation2Name, animation.animation2Hue);
+	}
+}, // 337: // Show Animation, Show Battle Animation
+216:function f(params){
+	if(params[0]===0) $gamePlayer.followers().forEach(f.tbl[216]);
+}, // Change Player Followers
+231:params=>ImageManager.requestPicture(params[1]), // Show Picture
+282:params=>{
+	const tileset=$dataTilesets[params[0]];
+	tileset.tilesetNames.forEach(f.tbl[282]);
+}, // Change Tileset
+283:params=>{
+	if(!$gameParty) return;
+	if($gameParty.inBattle()){
+		ImageManager.requestBattleback1(params[0]);
+		ImageManager.requestBattleback2(params[1]);
+	}
+}, // Change Battle Back
+284:params=>($gameParty.inBattle()||ImageManager.requestParallax(params[0])), // Change Parallax
+322:params=>{
+	ImageManager.requestCharacter(params[1]);
+	ImageManager.requestFace(params[3]);
+	ImageManager.requestSvActor(params[5]);
+}, // Change Actor Images
+323:params=>($gameMap.vehicle(params[0])&&ImageManager.requestCharacter(params[1])), // Change Vehicle Image
+336:params=>{
+	if(!$gameSystem) return;
+	const enemy=$dataEnemies[params[1]];
+	const imgMgr=ImageManager;
+	($gameSystem.isSideView()?imgMgr.requestSvEnemy:imgMgr.requestEnemy).call(imgMgr,enemy.battlerName,enemy.battlerHue);
+}, // Enemy Transform
+}, // 1: cmd funcs
+{
+205:command=>(command.code===Game_Character.ROUTE_CHANGE_IMAGE && ImageManager.requestCharacter(command.parameters[0])),
+216:follower=>{
+	const name=follower.characterName();
+	ImageManager.requestCharacter(name);
+},
+282:tilesetName=>ImageManager.requestTileset(tilesetName),
+}, // 2: helpers
+],true,true);
+t[0].tbl=t[1];
+for(let k in t[1]) t[1][k].tbl=t[2];
+t[1][337]=t[1][212];
+
+new cfc(Game_Interpreter.prototype).add('setup',function f(list,eventId,isNoRecurrsiveRequestImages){
+	this.clear();
+	this._mapId=$gameMap.mapId();
+	this._eventId=eventId||0;
+	this._list=list;
+},undefined,true,true);
+
+new cfc(DataManager).add('onLoad_after_map',function f(obj){
+	const rtv=f.ori&&f.ori.apply(this,arguments);
+	this.onLoad_after_map_requestEventsImages();
+	return rtv;
+}).add('onLoad_after_map_requestEventsImages',function f(obj){
+	// decided to do it before onLoad is called
+	// leaving this function to be a placeholder
+	//$dataMap.events.forEach(f.tbl[1],{});
+},t=[
+function f(page){
+	Game_Interpreter.requestImages(page.list,this);
+}, // 0: forEach page
+function f(evtd){
+	if(evtd) evtd.pages.forEach(f.tbl[0],this);
+}, // 1: forEach evtd
+]).add('onLoad_before_map',function f(obj){
+	const rtv=f.ori&&f.ori.apply(this,arguments);
+	this.onLoad_before_map_requestEventsImages();
+	return rtv;
+}).add('onLoad_before_map_requestEventsImages',function f(obj){
+	$dataMap.events.forEach(f.tbl[1],{});
+},t);
+t[1].tbl=t;
+
+})(); // Game_Interpreter.requestImages
 
 // ---- ---- ---- ---- fix bug
 
