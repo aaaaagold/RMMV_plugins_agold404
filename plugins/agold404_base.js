@@ -686,7 +686,11 @@ new cfc(Window_Selectable.prototype).add('processCursorMove',function f(){
 	const rectBtm=this.itemRect(this.maxItems()-this.maxCols());
 	this.downArrowVisible=this.contentsHeight()<rectBtm.y+rectBtm.height;
 	this.upArrowVisible=rectBeg.y<0;
-},undefined,false,true);
+},undefined,false,true).add('select',function f(idx){
+	const rtv=f.ori.apply(this,arguments);
+	this.onSelect.apply(this,arguments);
+	return rtv;
+}).add('onSelect',none);
 t[0].forEach(info=>Input.keyMapper[info[0]]=info[1]);
 t=undefined;
 //
@@ -1668,6 +1672,52 @@ new cfc(PIXI.Container.prototype).add('containsGlobalPoint',function f(x,y){
 },[
 {x:0,y:0},
 ]);
+
+new cfc(Game_Item.prototype).add('getItemKeyInfo',function f(){
+	return [(this._dataClass?this._dataClass[0]:"_"),this._itemId];
+},undefined,true,true).add('getItemKey',function f(){
+	return this.getItemKeyInfo().join(f.tbl[0]);
+},t=[
+":",
+],true,true);
+new cfc(Game_Item).add('itemKeyInfoToDataobj',function f(itemKeyInfo){
+	if(!itemKeyInfo) return false;
+	if(!f.tbl[0]){ f.tbl[0]={
+		i:$dataItems,
+		w:$dataWeapons,
+		a:$dataArmors,
+	}; }
+	const cont=f.tbl[0][itemKeyInfo[0]];
+	return cont&&cont[itemKeyInfo[1]];
+},[
+undefined,
+],true,true).add('itemKeyToDataobj',function f(itemKey){
+	return this.itemKeyInfoToDataobj(itemKey&&itemKey.split(f.tbl[0]));
+},t,true,true).add;
+
+new cfc(Window_ItemList.prototype).add('drawItemNumber',function f(item, x, y, width){
+	if(this.needsNumber()) this.drawItemNumber_num(item,x,y,width,$gameParty.numItems(item));
+},undefined,true,true).add('drawItemNumber_num',function f(item,x,y,width,num){
+	const digitsWidth=this.textWidth('0'.repeat(this.drawItemNumber_getReservedDigitsCnt()));
+	this.drawText(':',x,y,width-digitsWidth,'right');
+	this.drawText(num+'',x+width-digitsWidth,y,digitsWidth,'right');
+},undefined,true,true).add('drawItemNumber_getReservedDigitsCnt',function f(){
+	return f.tbl[0];
+},[
+4,
+],true,true).add('drawItem',function f(idx){
+	this.drawItemByIndex(idx);
+},undefined,true,true).add('drawItemByIndex',function f(idx){
+	const item=this._data[idx];
+	if(item) this.drawItemByItemAndRect(item,this.itemRect(idx));
+},undefined,true,true).add('drawItemByItemAndRect',function f(item,rect){
+	const numberWidth=this.numberWidth();
+	rect.width-=this.textPadding();
+	this.changePaintOpacity(this.isEnabled(item));
+	this.drawItemName(item, rect.x, rect.y, rect.width - numberWidth);
+	this.drawItemNumber(item, rect.x, rect.y, rect.width);
+	this.changePaintOpacity(1);
+},undefined,true,true);
 
 })(); // shorthand
 
@@ -2900,6 +2950,41 @@ for(let x=96;x<=105;++x) delete Input.keyMapper[x]; // num pad when num lock on
 
 })(); // modify key map
 
+// ---- ---- ---- ---- Window_MenuCommand.prototype.needsCommand
+
+(()=>{ let k,r,t;
+
+new cfc(Window_MenuCommand.prototype).add('needsCommand',function f(name){
+	const flags=$dataSystem.menuCommands;
+	if(flags&&(name in f.tbl[0])) return flags[f.tbl[0][name]];
+	return true;
+},[
+{
+'item':0,
+'skill':1,
+'equip':2,
+'status':3,
+'formation':4,
+'save':5,
+}, // 0: name2idx
+],true,true).add('addMainCommands',function f(){
+	f.tbl[0].forEach(f.tbl[1].bind(this,this.areMainCommandsEnabled()));
+},[
+[
+'item',
+'skill',
+'equip',
+'status',
+], // 0: cmd keys
+function f(partyExists,key){
+	if(this.needsCommand(key)) this.addCommand(TextManager[key],key,partyExists&&this.isConfEnabledCommand(key));
+}, // 1: forEach
+],true,true).add('isConfEnabledCommand',function f(name){
+	return true;
+},undefined,true,true);
+
+})(); // Window_MenuCommand.prototype.needsCommand
+
 // ---- ---- ---- ---- Game_Interpreter.requestImages
 
 (()=>{ let k,r,t;
@@ -3029,7 +3114,12 @@ new cfc(Window_Selectable.prototype).add('maxPageRows',function(isReturnReal){
 	const rect=this.itemRect_curr();
 	const c=this._windowContentsSprite;
 	return c&&rect.overlap(c);
-},undefined,true,true);
+},undefined,true,true).add('processCursorMove',function f(){
+	const idx=this.index();
+	const rtv=f.ori.apply(this,arguments);
+	if(isNaN(this.index())) this.select(idx);
+	return rtv;
+});
 
 })(); // fix bug
 
