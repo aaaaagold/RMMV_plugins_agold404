@@ -54,7 +54,7 @@ new cfc(Scene_ItemBase.prototype).add('create_tunePositions',function f(){
 	this._helpWindow.y=Graphics.height-this._helpWindow.height;
 	this.addChild(this._actorWindow);
 });
-Window_ItemList.prototype.maxCols=()=>4;
+//Window_ItemList.prototype.maxCols=()=>4;
 new cfc(Scene_Item.prototype).add('create',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.create_tunePositions();
