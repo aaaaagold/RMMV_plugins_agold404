@@ -10,7 +10,7 @@
 const _DateNow=Date.now();
 
 {
-const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri)=>{
+const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri,moduleName)=>{
 	if(is_putDeepest && p[k] && p[k].ori){
 		let fp=p[k],fc=p[k].ori,fs=new Set();
 		do{
@@ -31,6 +31,8 @@ const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri)=>{
 	}
 	if(is_notUsingOri) f.ori=undefined;
 	f.tbl=tbl;
+	f._funcName=k;
+	f._moduleName=moduleName;
 	return p;
 };
 const a=function cfc(p){
@@ -39,8 +41,8 @@ const a=function cfc(p){
 }
 const p=a.prototype;
 p.constructor=a;
-p.add=function(key,f,t,d,u){
-	cf(this._p,key,f,t,d,u);
+p.add=function(key,f,t,d,u,m){
+	cf(this._p,key,f,t,d,u,m);
 	return this;
 };
 p.getP=function(){ return this._p; };
