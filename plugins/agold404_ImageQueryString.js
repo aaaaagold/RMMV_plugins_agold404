@@ -30,8 +30,8 @@ const tuneN=(n,meta)=>{
 
 { const p=Game_Event.prototype;
 p._characterName_grayscalize=function f(n){
-	const data=this.event();
-	if(data && data.meta.grayscale && n) n=tuneN(n,data.meta);
+	const meta=this.getMeta();
+	if(meta.grayscale && n) n=tuneN(n,meta);
 	return n;
 };
 k='characterName';
