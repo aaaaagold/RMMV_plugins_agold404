@@ -2676,7 +2676,7 @@ new cfc(Game_Character.prototype).add('getPosKey',function(dx,dy){
 });
 
 new cfc(Game_Map.prototype).add('getPosKey',function f(x,y){
-	return $dataMap&&(0|x)+$dataMap.width*((y<<2)|2);
+	return $dataMap&&$gameMap.roundX(0|x)+$dataMap.width*(($gameMap.roundY(0|y)<<2)|2);
 }).add('update',function f(){
 	this.update_locTbl();
 	return f.ori.apply(this,arguments);
@@ -2770,13 +2770,15 @@ function(evt,i,a){
 	}
 },
 ]).add('update_locTbl_addEvt',function f(evt,coord){
+	return this._update_locTbl_addEvt_byKey(evt,coord,evt.getPosKey());
+}).add('_update_locTbl_addEvt_byKey',function f(evt,coord,key){
 	if(!coord) return;
-	const key=evt.getPosKey();
 	let cont=coord.get(key); if(!cont) coord.set(key,cont=[]);
 	return cont.uniquePush(evt);
 }).add('update_locTbl_delEvt',function f(evt,coord,x,y){
+	return this._update_locTbl_delEvt_byKey(evt,coord,this.getPosKey(x,y));
+}).add('_update_locTbl_delEvt_byKey',function f(evt,coord,key){
 	if(!coord) return;
-	const key=this.getPosKey(x,y);
 	const cont=coord.get(key); if(!cont) return;
 	return cont.uniquePop(evt);
 }).add('update_locTbl_chkEvtErr',function f(evt){
