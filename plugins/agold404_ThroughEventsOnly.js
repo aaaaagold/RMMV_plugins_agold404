@@ -27,24 +27,18 @@
 
 new cfc(Game_Event.prototype).add('setupPageSettings',function f(){
 	const page=f.ori.apply(this,arguments);
-	this.setThroughEvents(page&&page.meta,page);
+	this.setThroughEvents(page);
 	return page;
-}).add('setThroughEvents',function f(m2,page){
-	const evtd=this.event();
-	const m1=evtd&&evtd.meta;
-	if(!m1) return;
-	this._throughEvents_player=getPropertyValue(m2,'throughPlayers',m1.throughPlayers);
-	this._throughEvents_allEvents=getPropertyValue(m2,'throughEventsAll',m1.throughEventsAll);
-	this._throughEvents_myTag=getPropertyValue(m2,'throughEventsMyTag',m1.throughEventsMyTag);
+}).add('setThroughEvents',function f(page){
+	const meta=this.getMeta();
+	this._throughEvents_player=getPropertyValue(meta,'throughPlayers',false);
+	this._throughEvents_allEvents=getPropertyValue(meta,'throughEventsAll',false);
+	this._throughEvents_myTag=getPropertyValue(meta,'throughEventsMyTag',undefined);
 	{
-		const tagStr=m1.throughEventsOnlyOnTags;
-		evtd._throughEventsOnlyOnTags=evtd._throughEventsOnlyOnTags||(tagStr!=null&&tagStr.split&&(tagStr?tagStr.split(' '):f.tbl[0]))||f.tbl[0];
-	}
-	if('throughEventsOnlyOnTags' in m2){
-		const tagStr=m2.throughEventsOnlyOnTags;
+		const tagStr=meta.throughEventsOnlyOnTags;
 		page._throughEventsOnlyOnTags=page._throughEventsOnlyOnTags||(tagStr!=null&&tagStr.split&&(tagStr?tagStr.split(' '):f.tbl[0]))||f.tbl[0];
 	}
-	this._throughEvents_onlyOnTags=getPropertyValue(page,'_throughEventsOnlyOnTags',evtd._throughEventsOnlyOnTags).slice();
+	this._throughEvents_onlyOnTags=getPropertyValue(page,'_throughEventsOnlyOnTags',f.tbl[0]).slice();
 },[
 [], // 0: empty
 'throughPlayers',
