@@ -46,7 +46,7 @@ p.add=function(key,f,t,d,u,m){
 	cf(this._p,key,f,t,d,u,m);
 	return this;
 };
-p.addNew=function(key,f,t){
+p.addBase=function(key,f,t){
 	cf(this._p,key,f,t,true,true);
 	return this;
 };
@@ -761,11 +761,6 @@ const getWiderPoints=window.getWiderPoints=(pt3,width,isNormalToCoordinates,dim)
 	const len2=Math.sqrt(vec2[0]*vec2[0]+vec2[1]*vec2[1]);
 	const u1=[vec1[0]/len1*width,vec1[1]/len1*width,];
 	const u2=[vec2[0]/len2*width,vec2[1]/len2*width,];
-if(0){
-	const d1=[-u1[0],-u1[1]];
-	const d2=[-u1[0],-u1[1]];
-	const d3=[ u3[0], u3[1]];
-}
 	const rtv=[
 		[pt3[0][0]-u1[0],pt3[0][1]-u1[1],],
 		[pt3[1][0]+u1[0]-u2[0],pt3[1][1]+u1[1]-u2[1],],
