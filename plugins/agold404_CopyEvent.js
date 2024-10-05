@@ -15,7 +15,20 @@ new cfc(Game_System.prototype).add('cpevt_loadevt',function(mapid){
 		this._cpevt.mapid=mapid;
 		this._cpevt.evts.length=0;
 	}
-	for(let x=0,arr=this._cpevt.evts;x!==arr.length;++x) $dataMap.events[arr[x].id]=arr[x];
+	for(let arr=this._cpevt.evts,x=arr.length;x--;){
+		if($dataMap.events[arr[x].id]){
+			const evts=$gameMap&&$gameMap._events;
+			const oriId=arr[x].id;
+			const newId=arr[x].id=Math.max($dataMap.events.length,evts&&evts.length||0);
+			const evt=evts[oriId];
+			if(evt){
+				evt._eventId=newId;
+				evts[oriId]=null;
+				evts[newId]=evt;
+			}
+		}
+		$dataMap.events[arr[x].id]=arr[x];
+	}
 	$gameSystem._cpevted=1;
 });
 
@@ -37,7 +50,7 @@ new cfc(Game_Map.prototype).add('setup',function f(mapid){
 	if(!evtds[evtid]) return; // no such event
 	let newid=evtds.length|0; while(this._events[newid]) ++newid;
 	{
-		const newobjd=JSON.parse(JSON.stringify(evtds[evtid]));
+		const newobjd=Object.assign({},evtds[evtid]);
 		newobjd.id=newid;
 		newobjd.x=x;
 		newobjd.y=y;
@@ -46,6 +59,7 @@ new cfc(Game_Map.prototype).add('setup',function f(mapid){
 	}
 	const newevt=new Game_Event(this._mapId,newid);
 	if(d) newevt._direction=d;
+	newevt._srcEvtId=evtid;
 	this._events[newid]=newevt;
 	let sc=SceneManager._scene,sp;
 	if(sc.constructor===Scene_Map && (sp=sc._spriteset)){
@@ -54,7 +68,7 @@ new cfc(Game_Map.prototype).add('setup',function f(mapid){
 		sp._tilemap.addChild(spc);
 	}
 	return newid;
-});
+},undefined,true,true);
 
 new cfc(Game_Event.prototype).add('update',function f(){
 	return this.event()&&f.ori.apply(this,arguments);
