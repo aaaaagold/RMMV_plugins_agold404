@@ -181,7 +181,16 @@ r:0|0,
 u:0|0,
 d:0|0,
 },
-]);
+],true,true).add('getRect_local',function f(){
+	const a=this.anchor;
+	const w=this.width,h=this.height;
+	return new Rectangle(-a.x*w,-a.y*h,w,h);
+},undefined,true,true).add('containsPoint_global',function f(xy){
+	const pt=this.toLocal(xy);
+	return this.getRect_local().contains(pt.x,pt.y);
+},undefined,true,true).add('containsPoint_local',function f(xy){
+	return this.getRect_local().contains(xy.x,xy.y);
+},undefined,true,true);
 new cfc(Graphics).add('isInScreen_rect',function(rect){
 	return !(rect.x>=this.boxWidth || rect.x+rect.width<0 || rect.y>=this.boxHeight || rect.y+rect.height<0);
 });
@@ -1080,12 +1089,14 @@ new cfc(p).add('_createAllParts',function f(){
 
 (()=>{ let k,r,t;
 
-new cfc(Input).add('_onKeyUp',function f(event){
+new cfc(Input).add('_getKeyName',function f(event){
+	return this.keyMapper[event.keyCode]||event.keyCode;
+},undefined,true,true).add('_onKeyUp',function f(event){
 	return this._onKeyUp_do.apply(this,arguments);
 },undefined,true,true).add('_onKeyUp_do',function f(event){
-	const buttonName=this.keyMapper[event.keyCode];
-	this._currentState[buttonName||event.keyCode]=false;
-	if(event.keyCode===0) this.clear(); // For QtWebEngine on OS X
+	const btnName=this._getKeyName(event);
+	this._currentState[btnName]=false;
+	if(event.keyCode===0) this.clear(); // it is said that: For QtWebEngine on OS X
 },undefined,true,true).add('_onKeyDown',function f(event){
 	return this._onKeyDown_do.apply(this,arguments);
 },undefined,true,true).add('_onKeyDown_do',function f(event){
@@ -1096,9 +1107,9 @@ new cfc(Input).add('_onKeyUp',function f(event){
 		return;
 	}
 */
-	const buttonName=this.keyMapper[event.keyCode];
-	if(this._onKeyDown_okForRetryResource()) return;
-	this._currentState[buttonName||event.keyCode]=true;
+	const btnName=this._getKeyName(event);
+	if(this._onKeyDown_okForRetryResource(btnName)) return;
+	this._currentState[btnName]=true;
 },undefined,true,true).add('_onKeyDown_okForRetryResource',function f(buttonName){
 	const rtv=Graphics._errorShowed&&buttonName==='ok';
 	ResourceHandler.retry();
@@ -1134,6 +1145,17 @@ new cfc(Window.prototype).add('_updateCursor',function f(){
 },[
 0.5,
 ],true,true);
+
+
+new cfc(Sprite.prototype).add('update',function f(){
+	this.update_before();
+	this.children.forEach(f.tbl[0]);
+	this.update_after();
+},[
+child=>child.update&&child.update(), // 0: forEach
+],true,true).add('update_before',none,
+undefined,true,true).add('update_after',none,
+undefined,true,true);
 
 })(); // refine for future extensions
 
@@ -1449,8 +1471,8 @@ new cfc(SceneManager).add('getSprite',function f(obj){
 	return m&&m.get(obj);
 },[
 new Map([
-[Scene_Map,sc=>sc._chr2sp],
-[Scene_Battle,sc=>sc._btlr2sp],
+[Scene_Map,sc=>sc&&sc._chr2sp],
+[Scene_Battle,sc=>sc&&sc._btlr2sp],
 ]), // 0: constructor -> spritesMap
 ]);
 
@@ -1713,7 +1735,45 @@ new cfc(PIXI.Container.prototype).add('containsGlobalPoint',function f(x,y){
 	return rect.contains(x,y);
 },[
 {x:0,y:0},
-]);
+],undefined,true,true);
+
+new cfc(PIXI.Container.prototype).add('renderCanvas',function f(renderer){
+	const noDraw=this.renderCanvas_retVal_noDraw();
+	let rtv;
+	if((rtv=this.renderCanvas_clipPoints(f.ori,arguments))!==noDraw) return rtv;
+	return f.ori.apply(this,arguments);
+}).add('renderCanvas_retVal_noDraw',function f(){
+	return f.tbl[0];
+},[
+{}, // 0: ret
+],true,true).add('renderCanvas_clipPoints',function f(renderFunc,argv){
+	const points=this._clipPointExtWidth-0?getWiderPoints(this._clipPoints,this._clipPointExtWidth):this._clipPoints;
+	const renderer=argv[0]; if(!renderer||!points||!(points.length>=3)||!this.parent) return this.renderCanvas_retVal_noDraw();
+	const ctx=renderer.context;
+	const t=ctx.getTransform();
+	ctx.save(); // save before clipping
+	//ctx.imageSmoothingEnabled=true; // slow
+	ctx.setTransform(1,0,0,1,0,0);
+	ctx.beginPath();
+	for(let i=0,sz=points.length;i<sz;++i){
+		const p=this.parent?this.parent.toGlobal({x:points[i][0],y:points[i][1],}):({x:points[i][0],y:points[i][1],});
+		if(i) ctx.lineTo(p.x,p.y);
+		else ctx.moveTo(p.x,p.y);
+	}
+	ctx.clip();
+	ctx.setTransform(t.a,t.b,t.c,t.d,t.e,t.f);
+	const rtv=renderFunc.apply(this,argv);
+	ctx.restore(); // restore clipping
+	return rtv;
+},undefined,true,true).add('setClipPoints',function f(points,extWidth){
+	this._clipPointExtWidth=extWidth-0||0;
+	return this._clipPoints=points; // this.parent view
+},undefined,true,true);
+new cfc(Sprite.prototype).add('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._clipPoints=undefined;
+	return rtv;
+});
 
 new cfc(Game_Item.prototype).add('getItemKeyInfo',function f(){
 	return [(this._dataClass?this._dataClass[0]:"_"),this._itemId];
@@ -1735,7 +1795,7 @@ new cfc(Game_Item).add('itemKeyInfoToDataobj',function f(itemKeyInfo){
 undefined,
 ],true,true).add('itemKeyToDataobj',function f(itemKey){
 	return this.itemKeyInfoToDataobj(itemKey&&itemKey.split(f.tbl[0]));
-},t,true,true).add;
+},t,true,true);
 
 new cfc(Window_ItemList.prototype).add('drawItemNumber',function f(item, x, y, width){
 	if(this.needsNumber()) this.drawItemNumber_num(item,x,y,width,$gameParty.numItems(item));
@@ -1760,6 +1820,42 @@ new cfc(Window_ItemList.prototype).add('drawItemNumber',function f(item, x, y, w
 	this.drawItemNumber(item, rect.x, rect.y, rect.width);
 	this.changePaintOpacity(1);
 },undefined,true,true);
+
+new cfc(Game_Battler.prototype).add('getParty',function f(){
+	const func=f.tbl[0].get(this.constructor);
+	return func&&func();
+},[
+new Map([
+[Game_Enemy,()=>$gameTroop,],
+[Game_Actor,()=>$gameParty,],
+]), // 0: 
+]);
+
+new cfc(Bitmap.prototype).addNew('mirror_h',function f(forceRegen){
+	if(!this.isReady()) return;
+	return this._mirror_h_do(forceRegen);
+}).addNew('_mirror_h_do',function f(forceRegen){
+	if(!forceRegen&&this._mirrorBmp_h) return this._mirrorBmp_h;
+	const rtv=new Bitmap(1,1);
+	const w=this.width,h=this.height;
+	rtv.resize(w,h);
+	rtv.clear();
+	rtv.bltImage({width:w,height:h,_image:this._canvas.mirror_h()},0,0,w,h,0,0,w,h);
+	rtv._loadingState='loaded';
+	return this._mirrorBmp_h=rtv;
+}).addNew('mirror_v',function f(forceRegen){
+	if(!this.isReady()) return;
+	return this._mirror_v_do(forceRegen);
+}).addNew('_mirror_v_do',function f(forceRegen){
+	if(!forceRegen&&this._mirrorBmp_v) return this._mirrorBmp_v;
+	const rtv=new Bitmap(1,1);
+	const w=this.width,h=this.height;
+	rtv.resize(w,h);
+	rtv.clear();
+	rtv.bltImage({width:w,height:h,_image:this._canvas.mirror_v()},0,0,w,h,0,0,w,h);
+	rtv._loadingState='loaded';
+	return this._mirrorBmp_v=rtv;
+});
 
 })(); // shorthand
 
@@ -1961,17 +2057,84 @@ p._refresh=function f(){ SceneManager.addRefresh(this); };
 
 })(); // lazy refresh
 
-// ---- ---- ---- ---- btlr.getParty
+// ---- ---- ---- ---- drawMask API
 
-new cfc(Game_Battler.prototype).add('getParty',function f(){
-	const func=f.tbl[0].get(this.constructor);
-	return func&&func();
+(()=>{ let k,r,t;
+
+(t=function f(){ return this.parent&&f.ori.apply(this,arguments); }).ori=Sprite.prototype.refresh_do;
+new cfc(PIXI.Container.prototype).add('drawMask_set',function f(x,y,width,height){
+	const info={x:x|0,y:y|0,w:width|0,h:height|0};
+	const isInvalid=!(info.w>=0)||!(info.h>=0);
+	if(Graphics.isWebGL()) return this.drawMask_set_WebGL(info,isInvalid);
+	if(isInvalid) return this._drawMask=undefined;
+	return this._drawMask=info;
+},undefined,true,true).add('drawMask_set_WebGL',function f(info,isInvalid){
+	if(!PIXI.Container._bmp1x1) (PIXI.Container._bmp1x1=new Bitmap(1,1)).fillAll(f.tbl[0]);
+	if(this.mask){ this.removeChild(this.mask); this.mask=null; }
+	if(this._drawMaskSp) this._drawMaskSp.destroy();
+	if(isInvalid) return;
+	if(this.parent) this.parent.addChild(this._drawMaskSp=new Sprite(PIXI.Container._bmp1x1));
+	const msk=this._drawMaskSp;
+	if(this.mask!==msk){
+		msk.refresh_do=f.tbl[1];
+		this.update_drawMaskSp(msk,info);
+		this.mask=msk;
+	}
+	return this._drawMask=info;
 },[
-new Map([
-[Game_Enemy,()=>$gameTroop,],
-[Game_Actor,()=>$gameParty,],
-]), // 0: 
-]);
+'#FFFFFF',
+t,
+],true,true).add('drawMask_clear',function f(){
+	this._drawMask=undefined;
+	if(Graphics.isWebGL()) this.drawMask_set_WebGL(undefined,true);
+},undefined,true,true).add('renderCanvas',function f(renderer){
+	return this.renderCanvas_drawMask(f.ori,arguments);
+}).add('renderCanvas_drawMask',function f(renderFunc,argv){
+	const conf=this._drawMask;
+	const renderer=argv[0]; if(!renderer||!conf|!this.parent) return renderFunc.apply(this,argv);
+	const ctx=renderer.context;
+	const p0=this.parent.toGlobal({x:this.x+conf.x,y:this.y+conf.y}),p1=this.parent.toGlobal({x:this.x+conf.x+conf.w,y:this.y+conf.y+conf.h});
+	const t=ctx.getTransform();
+	ctx.save(); // save before clipping
+	ctx.setTransform(1,0,0,1,0,0);
+	ctx.beginPath();
+	ctx.moveTo(p0.x,p0.y);
+	ctx.lineTo(p1.x,p0.y);
+	ctx.lineTo(p1.x,p1.y);
+	ctx.lineTo(p0.x,p1.y);
+	ctx.clip();
+	ctx.setTransform(t.a,t.b,t.c,t.d,t.e,t.f);
+	const rtv=renderFunc.apply(this,argv);
+	ctx.restore(); // restore clipping
+	return rtv;
+},undefined,true,true).add('update_drawMaskSp',function f(msk,info){
+	msk=msk||this._drawMaskSp;
+	info=info||this._drawMask;
+	if(!msk||!info) return;
+	const anchor=this.anchor;
+	const scale=this.scale;
+	const W=scale.x*this.width;
+	const H=scale.y*this.height;
+	msk.position.set(
+		this.x+info.x, //-anchor.x*W,
+		this.y+info.y, //-anchor.y*H,
+	);
+	msk.scale.set(
+		info.w*scale.x,
+		info.h*scale.y,
+	);
+},undefined,true,true);
+new cfc(Sprite.prototype).add('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.update_drawMaskSp();
+	return rtv;
+}).add('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._drawMaskSp=undefined;
+	return rtv;
+});
+
+})(); // drawMask API
 
 // ---- ---- ---- ---- Tilemap / Spriteset
 
@@ -2497,6 +2660,7 @@ new cfc(p).add('render',function f(stage){
 		}
 		this.renderOtherEffects(stage);
 		this._skipCount=Math.min((Date.now()-startTime)>>4,this._maxSkip);
+		this.pasteCanvas();
 	}
 	this.frameCount+=SceneManager._updateSceneCnt|0; SceneManager._updateSceneCnt=0|0;
 },[
@@ -2538,6 +2702,14 @@ p.getImageData=function f(x,y,w,h){
 		gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,pixv);
 		return {data:pixv,width:w,height:h};
 	}else return this._canvas.getContext('2d').getImageData(x,y,w,h);
+};
+p.pasteCanvas=function f(){
+	if(!this._createScreenShot) return;
+	this._createScreenShot=false;
+	pasteCanvas(this._canvas);
+};
+p.createScreenShot=function f(){
+	this._createScreenShot=true;
 };
 }
 
