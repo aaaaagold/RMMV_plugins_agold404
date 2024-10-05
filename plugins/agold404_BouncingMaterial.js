@@ -9,11 +9,11 @@
 
 (()=>{ let k,r,t;
 
-new cfc(Sprite.prototype).add('bouncingMaterial_isUnitRoot',function f(){
+new cfc(Sprite.prototype).addBase('bouncingMaterial_isUnitRoot',function f(){
 	return false;
-},undefined,true,true).add('bouncingMaterial_isUnitComponent',function f(){
+}).addBase('bouncingMaterial_isUnitComponent',function f(){
 	return false;
-},undefined,true,true);
+});
 
 // ==== ==== ==== ==== 
 
@@ -22,19 +22,19 @@ const a=class Sprite_BouncingMaterial_unitRoot extends Sprite{
 };
 a.ori=Sprite;
 window[a.name]=a;
-new cfc(a.prototype).add('initialize',function f(bmp,separateType,frame,maxPadding){
+new cfc(a.prototype).addBase('initialize',function f(bmp,separateType,frame,maxPadding){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
 	this.bouncingMaterial_setUnitRoot(separateType,frame,maxPadding);
 	return rtv;
 },t=[
 a.ori.prototype,
-],true,true).add('update',function f(){
+]).addBase('update',function f(){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
 	this.bouncingMaterial_updateUnitRoot();
 	return rtv;
-},t,true,true).add('bouncingMaterial_isUnitRoot',function f(){
+},t).addBase('bouncingMaterial_isUnitRoot',function f(){
 	return !!this._bouncingMaterial_unit_bmpBak;
-},undefined,true,true).add('bouncingMaterial_resetUnitRoot',function f(){
+}).addBase('bouncingMaterial_resetUnitRoot',function f(){
 	if(!this.bouncingMaterial_isUnitRoot()) return;
 	
 	this.bitmap=this._bouncingMaterial_unitRoot_bmpBak||this.bitmap;
@@ -46,7 +46,7 @@ a.ori.prototype,
 	undefined;
 	
 	return this;
-},undefined,true,true).add('bouncingMaterial_setUnitRoot',function f(separateType,frame,maxPadding){
+}).addBase('bouncingMaterial_setUnitRoot',function f(separateType,frame,maxPadding){
 	// separateType: LU->RD or RU->LD
 	separateType=0|!!separateType;
 	if(!this.bitmap || this.children.length) return -1; // fail: not suitable
@@ -93,22 +93,22 @@ function f(...lastArgIsBmp){
 	if(arguments&&arguments[arguments.length-1]!==bmp) return; // changed
 	this.bouncingMaterial_setUnitRoot.apply(this,argument);
 }, // 0: bmp.loadListener
-],true,true).add('bouncingMaterial_getCorners',function f(){
+]).addBase('bouncingMaterial_getCorners',function f(){
 	return this._bouncingMaterial_unitRoot_corners;
-},t,true,true).add('bouncingMaterial_updateUnitRoot',function f(){
+},t).addBase('bouncingMaterial_updateUnitRoot',function f(){
 	if(!this.bouncingMaterial_isUnitRoot()) return;
 	return this;
-},undefined,true,true).add('bouncingMaterial_getMaxSpeed',function f(){
+}).addBase('bouncingMaterial_getMaxSpeed',function f(){
 	if(!this.bouncingMaterial_isUnitRoot()) return 0;
 	return Math.min.apply(null,this._bouncingMaterial_unitRoot_children.map(f.tbl[0]));
 },[
 c=>c.bouncingMaterial_getMaxSpeed(), // 0: map
-],true,true).add('bouncingMaterial_setMaxPadding',function f(val){
+]).addBase('bouncingMaterial_setMaxPadding',function f(val){
 	if(!this.bouncingMaterial_isUnitRoot()) return;
 	this._bouncingMaterial_unitRoot_children.forEach(f.tbl[0],val);
 },[
 function(sp){ this._maxPadding=this; }, // 0: forEach
-],true,true);
+]);
 }
 
 // ==== ==== ==== ==== 
@@ -125,26 +125,26 @@ static bouncingMaterial_getDefaultMaxSpeed(padding){
 };
 a.ori=Sprite;
 window[a.name]=a;
-new cfc(a.prototype).add('initialize',function f(bmp,unitComponentType,frame,maxPadding){
+new cfc(a.prototype).addBase('initialize',function f(bmp,unitComponentType,frame,maxPadding){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
 	this.anchor.set(0); // 0..1 = width or height , however it should be width-1 or height-1 => using different anchor may leave gaps between components
 	this.bouncingMaterial_setUnitComponent(unitComponentType,frame,maxPadding);
 	return rtv;
 },t=[
 a.ori.prototype,
-],true,true).add('update',function f(){
+]).addBase('update',function f(){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
 	this.bouncingMaterial_updateUnitComponent();
 	return rtv;
-},t,true,true).add('bouncingMaterial_isParentUnitRoot',function f(){
+},t).addBase('bouncingMaterial_isParentUnitRoot',function f(){
 	return this.parent instanceof Sprite_BouncingMaterial_unitRoot;
-},undefined,true,true).add('bouncingMaterial_isUnitComponent',function f(){
+}).addBase('bouncingMaterial_isUnitComponent',function f(){
 	return this.bouncingMaterial_getId()>=0;
-},undefined,true,true).add('bouncingMaterial_resetUnitComponent',function f(){
+}).addBase('bouncingMaterial_resetUnitComponent',function f(){
 	if(!this.bouncingMaterial_isUnitComponent()) return;
 	this.bouncingMaterial_setId(-1);
 	return this;
-},undefined,true,true).add('bouncingMaterial_setUnitComponent',function f(unitComponentId,frame,maxPadding){
+}).addBase('bouncingMaterial_setUnitComponent',function f(unitComponentId,frame,maxPadding){
 	if(this.bouncingMaterial_isUnitComponent()) return -1; // already
 	this._bouncingMaterial_isUnitComponent=true;
 	this.bouncingMaterial_setId(unitComponentId);
@@ -166,7 +166,7 @@ a.ori.prototype,
 	const sz=this._bouncingMaterial_componentSize=frame;
 	//this.bouncingMaterial_setUnitComponent_webgl(unitComponentId,sz); // too slow
 	return this;
-},undefined,true,true).add('bouncingMaterial_setUnitComponent_webgl',function f(unitComponentId,componentSize){
+}).addBase('bouncingMaterial_setUnitComponent_webgl',function f(unitComponentId,componentSize){
 	if(!Graphics.isWebGL()) return;
 	const myId=unitComponentId>=0?unitComponentId:this.bouncingMaterial_getId();
 	componentSize=componentSize||this._bouncingMaterial_componentSize;
@@ -240,23 +240,23 @@ a.ori.prototype,
 },[
 undefined, // 0: mask bmp
 4096, // reso
-],true,true).add('bouncingMaterial_setMaxPadding',function f(val){
+]).addBase('bouncingMaterial_setMaxPadding',function f(val){
 	this._maxPadding=val;
-},undefined,true,true).add('bouncingMaterial_getMaxPadding',function f(){
+}).addBase('bouncingMaterial_getMaxPadding',function f(){
 	return isNaN(this._maxPadding)?Sprite_BouncingMaterial_unitComponent.bouncingMaterial_getDefaultMaxPadding():this._maxPadding-0;
-},undefined,true,true).add('bouncingMaterial_getMaxSpeed',function f(){
+}).addBase('bouncingMaterial_getMaxSpeed',function f(){
 	return Sprite_BouncingMaterial_unitComponent.bouncingMaterial_getDefaultMaxPadding(this.bouncingMaterial_getMaxPadding());
-},undefined,true,true).add('bouncingMaterial_getComponentSize',function f(){
+}).addBase('bouncingMaterial_getComponentSize',function f(){
 	return this._bouncingMaterial_componentSize;
-},undefined,true,true).add('bouncingMaterial_setId',function f(val){
+}).addBase('bouncingMaterial_setId',function f(val){
 	return this._bouncingMaterial_unitComponentId=val;
-},undefined,true,true).add('bouncingMaterial_getId',function f(){
+}).addBase('bouncingMaterial_getId',function f(){
 	return this._bouncingMaterial_unitComponentId;
-},undefined,true,true).add('bouncingMaterial_updateUnitComponent',function f(){
+}).addBase('bouncingMaterial_updateUnitComponent',function f(){
 	if(!this.bouncingMaterial_isUnitComponent()||!this.bouncingMaterial_isParentUnitRoot()) return;
 	this._bouncingMaterial_updateUnitComponentFrame();
 	return this;
-},undefined,true,true).add('_bouncingMaterial_updateUnitComponentFrame',function f(){
+}).addBase('_bouncingMaterial_updateUnitComponentFrame',function f(){
 	const corners=this.parent.bouncingMaterial_getCorners();
 	const funcs=f.tbl[0];
 	const j=this.bouncingMaterial_getId()&f.tbl[1];
@@ -378,9 +378,9 @@ undefined, // 0: mask bmp
 ], // 0: adjust position scale skew 
 3, // 1: "id to type" bitmask
 4, // 2: widerPoints width
-],true,true).add('calculateVertices_getNextId',function f(i){
+]).addBase('calculateVertices_getNextId',function f(i){
 	return (i+1)&f.tbl[1];
-},t,true,true).add('calculateVertices',function f(){
+},t).add('calculateVertices',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	const vv=this.vertexData; if(!vv||!this.bouncingMaterial_isUnitComponent()) return rtv;
 	const myId=this.bouncingMaterial_getId()&f.tbl[1];
@@ -398,20 +398,20 @@ const a=class Sprite_BouncingMaterial_root extends Sprite{
 };
 a.ori=Sprite;
 window[a.name]=a;
-new cfc(a.prototype).add('initialize',function f(bmp,opt){
+new cfc(a.prototype).addBase('initialize',function f(bmp,opt){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
 	this.bouncingMaterial_setRoot(bmp,opt);
 	this.z=15; // prevent performance drop when it is a child of ShaderTilemap
 	return rtv;
 },t=[
 a.ori.prototype,
-],true,true).add('update',function f(){
+]).addBase('update',function f(){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
 	this.bouncingMaterial_updateRoot();
 	return rtv;
-},t,true,true).add('bouncingMaterial_isRoot',function f(){
+},t).addBase('bouncingMaterial_isRoot',function f(){
 	return !!this._bouncingMaterial_root_bmpBak;
-},undefined,true,true).add('bouncingMaterial_resetRoot',function f(){
+}).addBase('bouncingMaterial_resetRoot',function f(){
 	if(!this._bouncingMaterial_isRoot()) return;
 	this.bitmap=this._bouncingMaterial_root_bmpBak||this.bitmap;
 	
@@ -420,7 +420,7 @@ a.ori.prototype,
 	undefined;
 	
 	return this;
-},undefined,true,true).add('bouncingMaterial_setRoot',function f(bmp,opt){
+}).addBase('bouncingMaterial_setRoot',function f(bmp,opt){
 	this.bitmap=bmp||this.bitmap;
 	if(bmp&&!bmp.isReady()){
 		bmp.addLoadListener(f.tbl[0].bind(this,opt));
@@ -476,18 +476,18 @@ function f(opt,bmp){
 	if(this.bitmap!==bmp) return; // changed
 	this.bouncingMaterial_setRoot(bmp,opt);
 },
-],true,true).add('bouncingMaterial_getMaxSpeed',function f(){
+]).addBase('bouncingMaterial_getMaxSpeed',function f(){
 	return Sprite_BouncingMaterial_unitComponent.bouncingMaterial_getDefaultMaxSpeed(this._maxPadding);
-},undefined,true,true).add('bouncingMaterial_setMaxPadding',function f(val){
+}).addBase('bouncingMaterial_setMaxPadding',function f(val){
 	if(val<0) val=0;
 	if(!this._bouncingMaterial_root_units||this._maxPadding===val) return;
 	this._bouncingMaterial_root_units.forEach(f.tbl[0].bind(this._maxPadding=val));
 },[
 function(sp){ sp.bouncingMaterial_setMaxPadding(this); }, // 0: forEach
-],true,true).add('bouncingMaterial_updateRoot',function f(){
+]).addBase('bouncingMaterial_updateRoot',function f(){
 	if(!this.bouncingMaterial_isRoot()) return;
 	return this._bouncingMaterial_updateRoot();
-},undefined,true,true).add('_bouncingMaterial_updateRoot',function f(){
+}).addBase('_bouncingMaterial_updateRoot',function f(){
 	const ptTbl=this._bouncingMaterial_pointsTbl;
 	if(ptTbl){
 			const maxSpeed=this.bouncingMaterial_getMaxSpeed();
@@ -538,7 +538,7 @@ function(sp){ sp.bouncingMaterial_setMaxPadding(this); }, // 0: forEach
 			ptTbl[y][x][1]+=dxy[y][x][1];
 		} }
 	}
-},undefined,true,true).add('bouncingMaterial_findNearestPoints_local',function f(x,y){
+}).addBase('bouncingMaterial_findNearestPoints_local',function f(x,y){
 	return this._bouncingMaterial_pointsList.map(f.tbl[0].bind(this,x,y)).sort(f.tbl[1]).map(f.tbl[2]);
 },[
 function f(x,y,point){
@@ -548,10 +548,10 @@ function f(x,y,point){
 }, // 0: map
 (a,b)=>a[0]-b[0], // 1: cmp
 info=>info[1], // 2: map2
-],true,true).add('bouncingMaterial_findNearestPoints_parent',function f(x,y){
+]).addBase('bouncingMaterial_findNearestPoints_parent',function f(x,y){
 	const pt=this.toLocal({x:x,y:y},this.parent);
 	return this.bouncingMaterial_findNearestPoints_local(pt.x,pt.y);
-}).add('bouncingMaterial_findNearestPoints_global',function f(x,y,n){
+}).addBase('bouncingMaterial_findNearestPoints_global',function f(x,y,n){
 	const pt=this.toLocal({x:x,y:y});
 	return this.bouncingMaterial_findNearestPoints_local(pt.x,pt.y);
 });
@@ -559,7 +559,7 @@ info=>info[1], // 2: map2
 
 // ==== ==== ==== ==== 
 
-new cfc(Sprite.prototype).addNew('bouncingMaterial_set',function f(opt){
+new cfc(Sprite.prototype).addBase('bouncingMaterial_set',function f(opt){
 	let sp=this._bouncingMaterialRoot;
 	if(sp) sp.destroy();
 	this._bouncingMaterial_bmpBak=this.bitmap;
@@ -567,7 +567,7 @@ new cfc(Sprite.prototype).addNew('bouncingMaterial_set',function f(opt){
 	sp=this._bouncingMaterialRoot=new Sprite_BouncingMaterial_root(this.bitmap,opt);
 	this.addChild(sp);
 	this.bitmap=null;
-}).addNew('bouncingMaterial_reset',function f(){
+}).addBase('bouncingMaterial_reset',function f(){
 	const sp=this._bouncingMaterialRoot; if(!sp) return;
 	sp.destroy();
 	this._bouncingMaterialRoot=undefined;
