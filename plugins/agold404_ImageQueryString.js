@@ -20,7 +20,7 @@ const tuneN=(n,meta)=>{
 	return uqh.join('');
 };
 
-new cfc(Game_Battler.prototype).addNew('_battlerName_grayscalize',function f(n){
+new cfc(Game_Battler.prototype).addBase('_battlerName_grayscalize',function f(n){
 	const stat=this.states().find(f.tbl[0]);
 	if(stat && n) n=tuneN(n,stat.meta);
 	return n;
@@ -28,7 +28,7 @@ new cfc(Game_Battler.prototype).addNew('_battlerName_grayscalize',function f(n){
 stat=>stat.meta.grayscale, // 0: find
 ]);
 
-new cfc(Game_Event.prototype).addNew('_characterName_grayscalize',function f(n){
+new cfc(Game_Event.prototype).addBase('_characterName_grayscalize',function f(n){
 	const meta=this.getMeta();
 	if(meta.grayscale && n) n=tuneN(n,meta);
 	return n;
@@ -55,7 +55,7 @@ if(p[k]) new cfc(p).add(k,function f(){
 });
 }
 
-new cfc(ImageManager).addNew('_parseQs_uqh',function f(uqh,idx){
+new cfc(ImageManager).addBase('_parseQs_uqh',function f(uqh,idx){
 	idx=idx===undefined?1:idx;
 	const rtv={};
 	if(uqh&&uqh[idx]) uqh[idx].slice(1).split("&").forEach(f.tbl[0],rtv);
@@ -66,9 +66,9 @@ function(x){
 	if(idxe===-1) this[x]=true;
 	else this[x.slice(0,idxe)]=decodeURIComponent(x.slice(idxe+1));
 }, // 0: forEach
-]).addNew('_parseQs',function(path){
+]).addBase('_parseQs',function(path){
 	return this._parseQs_uqh(ImageManager.splitUrlQueryHash(path),1);
-}).addNew('_parseHs',function(path){
+}).addBase('_parseHs',function(path){
 	return this._parseQs_uqh(ImageManager.splitUrlQueryHash(path),2);
 }).add('loadNormalBitmap',function f(){ // (path, hue)
 	const uqh=ImageManager.splitUrlQueryHash(arguments[0]);
@@ -89,7 +89,7 @@ function(x){
 		}
 		return bitmap;
 	}else return f.ori.apply(this,arguments);
-}).addNew('loadNormalBitmap_addNewUqhListener',function f(func,key){
+}).addBase('loadNormalBitmap_addNewUqhListener',function f(func,key){
 	// func: function(uqh,newBmp,baseBmp){ ... }
 	this._addedUqhListeners.push(function(bitmap_base,uqh){
 		const args=this._parseQs_uqh(uqh);
