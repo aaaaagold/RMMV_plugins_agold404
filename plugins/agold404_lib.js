@@ -11,12 +11,13 @@ const _DateNow=Date.now();
 
 {
 const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri,moduleName)=>{
-	if(is_putDeepest && p[k] && p[k].ori){
+	const pre=p.__proto__&&p.__proto__.constructor.prototype;
+	if(is_putDeepest && p[k] && p[k].ori && !(pre&&pre[k]===p[k])){
 		let fp=p[k],fc=p[k].ori,fs=new Set();
 		do{
 			if(fs.has(fc)) throw new Error('f.ori repeated');
 			fs.add(fc);
-			if(fc.ori){
+			if(fc.ori && !(pre&&pre[k]===fc)){
 				fp=fc;
 				fc=fc.ori;
 			}else break;
@@ -43,6 +44,10 @@ const p=a.prototype;
 p.constructor=a;
 p.add=function(key,f,t,d,u,m){
 	cf(this._p,key,f,t,d,u,m);
+	return this;
+};
+p.addNew=function(key,f,t){
+	cf(this._p,key,f,t,true,true);
 	return this;
 };
 p.getP=function(){ return this._p; };
@@ -72,6 +77,18 @@ p.concat_inplace=function(...items){
 	return this;
 };
 p.pop_back=p.pop;
+p.lower_bound=function(val){
+	let l=0,h=this.length;
+	while(l+1<h){
+		const m=(l+h)>>>1;
+		if(this[m]<val) h=m;
+		else l=m;
+	}
+	return l;
+};
+p.upper_bound=function(val){
+	return this.length?this.lower_bound(val)+1:0;
+};
 p.uniqueHas=function(obj){
 	if(!this._map){
 		this._map=new Map();
@@ -692,13 +709,31 @@ p.ptcp=function(x,y,w,h,resizeTo){
 	);
 	return rtv;
 };
-p.scale=function(r){
+p.mirror_h=function(){
+	const rtv=document.ce('canvas'); rtv.width=this.width; rtv.height=this.height;
+	const ctx=rtv.getContext('2d');
+	ctx.translate(this.width,0);
+	ctx.scale(-1,1);
+	ctx.drawImage(this,0,0);
+	return rtv;
+};
+p.mirror_v=function(){
+	const rtv=document.ce('canvas'); rtv.width=this.width; rtv.height=this.height;
+	const ctx=rtv.getContext('2d');
+	ctx.translate(0,this.height);
+	ctx.scale(1,-1);
+	ctx.drawImage(this,0,0);
+	return rtv;
+};
+p.scale=function(r,y){
 	// return another canvas
 	if(isNaN(r)) r=1;
-	const src=r<0?this.mirror_h().mirror_v():this;
-	if(r<0) r=-r;
+	if(isNaN(y)) y=r;
+	let src=this;
+	if(r<0){ r=-r; src=this.mirror_h(); }
+	if(y<0){ y=-y; src=this.mirror_v(); }
 	const w=this.width , h=this.height;
-	return src.ptcp(0,0,this.width,this.height,{w:w*r||1,h:h*r||1});
+	return src.ptcp(0,0,this.width,this.height,{w:Math.ceil(w*r)||1,h:Math.ceil(h*r)||1});
 };
 }
 
@@ -713,6 +748,31 @@ const xyDist2=window.xyDist2=(a,b)=>{
 const useDefaultIfIsNaN=window.useDefaultIfIsNaN=(n,d)=>{
 	const rtv=n-0;
 	return isNaN(rtv)?d:rtv;
+};
+const getWiderPoints=window.getWiderPoints=(pt3,width,isNormalToCoordinates,dim)=>{
+	// currently only support dim===2
+	width=width-0||0;
+	if(!width) return pt3.slice();
+	const vec1=[pt3[1][0]-pt3[0][0],pt3[1][1]-pt3[0][1],];
+	const vec2=[pt3[2][0]-pt3[1][0],pt3[2][1]-pt3[1][1],];
+	const A=vec1[0]*vec2[1]-vec2[0]*vec1[1];
+	if(!A) return pt3.slice();
+	const len1=Math.sqrt(vec1[0]*vec1[0]+vec1[1]*vec1[1]);
+	const len2=Math.sqrt(vec2[0]*vec2[0]+vec2[1]*vec2[1]);
+	const u1=[vec1[0]/len1*width,vec1[1]/len1*width,];
+	const u2=[vec2[0]/len2*width,vec2[1]/len2*width,];
+if(0){
+	const d1=[-u1[0],-u1[1]];
+	const d2=[-u1[0],-u1[1]];
+	const d3=[ u3[0], u3[1]];
+}
+	const rtv=[
+		[pt3[0][0]-u1[0],pt3[0][1]-u1[1],],
+		[pt3[1][0]+u1[0]-u2[0],pt3[1][1]+u1[1]-u2[1],],
+		[pt3[2][0]+u2[0],pt3[2][1]+u2[1],],
+	];
+	//console.log(pt3,'->',rtv);
+	return rtv;
 };
 const getCStyleStringStartAndEndFromString=window.getCStyleStringStartAndEndFromString=(s,strt,ende)=>{
 	// suppose s is a String
@@ -760,6 +820,7 @@ const pasteCanvas=window.pasteCanvas=c=>{
 	img.src=c.toDataURL();
 	img.setAttribute('style','z-index:404;');
 	document.body.appendChild(img);
+	return img;
 };
 const listMapParents=window.listMapParents=mapId=>{
 	const rtv=[],s=new Set(); if(mapId===undefined) mapId=$gameMap.mapId();
