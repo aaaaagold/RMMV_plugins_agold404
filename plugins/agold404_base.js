@@ -1116,6 +1116,35 @@ new cfc(Input).addBase('_getKeyName',function f(event){
 	return rtv;
 });
 
+new cfc(DataManager).addBase('loadGlobalInfo',function(){
+	return this.loadGlobalInfo_parseData(this.loadGlobalInfo_loadRaw());
+}).addBase('loadGlobalInfo_loadRaw',function f(){
+	try{
+		return StorageManager.load(0);
+	}catch(e){
+		console.error(e);
+	}
+	// return false-like
+}).addBase('loadGlobalInfo_parseData',function f(jsonStr){
+	if(jsonStr){
+		const globalInfo=JSON.parse(jsonStr),sz=this.maxSavefiles();
+		for(let i=1,shouldDel;i<=sz;++i){
+			shouldDel=false;
+			if(!globalInfo[i]) shouldDel=true;
+			else{
+				try{
+					if(!StorageManager.exists(i)) shouldDel=true;
+				}catch(e){
+					shouldDel=true;
+				}
+			}
+			if(shouldDel) delete globalInfo[i];
+		}
+		return globalInfo;
+	}
+	return [];
+});
+
 new cfc(Window.prototype).addBase('_updateCursor',function f(){
 	const bp=this._updateCursor_getBlinkPeriod();
 	const blinkCount=this._animationCount%bp;
@@ -1735,7 +1764,14 @@ new cfc(PIXI.Container.prototype).addBase('containsGlobalPoint',function f(x,y){
 	return rect.contains(x,y);
 },[
 {x:0,y:0},
-]);
+]).add('getChildIndex',function f(c,isNoErr,returnEndIdxIfNotFound){
+	try{
+		return f.ori.apply(this,arguments);
+	}catch(e){
+		if(!isNoErr) throw e;
+	}
+	return returnEndIfNotFound?this.children.length:-1;
+});
 
 new cfc(PIXI.Container.prototype).add('renderCanvas',function f(renderer){
 	const noDraw=this.renderCanvas_retVal_noDraw();
@@ -2798,17 +2834,25 @@ new cfc(Bitmap.prototype).add('_makeFontNameText',function f(){
 
 })(); // default font
 
-// ---- ---- ---- ---- pretending localStorage is ok
+// ---- ---- ---- ---- save cache (both local and web) + pretending localStorage is ok
 
 (()=>{ let k,r,t;
 
-new cfc(StorageManager).add('pseudoStorage_getCont',function f(){
+t=[
+"bak-", // 0: pseudoStorage backup key prefix
+];
+
+new cfc(StorageManager).addBase('pseudoStorage_getCont',function f(){
 	let rtv=this._pseudoStorage; if(!rtv) rtv=this._pseudoStorage=new Map();
 	return rtv;
-}).add('pseudoStorage_save',function f(key,val){
+}).addBase('pseudoStorage_save',function f(key,val){
 	this.pseudoStorage_getCont().set(key+'',val+'');
-}).add('pseudoStorage_load',function f(key){
+}).addBase('pseudoStorage_load',function f(key){
 	return this.pseudoStorage_getCont().get(key+'')||null;
+}).addBase('pseudoStorage_has',function f(key){
+	return this.pseudoStorage_getCont().has(key+'');
+}).addBase('pseudoStorage_del',function f(key){
+	return this.pseudoStorage_getCont().delete(key+'');
 }).add('saveToWebStorage',function f(savefileId,json){
 	try{
 		return f.ori.apply(this,arguments);
@@ -2816,8 +2860,9 @@ new cfc(StorageManager).add('pseudoStorage_getCont',function f(){
 		if(e instanceof DOMException){
 			const key=this.webStorageKey(savefileId);
 			const data=LZString.compressToBase64(json);
-			this.pseudoStorage_save(key,data);
+			return this.pseudoStorage_save(key,data);
 		}
+		throw e;
 	}
 }).add('loadFromWebStorage',function f(savefileId){
 	try{
@@ -2827,10 +2872,124 @@ new cfc(StorageManager).add('pseudoStorage_getCont',function f(){
 			const key=this.webStorageKey(savefileId);
 			return LZString.decompressFromBase64(this.pseudoStorage_load(key));
 		}
+		throw e;
 	}
-});
+}).add('webStorageExists',function f(savefileId){
+	try{
+		return f.ori.apply(this,arguments);
+	}catch(e){
+		if(e instanceof DOMException){
+			const key=this.webStorageKey(savefileId);
+			return this.pseudoStorage_has(key);
+		}
+		throw e;
+	}
+}).add('removeWebStorage',function f(savefileId){
+	try{
+		return f.ori.apply(this,arguments);
+	}catch(e){
+		if(e instanceof DOMException){
+			const key=this.webStorageKey(savefileId);
+			return this.pseudoStorage_del(key);
+		}
+		throw e;
+	}
+}).addBase('saveCache_getCont',function f(){
+	let rtv=this._saveCache; if(!rtv) rtv=this._saveCache=new Map();
+	return rtv;
+}).addBase('saveCache_save',function(savefileId,json){
+	return this.saveCache_getCont().set(savefileId,json);
+}).addBase('saveCache_load',function(savefileId){
+	return this.saveCache_getCont().get(savefileId);
+}).addBase('saveCache_has',function(savefileId){
+	return this.saveCache_getCont().has(savefileId);
+}).addBase('saveCache_del',function(savefileId){
+	return this.saveCache_getCont().delete(savefileId);
+}).add('save',function f(savefileId,json){
+	this.saveCache_save.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).add('load',function f(savefileId){
+	if(!this.saveCache_has.apply(this,arguments)) this.saveCache_save(savefileId,f.ori.apply(this,arguments));
+	return this.saveCache_load.apply(this,arguments);
+}).add('exists',function f(savefileId){
+	return this.saveCache_has.apply(this,arguments)||f.ori.apply(this,arguments);
+}).add('remove',function f(savefileId){
+	this.saveCache_del.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).addBase('backup',function(savefileId){
+	if(this.exists(savefileId)) return (this.isLocalMode()?this.backup_fs:this.backup_web).apply(this,arguments);
+}).addBase('backup_fs',function f(savefileId){
+	const fs=require('fs');
+	const dirPath=this.localFileDirectoryPath();
+	const filePath=this.localFilePath(savefileId); // full path
+	try{
+		fs.renameSync(filePath,filePath+".bak");
+		return;
+	}catch(e){
+		const data=this.loadFromLocalFile(savefileId);
+		const compressed=LZString.compressToBase64(data);
+		this.pseudoStorage_save(f.tbl[0]+savefileId,compressed);
+		if(!fs.existsSync(dirPath)) fs.mkdirSync(dirPath);
+		fs.writeFileSync(filePath+".bak",compressed);
+		return compressed;
+	}
+},t).addBase('backup_web',function f(savefileId){
+	const data=this.loadFromWebStorage(savefileId);
+	const compressed=LZString.compressToBase64(data);
+	const key=this.webStorageKey(savefileId)+"bak";
+	this.pseudoStorage_save(f.tbl[0]+savefileId,compressed);
+	localStorage.setItem(key,compressed);
+	return compressed;
+},t).add('backup',function f(savefileId){
+	try{
+		return f.ori.apply(this,arguments);
+	}catch(e){
+		if(e instanceof DOMException) return;
+		throw e;
+	}
+}).add('cleanBackup',function f(savefileId){
+	this.pseudoStorage_del(f.tbl[0]+savefileId);
+	try{
+		return f.ori.apply(this,arguments);
+	}catch(e){
+	}
+},t).addBase('restoreBackup',function f(savefileId){
+	if(this.backupExists(savefileId)) return (this.isLocalMode()?this.restoreBackup_fs:this.restoreBackup_web).apply(this,arguments);
+}).addBase('restoreBackup_fs',function f(savefileId){
+	const fs=require('fs');
+	const dirPath=this.localFileDirectoryPath();
+	const filePath=this.localFilePath(savefileId);
+	if(!fs.existsSync(dirPath)) fs.mkdirSync(dirPath);
+	try{
+		fs.renameSync(filePath+".bak",filePath);
+		return;
+	}catch(e){
+		const data=this.loadFromLocalBackupFile(savefileId);
+		const compressed=LZString.compressToBase64(data);
+		fs.writeFileSync(filePath, compressed);
+		fs.unlinkSync(filePath+".bak");
+	}
+}).addBase('restoreBackup_web',function f(savefileId){
+	const data=this.loadFromWebStorageBackup(savefileId);
+	const compressed=LZString.compressToBase64(data);
+	const key=this.webStorageKey(savefileId);
+	localStorage.setItem(key,compressed);
+	localStorage.removeItem(key+"bak");
+}).add('restoreBackup',function f(savefileId){
+	try{
+		return f.ori.apply(this,arguments);
+	}catch(e){
+		if(e instanceof DOMException){
+			const bakKey=f.tbl[0]+savefileId;
+			if(!this.pseudoStorage_has(bakKey)) return;
+			const key=this.webStorageKey(savefileId);
+			return this.pseudoStorage_save(key,this.pseudoStorage_load(bakKey));
+		}
+		throw e;
+	}
+},t);
 
-})(); // pretending localStorage is ok
+})(); // save cache (both local and web) + pretending localStorage is ok
 
 // ---- ---- ---- ---- map evt search table
 
