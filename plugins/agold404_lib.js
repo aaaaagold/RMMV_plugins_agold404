@@ -916,3 +916,9 @@ const getPropertyValue=window.getPropertyValue=function f(obj,key,defaultVal){
 })(); // lib
 
 const undef=undefined,none=()=>{},filterArg0=x=>x,isNum=n=>!isNaN(n),cmpFunc_num=(a,b)=>a-b;
+const PNG_HEADER=new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, ]);
+const PNG_CHUNK_HEADER_IHDR=new Uint8Array([0, 0, 0, 13, 73, 72, 68, 82, ]);
+const PNG_16B_HEADER=new Uint8Array(16);
+PNG_16B_HEADER.set(PNG_HEADER,0);
+PNG_16B_HEADER.set(PNG_CHUNK_HEADER_IHDR,8);
+
