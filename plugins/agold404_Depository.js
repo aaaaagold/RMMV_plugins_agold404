@@ -219,6 +219,10 @@ _switchToWindow(nxt,wrap){
 	this.deactivate();
 	this.updateInputData();
 	if(!(nxt.index()>=0)) nxt.select(0); // error handle without UX
+	const a0=this.alpha;
+	const a1=nxt.alpha;
+	nxt.alpha=a0;
+	this.alpha=a1;
 	nxt.activate();
 	SoundManager.playCursor();
 	this._onSwitchToWindow(nxt);
@@ -432,9 +436,14 @@ function f(){
 	this.onCommonOk_selectValid(pak,this._catIdx[pak._category]||0);
 	const nxt=smbl==='depository'?dpst:pak;
 	if(nxt.updateInputData) nxt.updateInputData();
+	dpst.alpha=pak.alpha=f.tbl[0];
+	nxt.alpha=1;
 	nxt.activate();
 	this.createWindow_operationHelp_setState(nxt===pak?"inBackpack":"inDepository");
-},undefined,true,true).add('onListCancel_common',function f(now){
+},t=[
+0.75, // 0: deactivated window alpha // dpst or pak
+1, // 1: activated window alpha // dpst or pak
+],true,true).add('onListCancel_common',function f(now){
 	const nxt=now._categoryWindow;
 	now.deactivate();
 	
@@ -443,10 +452,11 @@ function f(){
 	this._catIdx.depository=this._window_itemList_depository.index();
 	pak.deselect();
 	dpst.deselect();
+	dpst.alpha=pak.alpha=f.tbl[1];
 	
 	//now.deselect();
 	nxt.activate();
-},undefined,true,true).add('onBackpackListCancel',function f(){
+},t,true,true).add('onBackpackListCancel',function f(){
 	this.onListCancel_common(this._window_itemList_backpack);
 },undefined,true,true).add('onBackpackListOk',function f(){
 	this.onCommonOk_item(
