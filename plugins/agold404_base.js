@@ -22,6 +22,23 @@ window[f.name]=f;
 console.log(getPluginNameViaSrc(document.currentScript.src));
 }
 
+new cfc(Decrypter).addBase('checkImgIgnore',function(url){
+	return this._ignoreList.uniqueHas(url);
+}).add('decryptArrayBuffer',function f(arrayBuffer,refHeader){
+	let rtv=f.ori.apply(this,arguments);
+	if(refHeader && (refHeader.byteLength>=16||refHeader.length>=16)){ const Bv=new Uint8Array(rtv); if(refHeader.toString()!==new Uint8Array(rtv).slice(0,16).toString()){
+		const bak=$dataSystem.encryptionKey;
+		const arr=[]; for(let x=16;x--;) arr[x]=Bv[x]^refHeader[x]^('0x'+this._encryptionKey[x]);
+		$dataSystem.encryptionKey=arr.map(f.tbl[0]).join('');
+		console.log('use key =',$dataSystem.encryptionKey);
+		rtv=f.ori.apply(this,arguments);
+		$dataSystem.encryptionKey=bak;
+	} }
+	return rtv;
+},[
+c=>c.toString(16), // 0: map
+]);
+
 { const a=Game_Interpreter,p=a.prototype;
 a.NOP={code:0,indent:0,parameters:[],};
 // prevent being slow due to getting non-exists property
@@ -905,7 +922,7 @@ new cfc(Decrypter).add('decryptImg',function f(url,bitmap){
 },[
 function(bitmap,url){
 	if(this.status<Decrypter._xhrOk){
-		const arrayBuffer=Decrypter.decryptArrayBuffer(this.response);
+		const arrayBuffer=Decrypter.decryptArrayBuffer(this.response,PNG_16B_HEADER);
 		Decrypter._setCache(url,arrayBuffer.slice());
 		Decrypter._onXhrLoad(bitmap,arrayBuffer);
 	}else this.onerror();
