@@ -198,15 +198,15 @@ r:0|0,
 u:0|0,
 d:0|0,
 },
-]).addBase('getRect_local',function f(){
+]);
+new cfc(PIXI.DisplayObject.prototype).addBase('getRect_local',function f(){
 	const a=this.anchor;
 	const w=this.width,h=this.height;
 	return new Rectangle(-a.x*w,-a.y*h,w,h);
-}).addBase('containsPoint_global',function f(xy){
-	const pt=this.toLocal(xy);
-	return this.getRect_local().contains(pt.x,pt.y);
 }).addBase('containsPoint_local',function f(xy){
 	return this.getRect_local().contains(xy.x,xy.y);
+}).addBase('containsPoint_global',function f(xy){
+	return this.containsPoint_local(this.toLocal(xy));
 });
 new cfc(Graphics).add('isInScreen_rect',function(rect){
 	return !(rect.x>=this.boxWidth || rect.x+rect.width<0 || rect.y>=this.boxHeight || rect.y+rect.height<0);
