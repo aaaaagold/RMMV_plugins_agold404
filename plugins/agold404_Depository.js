@@ -279,6 +279,10 @@ a.ori=Scene_MenuBase;
 window[a.name]=a;
 const p=a.prototype=Object.create(a.ori.prototype);
 p.constructor=a;
+const activeAlphas=[
+0.75, // 0: deactivated window alpha // dpst or pak
+1, // 1: activated window alpha // dpst or pak
+];
 new cfc(p).add('initialize',function f(){
 	f.tbl[0][f._funcName].apply(this,arguments);
 	this._depositoryId=$gameTemp._depositoryId;
@@ -291,7 +295,59 @@ a.ori.prototype,
 	f.tbl[0][f._funcName].apply(this,arguments);
 	this.createWindows();
 	this._prevScene_restore();
-},t,true,true).add('createWindows',function f(){
+},t,true,true).add('update',function f(){
+	this.update_backupSelects();
+	this.update_touch();
+	return f.tbl[0][f._funcName].apply(this,arguments);
+},t,true,true).add('update_backupSelects',function f(){
+	const dpst=this._window_itemList_depository,pak=this._window_itemList_backpack;
+	if(dpst.active) this._catIdx.depository=dpst.index();
+	if(pak.active) this._catIdx[pak._category]=pak.index();
+},undefined,true,true).add('update_touch',function f(){
+	const TI=TouchInput; if(!TI.isTriggered()) return;
+	if(this.update_touch_testCategoryWindow(TI)) return;
+	if(this.update_touch_testDepositoryWindow(TI)) return;
+	if(this.update_touch_testBackpackWindow(TI)) return;
+},undefined,true,true).add('update_touch_testWindowCommon',function f(wnd,globalXy,actFunc){
+	// actFunc = function(selectIndex){ ... }
+	if(!wnd.hitTest) return;
+	const xy=wnd.toLocal(globalXy);
+	const idx=wnd.hitTest(xy.x,xy.y);
+	if(!(idx>=0)) return;
+	if(wnd.active) return -2; // already activated. don't do more.
+	this._window_category.deactivate();
+	this._window_itemList_depository.deactivate();
+	this._window_itemList_backpack.deactivate();
+	wnd.activate();
+	if(actFunc) actFunc.call(this,idx);
+	return idx;
+},undefined,true,true).add('update_touch_testCategoryWindow',function f(globalXy){
+	const wnd=this._window_category;
+	return this.update_touch_testWindowCommon(wnd,globalXy,f.tbl[0]);
+},[
+function f(idx){
+	this._window_category.select(idx);
+	this.onCategoryOk();
+}, // 0: actFunc
+],true,true).add('update_touch_testDepositoryWindow',function f(globalXy){
+	if(!f.tbl[0].tbl) f.tbl[0].tbl=f.tbl[1];
+	return this.update_touch_testWindowCommon(this._window_itemList_depository,globalXy,f.tbl[0]);
+},[
+function f(idx){
+this._window_itemList_backpack.alpha=f.tbl[0];
+this._window_itemList_depository.alpha=f.tbl[1];
+}, // 0: actFunc
+activeAlphas,
+],true,true).add('update_touch_testBackpackWindow',function f(globalXy){
+	if(!f.tbl[0].tbl) f.tbl[0].tbl=f.tbl[1];
+	return this.update_touch_testWindowCommon(this._window_itemList_backpack,globalXy,f.tbl[0]);
+},[
+function f(idx){
+this._window_itemList_depository.alpha=f.tbl[0];
+this._window_itemList_backpack.alpha=f.tbl[1];
+}, // 0: actFunc
+activeAlphas,
+],true,true).add('createWindows',function f(){
 	let tmpU,tmpD,tmpL,tmpR;
 	tmpU=this.createWindow_operationHelp();
 	tmpU=this.createWindow_category(tmpU);
@@ -431,19 +487,19 @@ function f(){
 	const cat=this._window_category;
 	cat.deactivate();
 	if(cat.updateInputData) cat.updateInputData();
+	if(cat.updateListWindow) cat.updateListWindow();
 	const smbl=cat.currentSymbol(),dpst=this._window_itemList_depository,pak=this._window_itemList_backpack;
 	this.onCommonOk_selectValid(dpst,this._catIdx.depository||0);
 	this.onCommonOk_selectValid(pak,this._catIdx[pak._category]||0);
 	const nxt=smbl==='depository'?dpst:pak;
 	if(nxt.updateInputData) nxt.updateInputData();
+	dpst.deactivate();
+	pak.deactivate();
 	dpst.alpha=pak.alpha=f.tbl[0];
-	nxt.alpha=1;
+	nxt.alpha=f.tbl[1];
 	nxt.activate();
 	this.createWindow_operationHelp_setState(nxt===pak?"inBackpack":"inDepository");
-},t=[
-0.75, // 0: deactivated window alpha // dpst or pak
-1, // 1: activated window alpha // dpst or pak
-],true,true).add('onListCancel_common',function f(now){
+},t=activeAlphas,true,true).add('onListCancel_common',function f(now){
 	const nxt=now._categoryWindow;
 	now.deactivate();
 	
