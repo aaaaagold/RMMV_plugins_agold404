@@ -336,6 +336,7 @@ function f(idx){
 function f(idx){
 this._window_itemList_backpack.alpha=f.tbl[0];
 this._window_itemList_depository.alpha=f.tbl[1];
+if(this._window_itemList_depository.index()===idx) TouchInput.clear();
 }, // 0: actFunc
 activeAlphas,
 ]).addBase('update_touch_testBackpackWindow',function f(globalXy){
@@ -345,6 +346,7 @@ activeAlphas,
 function f(idx){
 this._window_itemList_depository.alpha=f.tbl[0];
 this._window_itemList_backpack.alpha=f.tbl[1];
+if(this._window_itemList_backpack.index()===idx) TouchInput.clear();
 }, // 0: actFunc
 activeAlphas,
 ]).addBase('createWindows',function f(){
