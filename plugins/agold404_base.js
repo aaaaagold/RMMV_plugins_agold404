@@ -2671,7 +2671,7 @@ new cfc(Bitmap).addBase('giveUpUrl_getCont',function f(){
 	return this.giveUpUrl_getCont().has(url)?ResourceHandler._emptyData.img:url;
 });
 new cfc(Bitmap.prototype).add('_onLoad',function f(){
-	{ const div=this._loader||this._loader._div; if(div) Graphics.currentLoadErrorDivs_clear(div); }
+	{ const div=this._loader&&this._loader._div; if(div) Graphics.currentLoadErrorDivs_clear(div); }
 	return f.ori.apply(this,arguments);
 }).add('decode',function f(){
 	const bakT=ResourceHandler.getLoaderType();
