@@ -23,7 +23,7 @@ console.log(getPluginNameViaSrc(document.currentScript.src));
 }
 
 new cfc(Decrypter).addBase('checkImgIgnore',function(url){
-	return this._ignoreList.uniqueHas(url);
+	return this._ignoreList.uniqueHas(url) || ResourceHandler.isDirectPath(url);
 }).add('decryptArrayBuffer',function f(arrayBuffer,refHeader){
 	let rtv=f.ori.apply(this,arguments);
 	if(refHeader && (refHeader.byteLength>=16||refHeader.length>=16)){ const Bv=new Uint8Array(rtv); if(refHeader.toString()!==new Uint8Array(rtv).slice(0,16).toString()){
@@ -851,7 +851,7 @@ new cfc(WebAudio.prototype).add('_load',function f(url,noerr,putCacheOnly){
 	if(!WebAudio._context) return;
 	const xhr=new XMLHttpRequest();
 	xhr._needDecrypt=false;
-	if(Decrypter.hasEncryptedAudio && !ImageManager.isDirectPath(url)){
+	if(Decrypter.hasEncryptedAudio && !ResourceHandler.isDirectPath(url)){
 		url=Decrypter.extToEncryptExt(url);
 		xhr._needDecrypt=true;
 	}
@@ -866,7 +866,7 @@ function(xhr,url,putCacheOnly){ if(xhr.status<400) this._onXhrLoad(xhr,url,undef
 ],false,true).add('_onXhrLoad',function f(xhr,url,cache,putCacheOnly){
 	let array=cache&&cache[0]||xhr&&xhr.response;
 	if(!cache){
-		if(xhr._needDecrypt && Decrypter.hasEncryptedAudio && !ImageManager.isDirectPath(url)) array=Decrypter.decryptArrayBuffer(array);
+		if(xhr._needDecrypt && Decrypter.hasEncryptedAudio && !ResourceHandler.isDirectPath(url)) array=Decrypter.decryptArrayBuffer(array);
 		this._setCache(url,cache=[array.slice(),]);
 	}
 	if(putCacheOnly) return;
@@ -963,7 +963,7 @@ function(url,bitmap,ori,argv,xhr){ if(!(xhr.readyState>=4)) return;
 	return this._cache;
 },[404,1<<28],false,true);
 new cfc(WebAudio.prototype).add('_load',function f(url){
-	if(!Decrypter.hasEncryptedAudio || ImageManager.isDirectPath(url) || Decrypter._notFoundCache.has(url) || getUrlParamVal('disableCustom')) return f.ori.apply(this,arguments);
+	if(!Decrypter.hasEncryptedAudio || ResourceHandler.isDirectPath(url) || Decrypter._notFoundCache.has(url) || getUrlParamVal('disableCustom')) return f.ori.apply(this,arguments);
 	jurl(url,"HEAD",0,0,'arraybuffer',f.tbl[0].bind(this,url,f.ori,arguments),f.tbl[1].bind(this,url,f.ori,arguments));
 },[
 function(url,ori,argv,resp,xhr){ if(xhr.readyState!==4) return;
@@ -1129,7 +1129,9 @@ new cfc(Input).addBase('_getKeyName',function f(event){
 	this._currentState[btnName]=true;
 }).addBase('_onKeyDown_okForRetryResource',function f(buttonName){
 	const rtv=Graphics._errorShowed&&buttonName==='ok';
-	ResourceHandler.retry();
+	if(rtv){ const s=Graphics._retryResourceBtns; if(s){
+		const it0=s.keys().next(); if(!it0.done){ const btn=it0.value; btn.click(); s.delete(btn); }
+	} }
 	return rtv;
 });
 
@@ -2603,11 +2605,94 @@ r=p[k]; (p[k]=function f(path){
 }).ori=r;
 }
 
-{ const p=ImageManager;
+{ const p=ResourceHandler;
+p._emptyData={
+'img':'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYV2NgAAIAAAUAAarVyFEAAAAASUVORK5CYII=', // blank_1x1
+'audio':'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAIARKwAABCxAgAEABAAZGF0YQAAAAA=', // blank_audio
+};
+p._reloaders=new Set();
+p.exists=function(){ return 0<this._reloaders.size; };
+new cfc(p).addBase('retry',function f(){
+	Graphics.eraseLoadingError();
+	SceneManager.resume();
+	const s=new Set(this._reloaders);
+	this._reloaders.clear();
+	s.forEach(f.tbl[0]);
+},[
+f=>f(), // 0: forEach
+]);
+p.reloader_add=function(f){ this._reloaders.add(f); };
+p.reloader_del=function(f){ this._reloaders.delete(f); };
+p.setLoaderType=function(t){ this._loaderType=t; };
+p.getLoaderType=function(){ return this._loaderType; };
+p.createLoader=function(url, retryMethod, resignMethod, retryInterval){
+	// create re-loader, actually
+	retryInterval=retryInterval||this._defaultRetryInterval;
+	retryMethod._printNoErr=retryMethod._printNoErr||this._printNoErr;
+	retryMethod._loaderType=retryMethod._loaderType||this._loaderType;
+	let retryCount=0;
+	const opt={};
+	const rtv=function loader(){
+		if(retryCount<retryInterval.length){
+			setTimeout(retryMethod, retryInterval[retryCount]);
+			retryCount++;
+		}else{
+			if(resignMethod) resignMethod();
+			if(url){
+				ResourceHandler.reloader_del(opt.reloader);
+				const f=opt.reloader=isGivingUp=>{
+					retryCount=0;
+					retryMethod(isGivingUp&&ResourceHandler._emptyData[retryMethod._loaderType]||url);
+				};
+				if(!loader._div||!loader._div.parentNode){
+					loader._div=undefined;
+					if(!retryMethod._printNoErr) loader._div=Graphics.printLoadingError(url,opt);
+				}
+				SceneManager.stop();
+				ResourceHandler.reloader_add(f);
+			}
+		}
+	};
+	return rtv;
+};
 (t=p.isDirectPath=function f(fname){
 	return fname && fname.constructor===String && f.tbl.some(p=>fname.match(p));
 }).ori=undefined;
 t.tbl=[/^(data:|\.\/\/)/,];
+}
+new cfc(Bitmap).addBase('giveUpUrl_getCont',function f(){
+	let rtv=Bitmap._giveUpUrl; if(!rtv) rtv=Bitmap._giveUpUrl=new Set();
+	return rtv;
+}).addBase('giveUpUrl_add',function f(url){
+	return this.giveUpUrl_getCont().add(url);
+}).addBase('giveUpUrl_del',function f(url){
+	return this.giveUpUrl_getCont().delete(url);
+}).addBase('giveUpUrl_getMod',function f(url){
+	return this.giveUpUrl_getCont().has(url)?ResourceHandler._emptyData.img:url;
+});
+new cfc(Bitmap.prototype).add('_onLoad',function f(){
+	{ const div=this._loader||this._loader._div; if(div) Graphics.currentLoadErrorDivs_clear(div); }
+	return f.ori.apply(this,arguments);
+}).add('decode',function f(){
+	const bakT=ResourceHandler.getLoaderType();
+	ResourceHandler.setLoaderType('img');
+	const rtv=f.ori.apply(this,arguments);
+	ResourceHandler.setLoaderType(bakT);
+	return rtv;
+}).add('_requestImage',function f(url){
+	const bakT=ResourceHandler.getLoaderType();
+	ResourceHandler.setLoaderType('img');
+	const rtv=f.ori.apply(this,arguments);
+	ResourceHandler.setLoaderType(bakT);
+	return rtv;
+}).add('_requestImage',function f(url,substituteUrl){
+	if(substituteUrl!==undefined) arguments[0]=substituteUrl;
+	arguments[0]=Bitmap.giveUpUrl_getMod(arguments[0]);
+	return f.ori.apply(this,arguments);
+});
+
+{ const p=ImageManager;
+p.isDirectPath=ResourceHandler.isDirectPath;
 p.splitUrlQueryHash=path=>{ if(!path) return ['','',''];
 	const idx_sharp=path.indexOf("#");
 	const rtv=idx_sharp<0?[path,'','',]:[path.slice(0,idx_sharp),'',path.slice(idx_sharp),];
@@ -2646,15 +2731,20 @@ r=p[k]; (p[k]=function(folder, filename, hue, smooth, reservationId){
 k='loadNormalBitmap';
 r=p[k]; (p[k]=function(path, hue){
 	if(!path) return ImageManager.loadEmptyBitmap();
-	const key = this._generateCacheKey(path, hue);
-	let bitmap = this._imageCache.get(key);
+	const key=this._generateCacheKey(path, hue);
+	let bitmap=this._imageCache.get(key);
 	if(!bitmap){
-		this._imageCache.add(key, bitmap = Bitmap.load(path));
+		this._imageCache.add(key,bitmap=Bitmap.load(path));
+		bitmap._cacheKey=key;
 		bitmap.addLoadListener(()=>bitmap.rotateHue(hue));
 	}else if(!bitmap.isReady()) bitmap.decode();
 	return bitmap;
 }).ori=r;
 }
+
+ImageCache.prototype.del=function f(key){
+	delete this._items[key];
+};
 
 })(); // ImageManager._loadBitmap
 
@@ -3249,35 +3339,123 @@ function(div){ this.uniquePop(div); }, // 1:
 	rtv._main=main;
 	return rtv;
 },[
-['color:yellow;','color:white;','margin:4px;','background-color:rgba(0,0,0,0.25);text-align:left;overflow-x:scroll;',], // 0: css
+['color:yellow;','color:white;','margin:4px;','background-color:rgba(0,0,0,0.25);text-align:left;overflow-x:scroll;font-family:monospace;',], // 0: css
 ]).addBase('printLoadingError',function f(url,opt){
 	if(!this.printLoadingError_can(url,opt)) return false;
-	this.printLoadingError_do(url,opt);
-	return true;
+	return this.printLoadingError_do(url,opt);
 }).addBase('printLoadingError_do',function f(url,opt){
 	// can continue
 	this._updateErrorPrinter_setShow(true);
 	const div=this._makeErrorHtml('Loading Error', 'Failed to load: ' + url);
+	div._opt=opt;
+	div._url=url;
 	this._errorPrinter.ac(div);
 	this.currentLoadErrorDivs_add(div);
 	
-	const btn=document.createElement('button');
-	btn.ac(document.createTextNode('Retry'));
-	btn.sa('style',f.tbl[0][0]);
-	btn._root=div;
-	btn.onmousedown = btn.ontouchstart = f.tbl[1].bind(this);
-	(div._main?div._main:div).ac(btn);
+	const d=document,btns=[];
+	if(!f.tbl[2]) d.head.ac(f.tbl[2]=d.ce('style').atxt(f.tbl[3]));
+	let s=this._retryResourceBtns; if(!s) s=this._retryResourceBtns=new Set();
+	
+	{ const btn=d.createElement('button');
+	btn.ac(d.ce('div').atxt('Retry all'));
+	btn.onclick=f.tbl[1];
+	btns.push(btn);
+	}
+	{ const btn=d.createElement('button');
+	btn.ac(d.ce('div').atxt('Retry this'));
+	btn.onclick=f.tbl[4];
+	s.add(btn);
+	btns.push(btn);
+	}
+	{ const btn=d.createElement('button');
+	btn.ac(d.ce('div').atxt('Give up this')).ac(d.ce('div').atxt('(use 1x1 transparent image)'));
+	btn.onclick=f.tbl[4];
+	btn._isGivingUp=true;
+	btns.push(btn);
+	}
+	{ const btn=d.createElement('button');
+	btn.ac(d.ce('div').atxt('Always give up this'));
+	btn.onclick=f.tbl[5];
+	btn._isGivingUp=true;
+	btns.push(btn);
+	}
+	btns.forEach(f.tbl[0][0],div);
+	btns.forEach(f.tbl[0][1],div);
 	
 	this._loadingCount = -Infinity;
+	
+	return div;
 },[
-['font-size:24px;color:#FFFFFF;background-color:#000000',], // 0: css
+[
+function f(btn){
+	// this=ErrorHtml
+	const div=this;
+	if(!f.tbl) f.tbl=[];
+	if(!f.tbl[0]) f.tbl[0]='btn'; // dom.class
+	btn.classList.add('btn');
+	btn._root=div;
+	(div._main?div._main:div).ac(btn);
+	div._maxBtnWidth=Math.ceil(Math.max(div._maxBtnWidth||0,btn.scrollWidth));
+	div._maxBtnHeight=Math.ceil(Math.max(div._maxBtnHeight||0,btn.scrollHeight));
+}, // 0-0: forEach btn - settings without width
+function f(btn){
+	btn.style.width=this._maxBtnWidth+'px';
+	btn.style.height=this._maxBtnHeight+'px';
+}, // 0-1: forEach btn - set width
+], // 0: forEach btn
 function(event){
 	ResourceHandler.retry();
 	event.stopPropagation();
-	this.currentLoadErrorDivs_clear(event.target._root);
-	if(!this.currentLoadErrorDivs_getCnt()) this._updateErrorPrinter_setShow(false);
-	this._updateErrorPrinter();
-},
+	Graphics.currentLoadErrorDivs_clear();
+	if(!Graphics.currentLoadErrorDivs_getCnt()) Graphics._updateErrorPrinter_setShow(false);
+	Graphics._updateErrorPrinter();
+	Graphics._retryResourceBtns.clear();
+}, // 1: retry all
+undefined, // 2: <style />
+`
+.btn{
+color:#FFFFFF;
+background-color:rgba(0,0,0,0.75);
+float:left;
+text-wrap:nowrap;
+font-size:16px;
+font-family:monospace;
+}
+.btn:hover{
+background-color:rgba(234,234,0,0.25);
+}
+`, // 3: content of above <style />
+function(event){
+	event.stopPropagation();
+	const root=this._root;
+	const opt=root&&root._opt;
+	if(!opt||!opt.reloader) return;
+	opt.reloader(this._isGivingUp);
+	ResourceHandler.reloader_del(opt.reloader);
+	if(root) Graphics.currentLoadErrorDivs_clear(root);
+	if(!Graphics.currentLoadErrorDivs_getCnt()){
+		Graphics._updateErrorPrinter_setShow(false);
+		SceneManager.resume();
+	}
+	Graphics._updateErrorPrinter();
+	if(this._isGivingUp && this._root._url && typeof $gameTemp!=='undefined' && $gameTemp && $gameTemp.popupMsg) $gameTemp.popupMsg("give up: \n"+this._root._url+"\nUTC time:\n"+new Date().toISOString(),{loc:"LU",});
+}, // 4: retry this / give up this
+function(event){
+	Bitmap.giveUpUrl_add(this._url);
+	event.stopPropagation();
+	const root=this._root;
+	const opt=root&&root._opt;
+	if(!opt||!opt.reloader) return;
+	opt.reloader(true);
+	ResourceHandler.reloader_del(opt.reloader);
+	if(root) Graphics.currentLoadErrorDivs_clear(root);
+	if(!Graphics.currentLoadErrorDivs_getCnt()){
+		Graphics._updateErrorPrinter_setShow(false);
+		SceneManager.resume();
+	}
+	Graphics._updateErrorPrinter();
+	if(this._isGivingUp && this._root._url && typeof $gameTemp!=='undefined' && $gameTemp && $gameTemp.popupMsg) $gameTemp.popupMsg("always give up: \n"+this._root._url+"\nUTC time:\n"+new Date().toISOString(),{loc:"LU",});
+}, // 5: always give up this
 ]).addBase('printLoadingError_can',function f(){
 	return this._errorPrinter;
 }).addBase('printError',function f(name,message,opt){
