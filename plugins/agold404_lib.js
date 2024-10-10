@@ -32,6 +32,7 @@ const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri,moduleName)=>{
 	}
 	if(is_notUsingOri) f.ori=undefined;
 	f.tbl=tbl;
+	//if(f._funcName && f!==none) console.warn("already having '_funcName' proterty for",f);
 	f._funcName=k;
 	f._moduleName=moduleName;
 	return p;
