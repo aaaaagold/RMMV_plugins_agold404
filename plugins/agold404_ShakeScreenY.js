@@ -13,7 +13,7 @@ new cfc(Game_Screen.prototype).add('clearShake',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.clearShakeY();
 	return rtv;
-}).add('clearShakeY',function f(){
+}).addBase('clearShakeY',function f(){
 	this._shakePowerY=0;
 	this._shakeSpeedY=0;
 	this._shakeDurationY=0;
@@ -21,7 +21,7 @@ new cfc(Game_Screen.prototype).add('clearShake',function f(){
 	this._shakeDurationYMax=undefined;
 	this._shakeMode=undefined;
 	this._shakeY=0;
-}).add('startShakeY',function f(power,speed,duration,mode){
+}).addBase('startShakeY',function f(power,speed,duration,mode){
 	power=Math.abs(power);
 	speed=speed-0||0;
 	duration-=0;
@@ -34,7 +34,7 @@ new cfc(Game_Screen.prototype).add('clearShake',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.updateShakeY();
 	return rtv;
-}).add('updateShakeY',function f(){
+}).addBase('updateShakeY',function f(){
 	if(this._shakeDurationY>0||this._shakeY!==0){
 		const delta=(this._shakePowerY*this._shakeSpeedY*this._shakeDirectionY)/10;
 		if(this._shakeMode && this._shakeMode in f.tbl[0]){
@@ -52,12 +52,12 @@ new cfc(Game_Screen.prototype).add('clearShake',function f(){
 {
 sin:'updateShakeY_sin',
 }, // 0: map
-]).add('updateShakeY_sin',function f(delta){
+]).addBase('updateShakeY_sin',function f(delta){
 	delta=Math.abs(delta);
 	const P_4=Math.floor(this._shakePowerY*2/delta)+1;
 	const P_2=P_4<<1;
 	this._shakeY=Math.sin(Math.PI*(this._shakeDurationYMax-this._shakeDurationY)/P_2)*delta*P_4*((P_2+this._shakeDurationY)/P_2).clamp(0,1);
-}).add('shakeY',function f(){
+}).addBase('shakeY',function f(){
 	if(!(f.tbl[0] in this)) this.clearShake();
 	return this._shakeY;
 },[
@@ -69,7 +69,7 @@ new cfc(Spriteset_Base.prototype).add('updatePosition',function f(){
 	const screen=$gameScreen;
 	this.updatePosition_deltaY(screen);
 	return rtv;
-},undefined,true).add('updatePosition_deltaY',function f(screen){
+},undefined,true).addBase('updatePosition_deltaY',function f(screen){
 	this.y+=Math.round(screen.shakeY());
 });
 
