@@ -123,14 +123,14 @@ p.uniqueClear=function(){
 	this._map.clear();
 	this.length=0;
 };
-new cfc(p).add('uniqueSort',function f(cmpFn=undefined){
+new cfc(p).addBase('uniqueSort',function f(cmpFn=undefined){
 	const arr=this.slice();
 	this.uniqueClear();
 	arr.sort.apply(arr,arguments).forEach(f.tbl[0],this);
 	return this;
 },[
 function(x){ this.uniquePush(x); },
-],true,true).add('sort',function f(cmpFn=undefined){
+]).add('sort',function f(cmpFn=undefined){
 	return this._map?this.uniqueSort.apply(this,arguments):f.ori.apply(this,arguments);
 }).add('concat_inplace',function f(...items){
 	if(!this._map) return f.ori.apply(this,arguments);
@@ -141,6 +141,9 @@ function(x){ this.uniquePush(x); },
 	}
 	return this;
 });
+p.kvGetKey=function(idx){
+	return this[idx][1];
+};
 p.kvHas=function(key){
 	if(!this._kvMap) this._kvMap=new Map(this);
 	return this._kvMap.has(key);
