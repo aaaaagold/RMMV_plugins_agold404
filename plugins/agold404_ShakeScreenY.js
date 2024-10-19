@@ -19,6 +19,7 @@ new cfc(Game_Screen.prototype).add('clearShake',function f(){
 	this._shakeDurationY=0;
 	this._shakeDirectionY=1;
 	this._shakeDurationYMax=undefined;
+	this._shakeDurationYCurr=0;
 	this._shakeMode=undefined;
 	this._shakeY=0;
 }).addBase('startShakeY',function f(power,speed,duration,mode){
@@ -29,7 +30,9 @@ new cfc(Game_Screen.prototype).add('clearShake',function f(){
 	this._shakeSpeedY=speed;
 	this._shakeDurationY=duration;
 	this._shakeDurationYMax=duration;
+	this._shakeDurationYCurr=this._shakeDurationYCurr||0;
 	this._shakeMode=mode;
+	return this;
 }).add('updateShake',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.updateShakeY();
@@ -37,9 +40,11 @@ new cfc(Game_Screen.prototype).add('clearShake',function f(){
 }).addBase('updateShakeY',function f(){
 	if(this._shakeDurationY>0||this._shakeY!==0){
 		const delta=(this._shakePowerY*this._shakeSpeedY*this._shakeDirectionY)/10;
+		++this._shakeDurationYCurr;
 		if(this._shakeMode && this._shakeMode in f.tbl[0]){
 			this[f.tbl[0][this._shakeMode]](delta);
 			--this._shakeDurationY;
+			if(!(this._shakeDurationY>0||this._shakeY!==0)) this._shakeDurationYCurr=0;
 			return;
 		}
 		if(!(1<this._shakeDurationY) && this._shakeY*(this._shakeY+delta)<0) return this.clearShake();
@@ -56,7 +61,10 @@ sin:'updateShakeY_sin',
 	delta=Math.abs(delta);
 	const P_4=Math.floor(this._shakePowerY*2/delta)+1;
 	const P_2=P_4<<1;
-	this._shakeY=Math.sin(Math.PI*(this._shakeDurationYMax-this._shakeDurationY)/P_2)*delta*P_4*((P_2+this._shakeDurationY)/P_2).clamp(0,1);
+	const curr=this._shakeDurationYCurr;
+	this._shakeY=Math.sin(Math.PI*curr/P_2)*delta*P_4*((P_2+this._shakeDurationYMax-curr)/P_2).clamp(0,1);
+}).addBase('getShakePeriodY_4',function f(){
+	return Math.floor((this._shakePowerY*2)/(this._shakePowerY*this._shakeSpeedY*this._shakeDirectionY/10))+1;
 }).addBase('shakeY',function f(){
 	if(!(f.tbl[0] in this)) this.clearShake();
 	return this._shakeY;
