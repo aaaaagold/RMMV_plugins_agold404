@@ -238,8 +238,11 @@ new Set([
 	const item=w.item(idx);
 	const cond=w._skillTree_learnMeta[idx].cond;
 	let condOk=true;
+	const a=w._actor;
+	const self=a;
+	const actor=a;
 	{
-		const res=eval(cond&&(cond instanceof Array)?cond[0]:cond);
+		const res=eval(cond&&(cond instanceof Array)?cond[0]:cond); // "condJs" or ["condJs","condFailMsg"]
 		condOk=res===undefined||res;
 	}
 	return condOk && item && w._actor && ( prevIdx===undefined || this.itemActionWindow_hasSkill(w.item(prevIdx)) ) && !this.itemActionWindow_hasSkill(item);
@@ -250,8 +253,11 @@ new Set([
 	const w=this._itemWindow;
 	if(idx===undefined) idx=w.index();
 	const item=w.item(idx);
-	if(item && w._actor){
-		w._actor.learnSkill(item.id);
+	const a=w._actor;
+	const self=a;
+	const actor=a;
+	if(item && a){
+		a.learnSkill(item.id);
 		const consume=w._skillTree_learnMeta[idx].consume;
 		if(consume){ eval(consume); }
 		this._itemWindow.refresh();
