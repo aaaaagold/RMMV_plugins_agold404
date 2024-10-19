@@ -21,7 +21,7 @@ new cfc(Game_Screen.prototype).addBase('_manualOffset_getCont',function f(){
 	for(let i=cont.length;i--;){
 		const xy=cont.kvGetVal(cont.kvGetKey(i));
 		c.x+=xy[0];
-		c.y+=xy[0];
+		c.y+=xy[1];
 	}
 }).addBase('getManualOffsetCache',function f(){
 	if(!this._manualOffsets_cache) this._manualOffset_refreshCache();
@@ -30,11 +30,14 @@ new cfc(Game_Screen.prototype).addBase('_manualOffset_getCont',function f(){
 	const cont=this._manualOffset_getCont();
 	x=x-0||0;
 	y=y-0||0;
+	const cache=this.getManualOffsetCache();
 	if(!x&&!y){
+		const xy=cont.kvGetVal(id);
 		cont.kvPop(id);
+		cache.x-=xy&&xy[0]-0||0;
+		cache.y-=xy&&xy[1]-0||0;
 		return this;
 	}
-	const cache=this.getManualOffsetCache();
 	if(cont.kvHas(id)){
 		const xy=cont.kvGetVal(id);
 		cache.x+=x-xy[0];
