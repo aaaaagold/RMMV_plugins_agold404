@@ -30,7 +30,7 @@ new cfc(Decrypter).addBase('checkImgIgnore',function(url){
 		const bak=$dataSystem.encryptionKey;
 		const arr=[]; for(let x=16;x--;) arr[x]=Bv[x]^refHeader[x]^('0x'+this._encryptionKey[x]);
 		$dataSystem.encryptionKey=arr.map(f.tbl[0]).join('');
-		console.log('use key =',$dataSystem.encryptionKey);
+		console.log('use key =',$dataSystem.encryptionKey,'\n ref header =',refHeader.slice());
 		rtv=f.ori.apply(this,arguments);
 		$dataSystem.encryptionKey=bak;
 	} }
@@ -865,7 +865,7 @@ function(xhr,url,putCacheOnly){ if(xhr.status<400) this._onXhrLoad(xhr,url,undef
 ]).addBase('_onXhrLoad',function f(xhr,url,cache,putCacheOnly){
 	let array=cache&&cache[0]||xhr&&xhr.response;
 	if(!cache){
-		if(xhr._needDecrypt && Decrypter.hasEncryptedAudio && !ResourceHandler.isDirectPath(url)) array=Decrypter.decryptArrayBuffer(array);
+		if(xhr._needDecrypt && Decrypter.hasEncryptedAudio && !ResourceHandler.isDirectPath(url)) array=Decrypter.decryptArrayBuffer(array,OGG_16B_HEADER);
 		this._setCache(url,cache=[array.slice(),]);
 	}
 	if(putCacheOnly) return;
@@ -3707,3 +3707,4 @@ new cfc(SceneManager).add('run',function f(){
 // ---- ---- ---- ---- 
 
 })();
+
