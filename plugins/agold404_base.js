@@ -609,7 +609,46 @@ new cfc(Window_Help.prototype).addBase('setText',function f(text,forceUpdate){
 	this.refresh();
 });
 //
-new cfc(Window_Selectable.prototype).add('processCursorMove',function f(){
+new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
+	const index=this.index();
+	const maxItems=this.maxItems();
+	const maxCols=this.maxCols();
+	const maxRows=this.maxRows();
+	if(maxRows>=2){
+		let nextIndex;
+		if(index+maxCols<maxItems) nextIndex=index+maxCols;
+		else if(this.cursorDown_canLoop(wrap)) nextIndex=index%maxCols;
+		if(nextIndex>=0) this.select(nextIndex);
+	}
+}).addBase('cursorDown_canLoop',t=function f(wrap){
+	return !!wrap;
+}).addBase('cursorUp',function(wrap){
+	const index=this.index();
+	const maxItems=this.maxItems();
+	const maxCols=this.maxCols();
+	const maxRows=this.maxRows();
+	if(maxRows>=2){
+		let nextIndex;
+		if(index>=maxCols) nextIndex=index-maxCols;
+		else if(this.cursorUp_canLoop(wrap)){
+			const c=index%maxCols;
+			const lastC=(maxItems-1)%maxCols;
+			nextIndex=(maxRows-1-(lastC<c))*maxCols+c;
+		}
+		if(nextIndex>=0) this.select(nextIndex);
+	}
+}).addBase('cursorUp_canLoop',t
+).addBase('cursorRight',function(wrap){
+	const index=this.index();
+	const maxItems=this.maxItems();
+	if(this.maxCols()>=2 && (index+1<maxItems||this.cursorRight_canLoop(wrap))) this.select((index+1)%maxItems);
+}).addBase('cursorRight_canLoop',t
+).addBase('cursorLeft',function f(wrap){
+	const index=this.index();
+	const maxItems=this.maxItems();
+	if(this.maxCols()>=2 && (index>=1||this.cursorLeft_canLoop(wrap))) this.select((index-1+maxItems)%maxItems);
+}).addBase('cursorLeft_canLoop',t
+).add('processCursorMove',function f(){
 	const idx=this.index();
 	const rtv=f.ori.apply(this,arguments);
 	if(this.isCursorMovable()){
