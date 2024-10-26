@@ -600,13 +600,16 @@ new cfc(Window_Base.prototype).addBase('lineHeight',function f(){
 	}else return f.tbl[0];
 },['']);
 //
-new cfc(Window_Help.prototype).addBase('setText',function f(text,forceUpdate){
-	if(this.setText_condOk(text,forceUpdate)) this.setText_doUpdate(text);
+new cfc(Window_Help.prototype).addBase('setText',function f(text,forceUpdate,out_textState){
+	if(this.setText_condOk(text,forceUpdate)) return this.setText_doUpdate(text,out_textState);
 }).addBase('setText_condOk',function f(text,forceUpdate){
 	return forceUpdate || this._text!==text;
-}).addBase('setText_doUpdate',function f(text){
+}).addBase('setText_doUpdate',function f(text,out_textState){
 	this._text=text;
-	this.refresh();
+	return this.refresh(out_textState);
+}).addBase('refresh',function f(out_textState){
+	this.contents.clear();
+	return this.drawTextEx(this._text, this.textPadding(), 0, undefined,undefined,out_textState);
 });
 //
 new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
@@ -690,7 +693,14 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 		if(0<M) this.select(M-1);
 	}
 	return rtv;
-}).addBase('itemRect_curr',function f(){
+}).add('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	if(this.active) this.update_active();
+	if(this.isOpenAndActive()) this.update_openAndActive();
+	return rtv;
+}).addBase('update_active',none
+).addBase('update_openAndActive',none
+).addBase('itemRect_curr',function f(){
 	return this.itemRect(this.index());
 }).addBase('itemRect_scrollRectInView',function f(rect){
 	let scy=this._scrollY;
@@ -745,6 +755,8 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	return rect;
 }).addBase('itemSpacingY',function f(){
 	return 0;
+}).addBase('topRow',function f(){
+	return Math.floor(this._scrollY/(this.itemHeight()+this.itemSpacingY()));
 }).addBase('updateArrows',function f(){
 	let scy=this._scrollY;
 	const rectBeg=this.itemRect(0);
@@ -1568,12 +1580,18 @@ new Map([
 
 (()=>{ let k,r,t;
 
-if(!window.addEnum) window.addEnum=function(key){
+window.addEnum=window.addEnum||function(key){
 	if(this[key]) return;
 	this._enumMax|=0;
 	this[key]=++this._enumMax;
 	return this;
 };
+const initAddEnum=obj=>{
+	obj._enumMax=obj._enumMax>=404?obj._enumMax:404;
+	obj.addEnum=window.addEnum;
+};
+
+initAddEnum(Game_BattlerBase);
 
 t=[
 ({
@@ -2029,28 +2047,29 @@ new cfc(Scene_Boot.prototype).addBase('start_after',function f(){
 	// consider some data is changed after last call
 	// TODO
 }).addBase('modData',function f(){
+	this.modItems();
 	this.modTraits();
 	this.modEffects(); // consider passive skill traits referrer to a state 
 }).addBase('modTraits',function f(){
 	// order: editor menu
-	$dataActors  .forEach(this.modTrait1);
-	$dataClasses .forEach(this.modTrait1);
-	//$dataSkills  .forEach(this.modTrait1);
-	//$dataItems   .forEach(this.modTrait1);
-	$dataWeapons .forEach(this.modTrait1);
-	$dataArmors  .forEach(this.modTrait1);
-	$dataEnemies .forEach(this.modTrait1);
-	$dataTroops  .forEach(this.modTrait1);
-	$dataStates  .forEach(this.modTrait1);
+	$dataActors  .forEach(this.modTrait1.bind(this));
+	$dataClasses .forEach(this.modTrait1.bind(this));
+	//$dataSkills  .forEach(this.modTrait1.bind(this));
+	//$dataItems   .forEach(this.modTrait1.bind(this));
+	$dataWeapons .forEach(this.modTrait1.bind(this));
+	$dataArmors  .forEach(this.modTrait1.bind(this));
+	$dataEnemies .forEach(this.modTrait1.bind(this));
+	$dataTroops  .forEach(this.modTrait1.bind(this));
+	$dataStates  .forEach(this.modTrait1.bind(this));
 }).addBase('modTrait1',none).add('modEffects',function f(){
 	// order: editor menu
-	$dataSkills  .forEach(this.modEffect1);
-	$dataItems   .forEach(this.modEffect1);
+	$dataSkills  .forEach(this.modEffect1.bind(this));
+	$dataItems   .forEach(this.modEffect1.bind(this));
 }).addBase('modEffect1',none).add('modItems',function f(){
 	// order: editor menu
-	$dataItems   .forEach(this.modItem1);
-	$dataWeapons .forEach(this.modItem1);
-	$dataArmors  .forEach(this.modItem1);
+	$dataItems   .forEach(this.modItem1.bind(this));
+	$dataWeapons .forEach(this.modItem1.bind(this));
+	$dataArmors  .forEach(this.modItem1.bind(this));
 }).addBase('modItem1',none);
 
 // ---- ---- ---- ---- scene.terminate before/after + clean scene child
@@ -2077,6 +2096,104 @@ new cfc(Scene_Boot.prototype).addBase('terminate_after',function f(){
 }).addBase('terminate_before',function f(){
 	return Scene_Base.prototype.terminate_before.apply(this,arguments);
 });
+
+// ---- ---- ---- ---- refine skill cost
+
+(()=>{ let k,r,t;
+
+const gbb=Game_BattlerBase;
+const gbbp=gbb.prototype;
+
+{
+const kwStr='hpCostRate';
+const kwTrait='TRAIT_'+kwStr;
+Game_BattlerBase.addEnum(kwTrait);
+Object.defineProperty(gbbp,'hpcr',{
+get:function f(){
+	return this.traitsPi(kwTrait,0);
+},configurable:true,
+});
+new cfc(Scene_Boot.prototype).add('modTrait1',function f(dataobj,i,arr){
+	this.modTrait1_hpCostRate.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).add('modTrait1_hpCostRate',function f(dataobj,i,arr){
+	const meta=dataobj&&dataobj.meta,ts=dataobj&&dataobj.traits; if(!meta||!ts) return;
+	const n=meta[f.tbl[0]]-0;
+	if(!isNaN(n)&&n!==1) ts.push({code:gbb[f.tbl[1]],dataId:0,value:n,});
+},[
+kwStr,
+kwTrait,
+]);
+}
+
+Object.defineProperty(gbbp,'mpcr',{
+get:function f(){
+	return this.mcr;
+},configurable:true,
+});
+
+{
+const kwStr='tpCostRate';
+const kwTrait='TRAIT_'+kwStr;
+Game_BattlerBase.addEnum(kwTrait);
+Object.defineProperty(gbbp,'tpcr',{
+get:function f(){
+	return this.traitsPi(kwTrait,0);
+},configurable:true,
+});
+new cfc(Scene_Boot.prototype).add('modTrait1',function f(dataobj,i,arr){
+	this.modTrait1_tpCostRate.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).add('modTrait1_tpCostRate',function f(dataobj,i,arr){
+	const meta=dataobj&&dataobj.meta,ts=dataobj&&dataobj.traits; if(!meta||!ts) return;
+	const n=meta[f.tbl[0]]-0;
+	if(!isNaN(n)&&n!==1) ts.push({code:gbb[f.tbl[1]],dataId:0,value:n,});
+},[
+kwStr,
+kwTrait,
+]);
+}
+
+new cfc(Game_BattlerBase.prototype).addBase('skillHpCost',function(skill) {
+	return ~~(skill.hpCost*this.hpcr);
+}).addBase('skillMpCost',function(skill){
+	return ~~(skill.mpCost*this.mpcr);
+}).addBase('skillTpCost',function(skill){
+	return ~~(skill.tpCost*this.tpcr);
+});
+
+new cfc(Window_Base.prototype).addBase('hpCostColor',function f(){
+	return this.textColor(21);
+})
+
+new cfc(Window_SkillList.prototype).addBase('drawSkillCost',function f(skill, x, y, width){
+	const actr=this._actor; if(!actr) return;
+	const hpCost=actr.skillHpCost(skill);
+	const mpCost=actr.skillMpCost(skill);
+	const tpCost=actr.skillTpCost(skill);
+	const fieldNum=!!hpCost+!!mpCost+!!tpCost; if(!fieldNum) return;
+	const sep=Math.ceil(this.textWidth('0'));
+	const digitWidth=sep;
+	const w=~~((width-(fieldNum-1)*sep)/fieldNum+sep);
+	let dx=0;
+	if(hpCost){
+		this.changeTextColor(this.hpCostColor());
+		this.drawText(hpCost, x+dx, y, w-sep, 'right');
+		dx+=w;
+	}
+	if(mpCost){
+		this.changeTextColor(this.mpCostColor());
+		this.drawText(mpCost, x+dx, y, w-sep, 'right');
+		dx+=w;
+	}
+	if(tpCost){
+		this.changeTextColor(this.tpCostColor());
+		this.drawText(tpCost, x+dx, y, w-sep, 'right');
+		dx+=w;
+	}
+});
+
+})(); // refine skill cost
 
 // ---- ---- ---- ---- Game_BattlerBase.traitCode2traitKey
 
