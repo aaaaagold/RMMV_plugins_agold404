@@ -26,12 +26,19 @@ const itemAct_cancel="取消";
 new cfc(Scene_Boot.prototype).add('start_before',function f(){
 	this.start_before_skillTree();
 	return f.ori.apply(this,arguments);
-}).add('start_before_skillTree',function f(idx){
+}).add('start_before_skillTree',function f(actrIdx,classIdx){
+	let idx;
+	
+	idx=actrIdx;
 	if(idx===undefined) $dataActors.forEach(f.tbl[0],this);
 	else if($dataActors[idx]) f.tbl[0].call(this,$dataActors[idx]);
+	
+	idx=classIdx
+	if(idx===undefined) $dataClasses.forEach(f.tbl[0],this);
+	else if($dataClasses[idx]) f.tbl[0].call(this,$dataClasses[idx]);
 },[
 dataobj=>{ const meta=dataobj&&dataobj.meta; if(!meta) return;
-	dataobj.skillTree=JSON.parse(meta.skillTree);
+	dataobj.skillTree=meta.skillTree?JSON.parse(meta.skillTree):[];
 },
 ]);
 
@@ -74,13 +81,37 @@ function(prefixItem){ this.addCommand.apply(this,prefixItem); }, // 1: forEach p
 function(stypeId){this.addCommand($dataSystem.skillTypes[stypeId], 'skill', true, stypeId); }, // 2: forEach skillType this.addCommand
 ]);
 { const p=Window_SkillList.prototype;
+const pp=p.__proto__;
+let t=[pp];
 new cfc(p).add('isTree',function f(){
 	return !(this._stypeId>=0);
+}).add('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._isSimpleTreeMode=!ConfigManager._skilltree_detailedTreeMode;
+	return rtv;
+}).addBase('isSimpleTreeMode',function f(){
+	return this._isSimpleTreeMode;
 }).add('itemSpacingY',function f(){
-	return this.isTree()?this.lineHeight():0;
-},undefined,false,true).add('itemHeight',function f(){
-	return this.lineHeight()<<!!this.isTree();
-},undefined,false,true).add('includes',function f(){
+	return this.isTree()?this.lineHeight():f.ori.apply(this,arguments);
+}).add('itemWidth',(p.itemWidth===pp.itemWidth?(function f(){
+	if(this.isTree() && this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconWidth);
+	return f.tbl[0][f._funcName].apply(this,arguments);
+}):(function f(){
+	if(this.isTree() && this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconWidth);
+	return f.ori.apply(this,arguments);
+})),t,true).add('itemHeight',(p.itemHeight===pp.itemHeight?(function f(){
+	if(this.isTree()){
+		if(this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconHeight);
+		return this.lineHeight()<<1;
+	}
+	return f.tbl[0][f._funcName].apply(this,arguments);
+}):(function f(){
+	if(this.isTree()){
+		if(this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconHeight);
+		return this.lineHeight()<<1;
+	}
+	return f.ori.apply(this,arguments);
+})),t,true).add('includes',function f(){
 	return this.isTree() || f.ori.apply(this,arguments);
 }).add('drawItem',function f(){
 	return this.isTree()?this.drawItem_tree.apply(this,arguments):f.ori.apply(this,arguments);
@@ -92,7 +123,7 @@ new cfc(p).add('isTree',function f(){
 		rect.width-=this.textPadding();
 		this.changePaintOpacity(!this._actor||this._actor.hasSkill(skill.id));
 		this.drawItemName(skill, rect.x, rect.y, rect.width);
-		this.drawSkillCost(skill, rect.x, rect.y + costHeight, rect.width);
+		if(!this.isSimpleTreeMode()) this.drawSkillCost(skill, rect.x, rect.y + costHeight, rect.width);
 		this.changePaintOpacity(true);
 	}
 	return skill;
@@ -105,7 +136,12 @@ new cfc(p).add('isTree',function f(){
 }).add('makeItemList_tree',function f(){
 	const rtv=this._data=[];
 	if(!this._actor) return rtv;
-	const arrv=this._skillTree=this._actor.getData().skillTree;
+	const arrv=this._skillTree=this._actor.getData().skillTree.slice();
+	const classObj=this._actor.currentClass();
+	if(classObj.skillTree && classObj.skillTree.length){
+		if(arrv.length) arrv.push(undefined);
+		arrv.concat_inplace(classObj.skillTree);
+	}
 	this._skillTree_learnMeta=[];
 	this._maxCols=arrv.length;
 	if(!arrv||!arrv.length) return rtv;
@@ -179,6 +215,7 @@ arr=>arr&&arr.length||0,
 		ctx.stroke();
 	}
 	ctx.restore();
+	this.refreshItemNameWindow();
 	return rtv;
 }).add('skillTree_linkWidth',function f(){
 	return f.tbl[0];
@@ -188,6 +225,49 @@ arr=>arr&&arr.length||0,
 	return f.tbl[0];
 },[
 'rgba(234,234,234,0.75)',
+]).add('update_active',(p.update_active===pp.update_active?(function f(){
+	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
+	this.update_switchSimpleTreeMode();
+	return rtv;
+}):(function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.update_switchSimpleTreeMode();
+	return rtv;
+})),t,true).addBase('update_switchSimpleTreeMode',function f(){
+	if(!this.isTree()||!Input.isTriggered('control')) return;
+	this._isSimpleTreeMode^=1;
+	this.updateCursor();
+	this.refresh();
+	SoundManager.playCursor();
+}).add('onSelect',(p.onSelect===pp.onSelect?(function f(){
+	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
+	this.refreshItemNameWindow();
+	return rtv;
+}):(function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.refreshItemNameWindow();
+	return rtv;
+})),t).addBase('refreshItemNameWindow',function f(){
+	const wnd=this._itemNameWindow,item=this.item(); if(!wnd) return;
+	if(this.isSimpleTreeMode() && this.isTree() && item){
+		wnd.show();
+		const textState={};
+		wnd.setText(item.name,true,textState);
+		if(!f.tbl[1]) f.tbl[1]=Math.ceil(wnd.textWidth(f.tbl[0]));
+		const width=Math.max(textState.right,f.tbl[1]);
+		if(textState && textState.right>=0) wnd.width=Math.ceil(width+wnd.textPadding()+(wnd.standardPadding()<<1));
+		wnd._actor=this._actor; this.drawSkillCost.call(wnd,item,0,textState.y+textState.height,width);
+		const rect=this.itemRect_curr(),c=this._windowContentsSprite;
+		wnd.position.set(
+			c.x+rect.x+rect.width,
+			(c.y+rect.y).clamp(0,this.height-wnd.height)
+		);
+		if(wnd.x>=this.width-wnd.width) wnd.x=c.x+rect.x-wnd.width;
+		if(wnd.x<0) wnd.x=0;
+	}else wnd.hide();
+},[
+'000 000 000',
+undefined,
 ]);
 } // Window_SkillList
 const a=class Window_ItemActions extends Window_Command{
@@ -200,8 +280,14 @@ window[a.name]=a;
 new cfc(Scene_Skill.prototype).add('create',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.create_tunePositions();
+	this.create_itemNameWindow();
 	this.create_itemActionWindow();
 	return rtv;
+}).addBase('create_itemNameWindow',function f(){
+	const wnd=this._itemActionWindow=new Window_Help(2);
+	wnd.hide();
+	this._itemWindow.addChild(wnd);
+	this._itemWindow._itemNameWindow=wnd;
 }).add('create_itemActionWindow',function f(){
 	this._isInitingItemActionWindow=true;
 	const wnd=this._itemActionWindow=new Window_ItemActions(0,0,{_scene:this,makeCommandList:this.itemActionWindow_makeCommandList,});
