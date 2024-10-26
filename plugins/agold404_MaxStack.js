@@ -58,20 +58,19 @@ paramKey_defaultMaxStack,
 new cfc(Scene_Boot.prototype).add('modItem1',function f(dataobj,i,arr){
 	this.modItem1_maxStack.apply(this,arguments);
 	return f.ori.apply(this,arguments);
-}).add('modItem1_maxStack',function f(dataobj,i,arr){
+}).addBase('modItem1_maxStack',function f(dataobj,i,arr){
 	const meta=dataobj&&dataobj.meta; if(!meta) return;
 	if(f.tbl[1] in meta) dataobj[f.tbl[0]]=meta[f.tbl[1]]-0||0;
-	return f.ori.apply(this,arguments);
 },t[0]);
 
 new cfc(Game_Party.prototype).add('maxItems',function f(dataobj){
 	if(dataobj && (f.tbl[0] in dataobj)) return dataobj[f.tbl[0]];
 	const res=this.getDefaultMaxStack();
 	return isNaN(res)?f.ori.apply(this,arguments):res;
-},t[0]).add('getDefaultMaxStack',function f(){
+},t[0]).addBase('getDefaultMaxStack',function f(){
 	if(!f.tbl[0].length) f.tbl[0].push(PluginManager.parameters(f.tbl[1])[f.tbl[2]]-0);
 	return f.tbl[0][0];
-},t[1],true,true);
+},t[1]);
 
 
 })();
