@@ -167,10 +167,10 @@ arr=>arr&&arr.length||0,
 	let id=info,cond,consume,connect,condFailMsg;
 	if(info instanceof Array){
 		id=info[0];
-		cond=info[1];
+		cond=(info[1] instanceof Array)?info[1][0]:info[1];
 		consume=info[2];
 		connect=(info[3] instanceof String)?eval(info[3]):info[3];
-		condFailMsg=info[4];
+		condFailMsg=(info[1] instanceof Array)?info[1][1]:info[4];
 	}
 	return {id:id,cond:cond,consume:consume,connect:connect,condFailMsg:condFailMsg,};
 }).add('skillTree_getPrevSkillIdx',function f(idx){
@@ -372,9 +372,12 @@ new Set([
 	const actor=a;
 	{
 		const res=eval(cond&&(cond instanceof Array)?cond[0]:cond); // "condJs" or ["condJs","condFailMsg"]
-		condOk=res===undefined||res;
+		condOk=res;
 	}
-	return condOk && item && w._actor && ( prevIdx===undefined || this.itemActionWindow_hasSkill(w.item(prevIdx)) ) && !this.itemActionWindow_hasSkill(item);
+	return item && w._actor && (
+		condOk ||
+		(condOk==null&&( prevIdx===undefined || !w.item(prevIdx) || this.itemActionWindow_hasSkill(w.item(prevIdx)) ))
+	) && !this.itemActionWindow_hasSkill(item);
 }).add('itemActionWindow_ok',function f(){
 	this.actor().setLastMenuSkill(this.item());
 	this.determineItem();
