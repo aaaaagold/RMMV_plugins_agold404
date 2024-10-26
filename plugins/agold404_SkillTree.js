@@ -164,13 +164,15 @@ arr=>arr&&arr.length||0,
 	arrv=arrv||this._skillTree;
 	if(!arrv) return;
 	const info=arrv[x]&&arrv[x][y];
-	let id=info,cond,consume;
+	let id=info,cond,consume,connect,condFailMsg;
 	if(info instanceof Array){
 		id=info[0];
 		cond=info[1];
 		consume=info[2];
+		connect=(info[3] instanceof String)?eval(info[3]):info[3];
+		condFailMsg=info[4];
 	}
-	return {id:id,cond:cond,consume:consume,};
+	return {id:id,cond:cond,consume:consume,connect:connect,condFailMsg:condFailMsg,};
 }).add('skillTree_getPrevSkillIdx',function f(idx){
 	const arrv=this._skillTree; if(!arrv) return;
 	if(!this._prevSkills) this._prevSkills=[];
@@ -197,13 +199,54 @@ arr=>arr&&arr.length||0,
 	const rtv=f.ori.apply(this,arguments);
 	if(!this.isTree()) return rtv;
 	// const padding1=this.standardPadding(); // already in-padding view
+	const maxCols=this.maxCols();
+	const maxRows=this.maxRows();
 	const ctx=this.contents.context;
 	const linkWidth=this.skillTree_linkWidth();
 	const linkColor=this.skillTree_linkColor();
 	ctx.save();
 		ctx.lineWidth=linkWidth;
 		ctx.strokeStyle=linkColor;
-	for(let idx=this._data.length;idx--;){
+	for(let idx=this._data.length;idx-->maxCols;){
+		const item=this.item(idx);
+		const info=this._skillTree_learnMeta[idx]; if(!info) continue;
+		const infoD=this._skillTree_learnMeta[idx+maxCols];
+		const infoL=this._skillTree_learnMeta[idx-1];
+		const infoR=this._skillTree_learnMeta[idx+1];
+		const rect=this.itemRect(idx);
+		const rectU=this.itemRect(idx-maxCols);
+		const rectL=this.itemRect(idx-1);
+		const rectR=this.itemRect(idx+1);
+		const midU={x:(rectU.x+(rectU.width>>1)+rect.x+(rect.width>>1))>>1,y:(rectU.y+rectU.height+rect.y)>>1,};
+		const midUL={x:(rectL.x+rectL.width+rect.x)>>1,y:midU.y};
+		const midUR={x:(rect.x+rect.width+rectR.x)>>1,y:midU.y};
+		if(info.connect&2){
+			ctx.beginPath();
+			ctx.moveTo(midU.x,midU.y);
+			if(!item && infoD.connect&8) ctx.lineTo(rect.x+(rect.width>>1),rect.y+rect.height);
+			else ctx.lineTo(rect.x+(rect.width>>1),rect.y);
+			ctx.stroke();
+		}
+		if(info.connect&4&&idx%maxCols){
+			ctx.beginPath();
+			ctx.moveTo(midU.x,midU.y);
+			ctx.lineTo(midUL.x,midUL.y);
+			ctx.stroke();
+		}
+		if(info.connect&8){
+			ctx.beginPath();
+			ctx.moveTo(midU.x,midU.y);
+			ctx.lineTo(rectU.x+(rectU.width>>1),rectU.y+rectU.height);
+			ctx.stroke();
+		}
+		if(info.connect&16&&(idx+1)%maxCols){
+			ctx.beginPath();
+			ctx.moveTo(midU.x,midU.y);
+			ctx.lineTo(midUR.x,midUR.y);
+			ctx.stroke();
+		}
+	}
+if(0)	for(let idx=this._data.length;idx--;){
 		const item=this.item(idx); if(!item) continue;
 		const prevIdx=this.skillTree_getPrevSkillIdx(idx);
 		if(!(prevIdx>=0)) continue;
