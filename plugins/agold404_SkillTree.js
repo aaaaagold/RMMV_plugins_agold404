@@ -70,8 +70,13 @@ new cfc(Scene_Item.prototype).add('create',function f(){
 new cfc(Window_SkillType.prototype).add('makeCommandList',function f(itemListPrefix){
 	// itemListPrefix === [name,'skill',enabled,stypeId]
 	if(this._actor){
-		(itemListPrefix=itemListPrefix||f.tbl[0]).forEach(f.tbl[1],this);
+		if(this._skillTree_skillTreeAtFirst){
+			if(!this._skillTree_noSkillTree) (itemListPrefix=itemListPrefix||f.tbl[0]).forEach(f.tbl[1],this);
+		}
 		this._actor.addedSkillTypes().sort(cmpFunc_num).forEach(f.tbl[2],this);
+		if(!this._skillTree_skillTreeAtFirst){
+			if(!this._skillTree_noSkillTree) (itemListPrefix=itemListPrefix||f.tbl[0]).forEach(f.tbl[1],this);
+		}
 	}
 },[
 [
@@ -315,16 +320,24 @@ undefined,
 } // Window_SkillList
 const a=class Window_ItemActions extends Window_Command{
 	initialize(x,y,chMethods){
+		this._skillTree_bothUseAndLearn=chMethods._scene._skillTree_bothUseAndLearn;
 		if(chMethods) for(let k in chMethods) this[k]=chMethods[k];
 		return Window_Command.prototype.initialize.apply(this,arguments);
 	}
 };
 window[a.name]=a;
-new cfc(Scene_Skill.prototype).add('create',function f(){
+new cfc(Scene_Skill.prototype).add('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._skillTree_showTree=$gameTemp._skillTree_showTree;
+	this._skillTree_bothUseAndLearn=$gameTemp._skillTree_bothUseAndLearn;
+	this._skillTree_skillTreeAtFirst=$gameTemp._skillTree_skillTreeAtFirst;
+	return rtv;
+}).add('create',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.create_tunePositions();
 	this.create_itemNameWindow();
 	this.create_itemActionWindow();
+	this.create_tuneParams();
 	return rtv;
 }).addBase('create_itemNameWindow',function f(){
 	const wnd=this._itemActionWindow=new Window_Help(2);
@@ -341,8 +354,20 @@ new cfc(Scene_Skill.prototype).add('create',function f(){
 	wnd.setHandler('learn',this.itemActionWindow_learn.bind(this));
 	wnd.setHandler('cancel',this.itemActionWindow_cancel.bind(this));
 	this._itemWindow.addChild(wnd);
+}).addBase('create_tuneParams',function f(){
+	this._skillTypeWindow._skillTree_skillTreeAtFirst=this._skillTree_skillTreeAtFirst;
+	this._skillTypeWindow._skillTree_noSkillTree=!this._skillTree_showTree;
 }).add('itemActionWindow_makeCommandList',function f(){
-	for(let x=0,arr=f.tbl[1],xs=arr.length;x!==xs;++x) this.addCommand(arr[x][0],arr[x][1],arr[x][2]!=null?this._scene&&arr[x][2].constructor===String?this._scene[arr[x][2]]():arr[x][2]:true);
+	for(let x=0,arr=f.tbl[1],xs=arr.length;x!==xs;++x){
+		if(!this._skillTree_bothUseAndLearn){
+			if(this._scene._skillTypeWindow.currentExt()<0){
+				if(arr[x][1]==='ok') continue;
+			}else{
+				if(arr[x][1]==='learn') continue;
+			}
+		}
+		this.addCommand(arr[x][0],arr[x][1],arr[x][2]!=null?this._scene&&arr[x][2].constructor===String?this._scene[arr[x][2]]():arr[x][2]:true);
+	}
 },[
 new Set([
 'learn',
@@ -419,6 +444,15 @@ new Set([
 	this._itemActionWindow.show();
 	this._itemActionWindow.activate();
 },undefined,false,true);
+
+
+new cfc(Game_Temp.prototype).addBase('openSkillTree',function f(){
+	//this._skillTree_skillTreeAtFirst=false;
+	//this._skillTree_bothUseAndLearn=false;
+	this._skillTree_showTree=true;
+	SceneManager.push(Scene_Skill);
+	this._skillTree_showTree=undefined;
+});
 
 
 })();
