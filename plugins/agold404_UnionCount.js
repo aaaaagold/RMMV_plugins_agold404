@@ -30,10 +30,9 @@ kw,
 new cfc(Scene_Boot.prototype).add('modItem1',function f(dataobj,i,arr){
 	this.modItem1_unionCnt.apply(this,arguments);
 	return f.ori.apply(this,arguments);
-}).add('modItem1_unionCnt',function f(dataobj,i,arr){
+}).addBase('modItem1_unionCnt',function f(dataobj,i,arr){
 	const meta=dataobj&&dataobj.meta; if(!meta) return;
 	if(f.tbl[1] in meta) dataobj[f.tbl[0]]=JSON.parse(meta[f.tbl[1]]);
-	return f.ori.apply(this,arguments);
 },t);
 
 new cfc(Game_Party.prototype).add('unionCnt',function f(dataobj){
@@ -45,9 +44,9 @@ new cfc(Game_Party.prototype).add('unionCnt',function f(dataobj){
 		if(cont) cnt+=this.numItems(cont[info[1]]);
 	}
 	return cnt;
-},t).add('hasMaxItems',function f(dataobj){
+},t).addBase('hasMaxItems',function f(dataobj){
 	return this.unionCnt(dataobj)>=(this.maxItems(dataobj)|0);
-},undefined,true,true);
+});
 
 
 })();
