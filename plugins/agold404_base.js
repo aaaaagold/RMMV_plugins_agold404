@@ -3849,7 +3849,7 @@ function f(command){
 		}
 	}
 }, // Common Event
-129:param=>{
+129:params=>{
 	const actor=$gameActors.actor(params[0]);
 	if(actor && params[1]===0){
 		const name=actor.characterName();
