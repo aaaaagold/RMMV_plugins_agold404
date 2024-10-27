@@ -691,6 +691,8 @@ p.rf=function(i){
 p.ra=function(a){ this.removeAttribute(a); return this; };
 p.ga=p.getAttribute;
 p.sa=function(a,v){ this.setAttribute(a,v); return this; };
+p.ae=function(t,f,o){ this.addEventListener.apply(this,arguments); return this; };
+p.re=function(t,f,o){ this.removeEventListener.apply(this,arguments); return this; };
 }
 //
 { const p=HTMLCanvasElement.prototype;
