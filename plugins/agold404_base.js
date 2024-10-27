@@ -1317,6 +1317,7 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	const sp=this._backgroundSprite=new Sprite(this._backgroundBmp);
 	this.addChild(sp);
 }).addBase('create_exitEvents',function f(){
+	// match terminate_removeExitEvents
 	document.body.ae(
 		'keydown',
 		this._exitEventFunction=evt=>{
@@ -1325,6 +1326,7 @@ new cfc(a.prototype).addBase('initialize',function f(){
 		},
 	);
 }).addBase('create_inputEvents',function f(){
+	// terminate_removeInputEvents
 	this._keyboardEventFunction_down=this.keyboardEvent_down.bind(this);
 	this._keyboardEventFunction_up=this.keyboardEvent_up.bind(this);
 	this._keyboardEventFunction_press=this.keyboardEvent_press.bind(this);
@@ -1348,10 +1350,14 @@ new cfc(a.prototype).addBase('initialize',function f(){
 }).addBase('keyboardEvent_press',function f(evt){
 	if(this.constructor===Scene_HTML_base) console.log('kbevt press',evt.keyCode);
 }).addBase('terminate',function f(){
-	this.terminate_removeKeyboardEvents();
+	this.terminate_removeExitEvents();
+	this.terminate_removeInputEvents();
 	this.terminate_removeDivRoot();
 	return f.tbl[0][f._funcName].apply(this,arguments);
-},t).addBase('terminate_removeKeyboardEvents',function f(){
+},t).addBase('terminate_removeExitEvents',function f(){
+	// match create_exitEvents
+	document.body.re('keydown',this._exitEventFunction,);
+}).addBase('terminate_removeInputEvents',function f(){
 	document.body.re(
 		'keydown',
 		this._keyboardEventFunction_down,
