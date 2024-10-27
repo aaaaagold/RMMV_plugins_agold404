@@ -1379,6 +1379,32 @@ new cfc(a.prototype).addBase('initialize',function f(){
 
 })(); // Scene_HTML_base
 
+// ---- ---- ---- ---- Sprite_FadeOut
+
+(()=>{ let k,r,t;
+
+const a=class Sprite_FadeOut extends Sprite{
+};
+window[a.name]=a;
+a.ori=Sprite;
+t=[
+a.ori.prototype,
+];
+new cfc(a.prototype).addBase('initialize',function f(bitmap,fadeOutFrames){
+	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
+	this._fadeOutFramesMax=fadeOutFrames;
+	this._fadeOutFramesRemained=fadeOutFrames;
+	return rtv;
+},t).addBase('update',function f(){
+	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
+	if(this._initAlpha===undefined) this._initAlpha=this.alpha;
+	this.alpha=this._initAlpha*(--this._fadeOutFramesRemained/this._fadeOutFramesMax);
+	if(!(0<this._fadeOutFramesRemained) && this.parent) this.parent.removeChild(this);
+	return rtv;
+},t);
+
+})(); // Sprite_FadeOut
+
 // ---- ---- ---- ---- PluginManager
 
 (()=>{ let k,r,t;
@@ -2102,36 +2128,44 @@ new cfc(SceneManager).addBase('push',function f(sceneClass,shouldRecordCurrentSc
 	if(shouldRecordCurrentScene && this._nextScene) this._nextScene._prevScene=this._scene;
 	return this._nextScene && this._nextScene._prevScene;
 }).addBase('changeScene',function f(){
-	if(this.isSceneChanging() && !this.isCurrentSceneBusy() && ImageManager.isReady()){
-		let recordedPrevScene;
+	if(this.changeScene_condOk()){
+		this.changeScene_do_before();
+		this.changeScene_do();
+		this.changeScene_do_after();
+	}
+}).addBase('changeScene_condOk',function f(){
+	return this.isSceneChanging() && !this.isCurrentSceneBusy() && ImageManager.isReady();
+}).addBase('changeScene_do_before',none,
+).addBase('changeScene_do_after',none,
+).addBase('changeScene_do',function f(){
+	let recordedPrevScene;
+	if(this._scene){
+		if(!this._nextScene||!this._nextScene._prevScene){
+			this._scene.terminate_before();
+			this._scene.terminate();
+			this._scene.terminate_after();
+			this._scene.detachReservation();
+		}
+		this._previousClass = this._scene.constructor;
+		recordedPrevScene = this._scene._prevScene;
+	}
+	if(recordedPrevScene && this._nextScene && recordedPrevScene.constructor===this._nextScene.constructor){
+		this._nextScene = null;
+		(this._scene=recordedPrevScene)._active=true;
+	}else{
+		this._scene = this._nextScene;
 		if(this._scene){
-			if(!this._nextScene||!this._nextScene._prevScene){
-				this._scene.terminate_before();
-				this._scene.terminate();
-				this._scene.terminate_after();
-				this._scene.detachReservation();
-			}
-			this._previousClass = this._scene.constructor;
-			recordedPrevScene = this._scene._prevScene;
-		}
-		if(recordedPrevScene && this._nextScene && recordedPrevScene.constructor===this._nextScene.constructor){
+			this._scene.attachReservation();
+			this._scene.create();
 			this._nextScene = null;
-			(this._scene=recordedPrevScene)._active=true;
-		}else{
-			this._scene = this._nextScene;
-			if(this._scene){
-				this._scene.attachReservation();
-				this._scene.create();
-				this._nextScene = null;
-				this._sceneStarted = false;
-				this.onSceneCreate();
-			}
+			this._sceneStarted = false;
+			this.onSceneCreate();
 		}
-		if(this._exiting){
-			if(f.tbl[0]){
-				--f.tbl[0];
-				this.terminate();
-			}
+	}
+	if(this._exiting){
+		if(f.tbl[0]){
+			--f.tbl[0];
+			this.terminate();
 		}
 	}
 },[
@@ -3946,6 +3980,44 @@ function f(evtd){
 t[1].tbl=t;
 
 })(); // Game_Interpreter.requestImages
+
+// ---- ---- ---- ---- fading scene change
+
+(()=>{ let k,r,t;
+
+if(1)new cfc(SceneManager).add('changeScene_do_before',function f(){
+	this.changeScene_do_before_fadingSceneChange();
+	return f.ori.apply(this,arguments);
+}).add('changeScene_do_before_fadingSceneChange',function f(){
+	this._fadingSceneChangePreSc=this._scene&&this._scene._prevScene;
+	this._fadingSceneChangeBmp=this.snap();
+}).add('changeScene_do_after',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.changeScene_do_after_fadingSceneChange();
+	return rtv;
+}).add('changeScene_do_after_fadingSceneChange',function f(){
+	const sc=this._fadingSceneChangePreSc;
+	if(!sc||sc!==this._scene) return;
+	this.addFadingSceneChangeSprite();
+}).add('onSceneStart',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.onSceneStart_fadingSceneChange();
+	return rtv;
+}).addBase('onSceneStart_fadingSceneChange',function f(){
+	this.addFadingSceneChangeSprite();
+}).addBase('addFadingSceneChangeSprite',function f(){
+	if(!this._fadingSceneChangeBmp) return;
+	const n=this.getFadingSceneChangeFrames();
+	if(0<n && this._scene) this._scene.addChild(new Sprite_FadeOut(this._fadingSceneChangeBmp,n));
+	delete this._fadingSceneChangeBmp;
+	delete this._fadingSceneChangePreSc;
+}).addBase('getFadingSceneChangeFrames',function f(){
+	return getUrlParamVal(f.tbl[0])-0;
+},[
+'fadingSceneChange', // 0: paramName
+]);
+
+})(); // fading scene change
 
 // ---- ---- ---- ---- fix bug
 
