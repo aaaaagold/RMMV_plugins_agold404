@@ -922,16 +922,22 @@ new cfc(WebAudio.prototype).addBase('_load',function f(url,noerr,putCacheOnly){
 },[
 function(xhr,url,putCacheOnly){ if(xhr.status<400) this._onXhrLoad(xhr,url,undefined,putCacheOnly); },
 ]).addBase('_onXhrLoad',function f(xhr,url,cache,putCacheOnly){
-	let array=cache&&cache[0]||xhr&&xhr.response;
+	const src=cache&&cache[0]||xhr&&xhr.response;
+	let array=src;
 	if(!cache){
-		if(xhr._needDecrypt && Decrypter.hasEncryptedAudio && !ResourceHandler.isDirectPath(url)) array=Decrypter.decryptArrayBuffer(array,OGG_16B_HEADER);
+		if(xhr._needDecrypt && Decrypter.hasEncryptedAudio && !ResourceHandler.isDirectPath(url)) array=Decrypter.decryptArrayBuffer(src);
 		this._setCache(url,cache=[array.slice(),]);
 	}
 	if(putCacheOnly) return;
 	if(cache[1]) return f.tbl[0].call(this,undefined,cache[1]),array;
 	if(array===cache[0]) array=array.slice();
 	this._readLoopComments(new Uint8Array(array));
-	WebAudio._context.decodeAudioData(array,f.tbl[0].bind(this,cache));
+	const func=f.tbl[0].bind(this,cache);
+	WebAudio._context.decodeAudioData(
+		array,
+		func,
+		err=>WebAudio._context.decodeAudioData(cache[0]=Decrypter.decryptArrayBuffer(src,OGG_16B_HEADER),func),
+	);
 	return array;
 },[
 function(cacheObj,buffer){
