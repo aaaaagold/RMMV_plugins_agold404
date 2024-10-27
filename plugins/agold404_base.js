@@ -157,9 +157,17 @@ new cfc(Graphics).add('_updateAllElements',function f(){
 	}
 }).addBase('addAsGameCanvas',function f(dom){
 	if(!dom || !dom.classList) return;
-	dom.classList.add('AsGameCanvas');
+	if(!dom.classList.contains(f.tbl[0])){
+		const c=this._canvas;
+		dom.sa('style',c.ga('style'));
+		dom.width=c.width;
+		dom.height=c.height;
+	}
+	dom.classList.add(f.tbl[0]);
 	this._centerElement(dom);
-});
+},[
+'AsGameCanvas', // 0: marker
+]);
 new cfc(Graphics).addBase('refGameSystem_get',function(){
 	return this._refGameSystem;
 }).addBase('refGameSystem_set',function(ref){
@@ -1257,6 +1265,108 @@ child=>child.update&&child.update(), // 0: forEach
 
 })(); // refine for future extensions
 
+// ---- ---- ---- ---- Scene_HTML_base
+
+(()=>{ let k,r,t;
+
+const a=class Scene_HTML_base extends Scene_Base{
+};
+window[a.name]=a;
+a.ori=Scene_Base;
+t=[
+a.ori.prototype,
+];
+new cfc(a.prototype).addBase('initialize',function f(){
+	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
+	this._isToExit=false;
+	this.initialize_background();
+	this.initialize_divRoot();
+	return rtv;
+},t).addBase('initialize_background',function f(){
+	const bmp=this._backgroundBmp=SceneManager.snap();
+	bmp.blur();
+}).addBase('initialize_divRoot',function f(){
+	if(this._divRoot) return this._divRoot;
+	const rtv=this._divRoot=document.ce('div');
+	Graphics.addAsGameCanvas(rtv);
+	rtv._main=this._divMain=document.ce('div').sa('style',this.divRootCss());
+	rtv.appendChild(rtv._main);
+	document.body.ac(rtv);
+	return rtv;
+}).addBase('divRootCss',function(){
+	return "width:100%;height:100%;background-color:rgba(0,0,0,0.25);color:#EEEEEE";
+}).addBase('update',function f(){
+	if(this.update_processInput()) return this.popScene();
+	return f.tbl[0][f._funcName].apply(this,arguments);
+},t).addBase('update_processInput',function f(){
+	if(this.update_processInput_isToExit()) return true;
+}).addBase('update_processInput_isToExit',function f(){
+	return this._isToExit;
+}).addBase('create',function f(){
+	this.create_background();
+	this.create_exitEvents();
+	this.create_inputEvents();
+	return f.tbl[0][f._funcName].apply(this,arguments);
+},t).addBase('create_background',function f(){
+	const sp=this._backgroundSprite=new Sprite(this._backgroundBmp);
+	this.addChild(sp);
+}).addBase('create_exitEvents',function f(){
+	document.body.ae(
+		'keydown',
+		this._exitEventFunction=evt=>{
+			if(evt.keyCode!==27) return;
+			this._isToExit=true;
+		},
+	);
+}).addBase('create_inputEvents',function f(){
+	this._keyboardEventFunction_down=this.keyboardEvent_down.bind(this);
+	this._keyboardEventFunction_up=this.keyboardEvent_up.bind(this);
+	this._keyboardEventFunction_press=this.keyboardEvent_press.bind(this);
+	document.body.ae(
+		'keydown',
+		this._keyboardEventFunction_down,
+		this._keyboardEventOption_down,
+	).ae(
+		'keyup',
+		this._keyboardEventOption_up,
+		this._keyboardEventOption_up,
+	).ae(
+		'keypress',
+		this._keyboardEventFunction_press,
+		this._keyboardEventOption_press,
+	);
+}).addBase('keyboardEvent_down',function f(evt){
+	if(this.constructor===Scene_HTML_base) console.log('kbevt down',evt.keyCode);
+}).addBase('keyboardEvent_up',function f(evt){
+	if(this.constructor===Scene_HTML_base) console.log('kbevt up',evt.keyCode);
+}).addBase('keyboardEvent_press',function f(evt){
+	if(this.constructor===Scene_HTML_base) console.log('kbevt press',evt.keyCode);
+}).addBase('terminate',function f(){
+	this.terminate_removeKeyboardEvents();
+	this.terminate_removeDivRoot();
+	return f.tbl[0][f._funcName].apply(this,arguments);
+},t).addBase('terminate_removeKeyboardEvents',function f(){
+	document.body.re(
+		'keydown',
+		this._keyboardEventFunction_down,
+		this._keyboardEventOption_down,
+	).re(
+		'keyup',
+		this._keyboardEventOption_up,
+		this._keyboardEventOption_up,
+	).re(
+		'keypress',
+		this._keyboardEventFunction_press,
+		this._keyboardEventOption_press,
+	);
+}).addBase('terminate_removeDivRoot',function f(){
+	const c=this._divRoot;
+	const p=c&&c.parentNode;
+	if(p) p.removeChild(c);
+});
+
+})(); // Scene_HTML_base
+
 // ---- ---- ---- ---- PluginManager
 
 (()=>{ let k,r,t;
@@ -2226,7 +2336,7 @@ new cfc(p).add('renderScene',function f(){
 	return f.ori.apply(this,arguments);
 },[
 // sp=>sp.refresh_do()===SceneManager.NOT_REFRESHED && SceneManager._scene._needRefreshes_notYet, // discard if can't refresh
-sp=>sp.refresh_do(),
+sp=>sp.parent&&sp.refresh_do(),
 ]).addBase('addRefresh',function f(obj,forcePending){
 	if(!obj||(typeof obj.refresh_do!=='function')) return console.warn('got unsupported obj',obj);
 	const sc=this._scene; if(!sc) return;
