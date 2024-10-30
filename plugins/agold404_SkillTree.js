@@ -395,10 +395,10 @@ new Set([
 	const a=w._actor;
 	const self=a;
 	const actor=a;
-	{
+	{ const w=undefined; {
 		const res=eval(cond&&(cond instanceof Array)?cond[0]:cond); // "condJs" or ["condJs","condFailMsg"]
 		condOk=res;
-	}
+	} }
 	return item && w._actor && (
 		condOk ||
 		(condOk==null&&( prevIdx===undefined || !w.item(prevIdx) || this.itemActionWindow_hasSkill(w.item(prevIdx)) ))
