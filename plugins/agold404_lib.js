@@ -911,13 +911,99 @@ const getPropertyValue=window.getPropertyValue=function f(obj,key,defaultVal){
 	else return defaultVal;
 };
 
-})(); // jurl
+})(); // getProperty
+
+// math
+(()=>{ let k,r,t;
+
+// bit order
+const bitRev8=window.bitRev8=function f(n){
+	if(!f.tbl){ f.tbl=[]; for(let x=256;x--;){
+		let idx=0,n=x; for(let i=8;i--;n>>>=1) idx=(idx<<1)|(n&1);
+		f.tbl[idx]=x;
+	} }
+	return f.tbl[n&0xFF];
+},bitRev32=window.bitRev32=n=>{
+	return (window.bitRev8(n)<<24)|(window.bitRev8(n>>>8)<<16)|(window.bitRev8(n>>>16)<<8)|window.bitRev8(n>>>24);
+},printHex32=window.printHex32=n=>'0x'+(n>>>0).toString(16).padStart(8,'0');
+
+// byte to number
+const bytesToInt=window.bytesToInt=(byteData,byteLen,byteOffset,isBigEndian)=>{
+	// support byteLen <= 4
+	byteOffset=byteOffset-0||0;
+	if(byteData.buffer) byteData=new Uint8Array(byteData.buffer,byteData.byteOffset+byteOffset,byteData.byteLength-byteOffset);
+	let rtv=0;
+	if(isBigEndian){ for(let x=0,xs=byteLen;x<xs;++x){
+		rtv=(rtv<<8)|byteData[x];
+	} }else{ for(let x=byteLen;x--;){
+		rtv=(rtv<<8)|byteData[x];
+	} }
+	return rtv;
+};
+
+// crc32
+const crc32=window.crc32=function f(byteData,poly,invIn,invOut,isRf8){
+	poly|=0; if(!poly||!byteData||!byteData.length) return 0;
+	if(byteData.buffer) byteData=new Uint8Array(byteData.buffer,byteData.byteOffset,byteData.byteLength);
+	
+	if(!f.tbl) f.tbl={};
+	let tbl=f.tbl[poly]; if(!tbl){ tbl=f.tbl[poly]=[]; for(let x=256,b,i;x--;){ b=x; for(i=8;i--;) b=(b&1?poly:0)^(b>>>1); tbl[x]=b; } }
+	
+	let rtv=invIn;
+	const func=isRf8?window.bitRev8:parseInt;
+	for(let x=0,xs=byteData.length;x!==xs;++x) rtv=(rtv>>>8)^tbl[((func(byteData[x]))^rtv)&0xFF];
+	return rtv^invOut;
+};
+if(0){
+//for(let x=256;x--;) console.log(x.toString(16),printHex32(bitRev8(x)));
+const data=[ 
+	// Offset 0x00 to 0x039 
+ 0x4F, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00, 
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+ /*0x54, 0x25, 0x0F, 0x37,*/0,0,0,0, 
+ 0x01, 0x1E, 0x01, 0x76, 0x6F, 0x72, 
+ 0x62, 0x69, 0x73, 0x00, 0x00, 0x00, 0x00, 0x02, 
+ 0x44, 0xAC, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 
+ 0x00, 0xFA, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 
+ 0xB8, 0x01, 
+],poly=0x04C11DB7;
+console.log(' 0  0 r r\t',printHex32( bitRev32(crc32(data, bitRev32(poly),0,0,true)) ),); // ogg, res=littleEndian
+console.log('-1 -1    \t',printHex32( crc32(data, bitRev32(poly),-1,-1,) ),); // 7z
+}
+const mul32gf2=window.mul32gf2=function f(n1,n2,poly,revPoly){
+	if(!f.zero32) f.zero32=[0|0,0|0,0|0,0|0,];
+	// a number is equals to 1 when only the highest bit (i.e. bit31) is 1.
+	if(revPoly) poly=window.bitRev32(poly);
+	let res64_h=0,res64_l=(n2&1)?n1:0; // bit63..bit0 = -1..62
+	for(let b=32;--b;){ if((n2>>>b)&1){
+		res64_l^=(n1<<b);
+		res64_h^=(n1>>>(32-b));
+	} }
+	// <<=1 ( -1..62 =output=> 0..63 )
+	res64_h<<=1;
+	res64_h|=res64_l>>>31;
+	res64_l<<=1;
+	const rtv=window.crc32(f.zero32,poly,res64_l,res64_h);
+	//console.log(printHex32(n1),printHex32(n2),printHex32(res64_l),printHex32(res64_h),printHex32(rtv));
+	return rtv;
+};
+const pow32gf2=window.pow32gf2=(b,e,poly,revPoly)=>{
+	e|=0;
+	if(revPoly) poly=window.bitRev32(poly);
+	if(e<0) throw new Error("TODO: negtive e for pow32gf2");
+	let rtv=0x80000000;
+	for(;e;e>>>=1,b=window.mul32gf2(b,b,poly)) if(e&1) rtv=window.mul32gf2(rtv,b,poly);
+	return rtv;
+};
+
+})(); // math
 
 // empty
 (()=>{ let k,r,t;
 
 
-})(); // jurl
+})(); // empty
 
 
 })(); // lib
@@ -935,6 +1021,8 @@ const OGG_GRANULEPOSITION_HEADER=new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, ]);
 const OGG_STREAMSERIAL_HEADER=new Uint8Array([0, 0, 0, 0, ]);
 const OGG_PAGESEQ_HEADER=new Uint8Array([0, 0, 0, 0, ]);
 const OGG_22B_HEADER=new Uint8Array(22);
+const OGG_PAGECHKSUM_PAGEOFFSET=OGG_22B_HEADER.byteLength;
+const OGG_PAGECHKSUM_BYTESIZE=4;
 OGG_22B_HEADER.set(OGG_HEADER,0);
 OGG_22B_HEADER.set(OGG_VERSION_HEADER,4);
 OGG_22B_HEADER.set(OGG_HEADERTYPE_HEADER,5);
@@ -942,4 +1030,25 @@ OGG_22B_HEADER.set(OGG_GRANULEPOSITION_HEADER,6);
 OGG_22B_HEADER.set(OGG_STREAMSERIAL_HEADER,14);
 OGG_22B_HEADER.set(OGG_PAGESEQ_HEADER,18);
 const OGG_16B_HEADER=new Uint8Array(OGG_22B_HEADER.buffer,0,16);
+const CRC32_POLY_OGG=0x04C11DB7;
+const CRC32_POLY_OGG_rev=bitRev32(CRC32_POLY_OGG);
+const FILE_FORMATS={
+ogg:{
+	getPageByteSize:(arrayBuffer,byteOffset,isOmitOggs)=>{
+		// get a page's size in bytes
+		byteOffset=(byteOffset-0||0)|0;
+		const segCountOffset=26;
+		const segCountBytes=1;
+		const segLenBytes=1;
+		if(arrayBuffer.buffer) arrayBuffer=arrayBuffer.buffer;
+		if(arrayBuffer.byteLength-byteOffset<segCountOffset+segCountBytes) return 0;
+		if(!isOmitOggs&&new Uint8Array(arrayBuffer,byteOffset,4).toString()!==OGG_HEADER.toString()) return 0;
+		const segCount=new Uint8Array(arrayBuffer,byteOffset+segCountOffset,segCountBytes)[0];
+		const segLens=new Uint8Array(arrayBuffer,byteOffset+segCountOffset+segCountBytes,Math.min(arrayBuffer.byteLength-(byteOffset+segCountOffset+segCountBytes),segLenBytes*segCount));
+		let pageBytes=segCountOffset+segCountBytes+segLenBytes*segCount;
+		for(let x=0,xs=segLens.length;x!==xs;++x) pageBytes+=segLens[x];
+		return pageBytes;
+	},
+}, // ogg
+};
 
