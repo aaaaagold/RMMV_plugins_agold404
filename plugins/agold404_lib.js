@@ -378,6 +378,7 @@ p.kvPop=function(k){
 		arr[idx]=arr.back;
 		st.set(arr[idx],idx);
 		arr.pop();
+		this._float(idx);
 		this._sink(idx);
 		return rtv;
 	};
