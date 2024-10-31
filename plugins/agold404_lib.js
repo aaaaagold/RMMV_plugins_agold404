@@ -426,7 +426,7 @@ p.kvPop=function(k){
 		const arr=this._data;
 		if(arr.length===1) return;
 		let idx=strt||(arr.length-1),lt=this._lt;
-		while(idx!==1 && lt(arr[idx>>1],arr[idx])){
+		while(idx!==1 && idx<arr.length && lt(arr[idx>>1],arr[idx])){
 			const st=this._searchTbl,idx0=idx;
 			idx>>=1;
 			const tmp=arr[idx]; arr[idx]=arr[idx0]; arr[idx0]=tmp;
