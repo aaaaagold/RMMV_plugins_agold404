@@ -25,12 +25,14 @@ console.log(getPluginNameViaSrc(document.currentScript.src));
 new cfc(Decrypter).addBase('checkImgIgnore',function(url){
 	return this._ignoreList.uniqueHas(url) || ResourceHandler.isDirectPath(url);
 }).add('decryptArrayBuffer',function f(arrayBuffer,refHeader){
+	// refHeader = 16B or function(resultArrayBuffer) which generates an expected header16B
 	let rtv=f.ori.apply(this,arguments);
+	if(refHeader instanceof Function) refHeader=refHeader(rtv);
 	if(refHeader && (refHeader.byteLength>=16||refHeader.length>=16)){ const Bv=new Uint8Array(rtv); if(refHeader.toString()!==new Uint8Array(rtv).slice(0,16).toString()){
 		const bak=$dataSystem.encryptionKey;
 		const arr=[]; for(let x=16;x--;) arr[x]=Bv[x]^refHeader[x]^('0x'+this._encryptionKey[x]);
 		$dataSystem.encryptionKey=arr.map(f.tbl[0]).join('');
-		console.log('use key =',$dataSystem.encryptionKey,'\n ref header =',refHeader.slice());
+		console.log('use key =',$dataSystem.encryptionKey,'\n ref header =',refHeader);
 		rtv=f.ori.apply(this,arguments);
 		$dataSystem.encryptionKey=bak;
 	} }
@@ -936,7 +938,7 @@ function(xhr,url,putCacheOnly){ if(xhr.status<400) this._onXhrLoad(xhr,url,undef
 	WebAudio._context.decodeAudioData(
 		array,
 		func,
-		err=>WebAudio._context.decodeAudioData(cache[0]=Decrypter.decryptArrayBuffer(src,OGG_16B_HEADER),func),
+		err=>WebAudio._context.decodeAudioData(cache[0]=Decrypter.decryptArrayBuffer(src,f.tbl[1]),func),
 	);
 	return array;
 },[
@@ -952,7 +954,40 @@ function(cacheObj,buffer){
 		this._loopLength=this._totalTime;
 	}
 	this._onLoad();
-}
+}, // 0: decode success // bind 'this' to WebAudio instance
+arrayBuffer=>{
+	if(!arrayBuffer) return;
+	const byteData=new Uint8Array(arrayBuffer);
+	const pageSize=FILE_FORMATS.ogg.getPageByteSize(arrayBuffer,0,true);
+	const guessOffsetBeg=14;
+	const guessOffsetEnd=16;
+	if(!(pageSize>=guessOffsetEnd)||!(pageSize>=OGG_PAGECHKSUM_PAGEOFFSET+OGG_PAGECHKSUM_BYTESIZE)) return OGG_16B_HEADER;
+	const deducedHeader=new Uint8Array(pageSize);
+	deducedHeader.set(OGG_16B_HEADER,0);
+	deducedHeader.set(new Uint8Array(arrayBuffer,OGG_16B_HEADER.byteLength,pageSize-OGG_16B_HEADER.byteLength),OGG_16B_HEADER.byteLength);
+	const currChksum=window.bitRev32(window.bytesToInt(byteData,OGG_PAGECHKSUM_BYTESIZE,OGG_PAGECHKSUM_PAGEOFFSET));
+	for(let x=OGG_PAGECHKSUM_BYTESIZE;x--;) deducedHeader[OGG_PAGECHKSUM_PAGEOFFSET+x]=0;
+	const Mt=window.pow32gf2(0x00800000,pageSize-guessOffsetEnd,CRC32_POLY_OGG_rev);
+	const M0=window.mul32gf2(0x00008000,Mt,CRC32_POLY_OGG_rev);
+	for(let x=guessOffsetBeg;x<guessOffsetEnd;++x) deducedHeader[x]=0;
+	const baseChksum=
+		window.mul32gf2(window.crc32(new Uint8Array(deducedHeader.buffer,0,guessOffsetBeg),CRC32_POLY_OGG_rev,0,0,true),M0,CRC32_POLY_OGG_rev)^
+		window.crc32(new Uint8Array(deducedHeader.buffer,guessOffsetEnd,pageSize-guessOffsetEnd),CRC32_POLY_OGG_rev,0,0,true)^
+		0;
+	//console.log(deducedHeader,printHex32(window.crc32(deducedHeader,CRC32_POLY_OGG_rev,0,0,true)));
+	for(let t=65536;t--;){
+		const Ct=window.crc32([t&0xFF,t>>>8,],CRC32_POLY_OGG_rev,0,0,true);
+		const res=baseChksum^mul32gf2(Ct,Mt,CRC32_POLY_OGG_rev);
+		if(res===currChksum){
+			deducedHeader[14]=t&0xFF;
+			deducedHeader[15]=t>>>8;
+			let r=window.bitRev32(res);
+			for(let r=window.bitRev32(res),x=0;x<OGG_PAGECHKSUM_BYTESIZE;++x,r>>>=8) deducedHeader[OGG_PAGECHKSUM_PAGEOFFSET+x]=r&0xFF;
+			break;
+		}
+	}
+	return deducedHeader;
+}, // 1: decode fail, gen header16B in 'Decrypter.decryptArrayBuffer'
 ]).add('initialize',function f(url,noerr,putCacheOnly){
 	this._noerr=noerr;
 	this._putCacheOnly=putCacheOnly;
