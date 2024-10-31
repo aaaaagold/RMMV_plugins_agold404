@@ -38,7 +38,7 @@ new cfc(Decrypter).addBase('checkImgIgnore',function(url){
 	} }
 	return rtv;
 },[
-c=>c.toString(16), // 0: map
+c=>c.toString(16).padStart(2,'0'), // 0: map
 ]);
 
 { const a=Game_Interpreter,p=a.prototype;
