@@ -66,6 +66,13 @@ cancel:()=>TouchInput.isCancelled(),
 	const rtv=f.ori.apply(this,arguments);
 	if(this._childInterpreter) this._childInterpreter._parentInterpreter=this;
 	return rtv;
+}).addBase('jumpToLabel',function f(label,isRev,start){
+	if(start===undefined) start=this._index;
+	start=start-0||0;
+	for(let cmds=this._list,x=start,dx=isRev?-1:1,xs=cmds?cmds.length:0;x<xs&&x>=0;x+=dx){
+		const cmd=cmds[x]; if(cmd.code===118&&cmd.parameters[0]===label){ this._index=x; break; }
+	}
+	return this._index;
 });
 }
 new cfc(Game_System.prototype).add('initialize',function f(){
@@ -691,8 +698,10 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	const idx=this.index();
 	const rtv=f.ori.apply(this,arguments);
 	if(idx>=0 && idx===this.index()){
+		// no longer than a page
 		const C=this.maxCols();
 		if(idx>=C) this.select(idx%C);
+		else this.select(0); // hit on top
 	}
 	return rtv;
 }).add('cursorPagedown',function f(){
@@ -828,6 +837,7 @@ function(){ Scene_Base.prototype.stop.call(this); },
 	if(this._lastBgBm) SceneManager._backgroundBitmap=this._lastBgBm;
 },t);
 //
+// DO NOT change _onLoad* which are starting with a '_'
 new cfc(DataManager).addBase('isSkill',function f(item){
 	return item && $dataSkills.uniqueHas(item);
 }).addBase('isItem',function f(item){
@@ -893,17 +903,27 @@ function(src,e) {
 	// dummy
 }).addBase('onLoad_after_tileset',function f(obj,name,src,msg){
 	// dummy
+}).addBase('_onLoad_before_system',function f(obj,name,src,msg){
+	return this.onLoad_before_system.apply(this,arguments);
+}).addBase('_onLoad_after_system',function f(obj,name,src,msg){
+	return this.onLoad_after_system.apply(this,arguments);
+}).addBase('onLoad_before_system',function f(obj,name,src,msg){
+	// dummy
+}).addBase('onLoad_after_system',function f(obj,name,src,msg){
+	// dummy
 });
 { const p=DataManager;
 p.onLoad_before.tbl=new Map([
 	['$dataMap',	p._onLoad_before_map],
 	['$dataSkills',	p._onLoad_before_skill],
 	['$dataTilesets',	p._onLoad_before_tileset],
+	['$dataSystem',	p._onLoad_before_system],
 ]);
 p.onLoad_after.tbl=new Map([
 	['$dataMap',	p._onLoad_after_map],
 	['$dataSkills',	p._onLoad_after_skill],
 	['$dataTilesets',	p._onLoad_after_tileset],
+	['$dataSystem',	p._onLoad_after_system],
 ]);
 }
 //
@@ -1261,6 +1281,9 @@ new cfc(DataManager).addBase('loadGlobalInfo',function(){
 		return globalInfo;
 	}
 	return [];
+}).addBase('getLocale',function f(){
+	let rtv; try{ rtv=Intl.DateTimeFormat().resolvedOptions().locale; }catch(e){ console.warn("get locale failed"); rtv=''; }
+	return rtv;
 });
 
 new cfc(Window.prototype).addBase('_updateCursor',function f(){
@@ -1318,14 +1341,26 @@ t=[
 a.ori.prototype,
 ];
 new cfc(a.prototype).addBase('initialize',function f(){
+	this.fontFace_init();
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
+	this.initialize_initFontFace();
 	this._isToExit=false;
 	this.initialize_background();
 	this.initialize_divRoot();
 	return rtv;
-},t).addBase('initialize_background',function f(){
+},t).addBase('fontFace_get',function f(){
+	return this._fontFace;
+}).addBase('fontFace_set',function f(ff){
+	this._fontFace=ff;
+}).addBase('fontFace_init',function f(){
+	let bmp=a._template_bmp; if(!bmp){ bmp=new Bitmap(1,1); bmp._makeFontNameText(); }
+	return bmp;
+}).addBase('initialize_initFontFace',function f(){
+	this.fontFace_set(this.fontFace_init().fontFace);
+}).addBase('initialize_background',function f(){
 	const bmp=this._backgroundBmp=SceneManager.snap();
 	bmp.blur();
+	return bmp;
 }).addBase('initialize_divRoot',function f(){
 	if(this._divRoot) return this._divRoot;
 	const rtv=this._divRoot=document.ce('div');
@@ -1333,6 +1368,7 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	rtv._main=this._divMain=document.ce('div').sa('style',this.divRootCss());
 	rtv.appendChild(rtv._main);
 	document.body.ac(rtv);
+	rtv.style.fontFamily=this.fontFace_get();
 	return rtv;
 }).addBase('divRootCss',function(){
 	return "width:100%;height:100%;background-color:rgba(0,0,0,0.25);color:#EEEEEE";
