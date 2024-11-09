@@ -38,7 +38,7 @@
  * @type note[]
  * @text Displayed in Other Languages
  * @desc will replace the values in above options. format: locale \n renameSaveTag \n loadSaveFromFile \n exportSaveToFile
- * @default ["[\"zh-TW\\n修改存檔標記\\n讀取檔案\\n匯出存檔\"]"]
+ * @default ["\"zh-TW\\n修改存檔標記\\n讀取檔案\\n匯出存檔\""]
  * 
  * This plugin can be renamed as you want.
  */
@@ -87,8 +87,7 @@ new cfc(DataManager).add('agold404_SaveManager_pluginParams_get',function f(){
 		}
 	}
 	const params=tmp;
-	tmp=undefined; try{ tmp=Intl.DateTimeFormat().resolvedOptions().locale; }catch(e){ console.warn(pluginName,":","get locale failed"); }
-	const locale=tmp;
+	const locale=DataManager.getLocale()||undefined;
 	if(!params._lastRes) params._lastRes={};
 	rtv=params._lastRes[locale];
 	if(!rtv){
@@ -109,7 +108,7 @@ exportSaveToFile:{display:"Export Save to File",key:optSaveLocal,status:"",},
 ['renameTag','loadSaveFromFile','exportSaveToFile',], // 1: order of options
 undefined, // 2: 'no status text' key set
 item=>JSON.parse(item), // 3: JSON.parse
-arrRaw=>{ const arr=arrRaw[0].split('\n'); return [arr[0],arr.slice(1),]; }, // 4: adjust to Map arguments[0]
+arrRaw=>{ const arr=arrRaw.split('\n'); return [arr[0],arr.slice(1),]; }, // 4: adjust to Map arguments[0]
 ],false,true).add('agold404_SaveManager_pluginParams_clearParsingCache',function f(){
 	const last=this._agold404_SaveManager_pluginParams;
 	this._agold404_SaveManager_pluginParams=undefined;
