@@ -25,7 +25,7 @@
  * @param AllocatingAbilities
  * @type note[]
  * @text Allocating Abilities
- * @desc Set custom entries. format: item name \n object property name \n eval string for allocating (rest of lines)
+ * @desc Set custom entries. format: item name \n object property name \n eval for cond. \n eval for alloc.
  * @default ["\"\\\"item name 1 \\\"+Date.now()\\nexampleAbility\\ntrue\\nconsole.warn(\\\"allocating to exampleAbility\\\")\""]
  * 
  * 
