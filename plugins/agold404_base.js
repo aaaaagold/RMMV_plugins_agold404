@@ -1879,6 +1879,11 @@ new cfc(Game_Character.prototype).addBase('jumpTo',function f(x,y,facingAfterJum
 		x:$gameMap.roundXWithDirection(x,d),
 		y:$gameMap.roundYWithDirection(y,d),
 	});
+}).addBase('frontPos_r',function f(){
+	const rtv=this.frontPos(this._realX,this._realY);
+	rtv._realX=rtv.x;
+	rtv._realY=rtv.y;
+	return rtv;
 }).addBase('rightPos',function f(xy,y){
 	let x;
 	if(typeof xy==='number') x=xy;
@@ -1889,6 +1894,11 @@ new cfc(Game_Character.prototype).addBase('jumpTo',function f(x,y,facingAfterJum
 		x:$gameMap.roundXWithDirection(x,d),
 		y:$gameMap.roundYWithDirection(y,d),
 	});
+}).addBase('rightPos_r',function f(){
+	const rtv=this.rightPos(this._realX,this._realY);
+	rtv._realX=rtv.x;
+	rtv._realY=rtv.y;
+	return rtv;
 }).addBase('rightPos_dirRemap',function f(d){
 	return f.tbl[0][d]||d;
 },t).addBase('jumpFront',function f(dist,facingAfterJump){
