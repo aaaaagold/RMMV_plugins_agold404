@@ -22,6 +22,11 @@
  * (optional) text, with the locale
  * 
  * 
+ * One can use DataManager.termExt_updateDataSystemTerms(); to update phrases after $gameSystem.setLocate(SPECIFYING_LOCALE_STRING_HERE);
+ * $gameSystem.setLocate(); with no arguments means using default setting,
+ * which is Intl.DateTimeFormat().resolvedOptions().locale;
+ * 
+ * 
  * @param TermsCommands
  * @type note[]
  * @text $dataSystem.terms.commands
@@ -61,6 +66,9 @@ new cfc(DataManager).add('onLoad_before_system',function f(obj,name,src,msg){
 	this.onLoad_before_system_termExt.apply(this,arguments);
 	return rtv;
 }).addBase('onLoad_before_system_termExt',function f(obj,name,src,msg){
+	this.termExt_updateDataSystemTerms(obj);
+}).addBase('termExt_updateDataSystemTerms',function f(dataSystem){
+	const obj=dataSystem||$dataSystem;
 	const parameters=PluginManager.parameters(f.tbl[0]); if(!parameters) return;
 	const locale=DataManager.getLocale();
 	const tCmds=this.termExt_pasrseSetting1(parameters.TermsCommands);
@@ -73,7 +81,7 @@ new cfc(DataManager).add('onLoad_before_system',function f(obj,name,src,msg){
 		['params',tParams],
 		['basic',tBasic],
 	];
-	for(let x=0,xs=infos.length;x!==xs;++x) this.termExt_updateDataSystemTerms(locale,infos[x][0],infos[x][1]);
+	for(let x=0,xs=infos.length;x!==xs;++x) this._termExt_updateDataSystemTerms(obj,locale,infos[x][0],infos[x][1]);
 },t).addBase('termExt_pasrseSetting1',function f(setting){
 	// rtv = [ [key,{locale:textWithTheLocale, ... },text], ... ]
 	const rtv=[];
@@ -86,7 +94,7 @@ new cfc(DataManager).add('onLoad_before_system',function f(obj,name,src,msg){
 		rtv.push(curr);
 	}
 	return rtv;
-}).addBase('termExt_updateDataSystemTerms',function f(locale,category,parsedInfo){
+}).addBase('_termExt_updateDataSystemTerms',function f($dataSystem,locale,category,parsedInfo){
 	const obj=$dataSystem.terms&&$dataSystem.terms[category];
 	for(let x=0,xs=parsedInfo.length;x!==xs;++x) obj[parsedInfo[x][0]]=(locale in parsedInfo[x][1])?parsedInfo[x][1][locale]:parsedInfo[x][2];
 	return obj;
