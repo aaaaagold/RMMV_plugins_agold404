@@ -3,7 +3,15 @@
  * @plugindesc extends $dataSystem.terms with locale.
  * @author agold404
  *
- * @help all formats are 2+n*2 lines:
+ * @help this plugin adds custom properties to the following:
+ * - $dataSystem.terms.commands
+ * - $dataSystem.terms.messages
+ * - $dataSystem.terms.params
+ * - $dataSystem.terms.basic
+ * according to locale setting.
+ * 
+ * 
+ * all formats are 2+n*2 lines:
  * 
  * default key, for the text
  * default text
@@ -25,6 +33,12 @@
  * One can use DataManager.termExt_updateDataSystemTerms(); to update phrases after $gameSystem.setLocate(SPECIFYING_LOCALE_STRING_HERE);
  * $gameSystem.setLocate(); with no arguments means using default setting,
  * which is Intl.DateTimeFormat().resolvedOptions().locale;
+ * 
+ * 
+ * in short, to sets the locale in game, execute the following in order:
+ * 
+ * $gameSystem.setLocate(SPECIFYING_LOCALE_STRING_HERE);
+ * DataManager.termExt_updateDataSystemTerms();
  * 
  * 
  * @param TermsCommands
