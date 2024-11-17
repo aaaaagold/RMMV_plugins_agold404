@@ -1290,8 +1290,16 @@ new cfc(DataManager).addBase('loadGlobalInfo',function(){
 		return globalInfo;
 	}
 	return [];
-}).addBase('getLocale',function f(){
-	let rtv; try{ rtv=Intl.DateTimeFormat().resolvedOptions().locale; }catch(e){ console.warn("get locale failed"); rtv=''; }
+});
+
+new cfc(Game_System.prototype).addBase('getLocale',function f(){
+	return this._customLocale;
+}).addBase('setLocale',function f(locale){
+	return this._customLocale=locale;
+});
+new cfc(DataManager).addBase('getLocale',function f(){
+	let rtv=$gameSystem&&$gameSystem.getLocale(); if(rtv) return rtv;
+	try{ rtv=Intl.DateTimeFormat().resolvedOptions().locale; }catch(e){ console.warn("get locale failed"); rtv=''; }
 	return rtv;
 });
 
