@@ -83,8 +83,10 @@ new RegExp(t[5].slice(1)+"("+t[2].toString().slice(1,-1)+")"), // 0: matched
 ]).addBase('processEscapeCharacter_withPictureBehind',function f(code,textState,m){
 	const param=this.obtainEscapeParam(textState);
 	const infos=this._withPictureBehind_infos; if(!infos) return;
+	this._processEscapeCharacter_withPictureBehind(param,infos,textState,m);
+}).addBase('_processEscapeCharacter_withPictureBehind',function f(id,infos,textState,m){
 	const funcs=f.tbl[0][m[1]==="X"?f.tbl[1][this._withPictureBehind_lastLoc]||$gameSystem.messageWithPictureBehind_firstLoc_get()||f.tbl[1]._default:m[1]];
-	const func=funcs&&funcs.func; if(func) func(this,infos,param,textState,funcs.load);
+	const func=funcs&&funcs.func; if(func) func(this,infos,id,textState,funcs.load);
 },t=[
 {
 L:{
