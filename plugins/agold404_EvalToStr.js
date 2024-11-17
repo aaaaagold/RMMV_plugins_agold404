@@ -17,7 +17,8 @@ new cfc(Window_Base.prototype).add('drawTextEx',function f(text, x, y, _3, _4, o
 function(){ return arguments[1]+eval(JSON.parse(arguments[3])); },
 ]);
 
-if(0) new cfc(Game_Message.prototype).add('add',function f(txt){
+// message didn't use drawText nor drawTextEx
+new cfc(Game_Message.prototype).add('add',function f(txt){
 	arguments[0]=(arguments[0]+'').replace(f.tbl[0],f.tbl[1].bind(this));
 	return f.ori.apply(this,arguments);
 },t);
