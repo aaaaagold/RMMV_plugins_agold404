@@ -273,6 +273,7 @@ undefined,
 t=()=>{};
 for(let x=0,arr=['_updateCursor','_updatePauseSign',];x!==arr.length;++x) new cfc(p).add(arr[x],t,undefined,true,true);
 t=undefined;
+new cfc(p).addBase('_processEscapeCharacter_withPictureBehind',none);
 }
 
 new cfc(Game_System.prototype).add('flashbackText_savedCont_get',function f(){
