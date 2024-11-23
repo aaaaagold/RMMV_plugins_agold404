@@ -1303,6 +1303,14 @@ new cfc(DataManager).addBase('getLocale',function f(){
 	return rtv;
 });
 
+new cfc(Game_Interpreter.prototype).add('setupChoices',function f(params){
+	const rtv=f.ori.apply(this,arguments);
+	$gameMessage.setChoiceCallback(this.setupChoices_callback.bind(this));
+	return rtv;
+}).addBase('setupChoices_callback',function f(n){
+	this._branch[this._indent]=n;
+});
+
 new cfc(Window.prototype).addBase('_updateCursor',function f(){
 	const bp=this._updateCursor_getBlinkPeriod();
 	const blinkCount=this._animationCount%bp;
