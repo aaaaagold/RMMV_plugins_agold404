@@ -3260,12 +3260,12 @@ p.getImageData=function f(x,y,w,h){
 	}else return this._canvas.getContext('2d').getImageData(x,y,w,h);
 };
 p.pasteCanvas=function f(){
-	if(!this._createScreenShot) return;
-	this._createScreenShot=false;
+	if(!this._createScreenshot) return;
+	this._createScreenshot=false;
 	pasteCanvas(this._canvas);
 };
-p.createScreenShot=function f(){
-	this._createScreenShot=true;
+p.createScreenshot=function f(){
+	this._createScreenshot=true;
 };
 }
 
