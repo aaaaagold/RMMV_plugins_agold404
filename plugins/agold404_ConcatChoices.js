@@ -2,7 +2,7 @@
 /*:
  * @plugindesc concatenate several choices (event) command (Show Choices)
  * @author agold404
- * @desc 1-line comment: (at-sign)CONCAT between two concequent "Show Choices"
+ * @help 1-line comment: (at-sign)CONCAT between two concequent "Show Choices"
  * 
  * @CONCAT
  * 
