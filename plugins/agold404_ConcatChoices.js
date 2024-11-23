@@ -3,6 +3,12 @@
  * @plugindesc concatenate several choices (event) command (Show Choices)
  * @author agold404
  * @help 1-line comment: (at-sign)CONCAT between two concequent "Show Choices"
+ * default choice setting will be set to:
+ *  1. the first Show Choices cmds' default choice settings, if the rest are all None.
+ *  2. the first Show Choices cmds' default choice settings, which is not None.
+ * cancel type setting will be set to:
+ *  1. the first Show Choices cmds' cancel type settings, if the rest are all either Branch or Disallow.
+ *  2. the first Show Choices cmds' cancel type settings, which is not Branch nor Disallow.
  * 
  * @CONCAT
  * 
