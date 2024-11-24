@@ -488,56 +488,57 @@ function(sp){ sp.bouncingMaterial_setMaxPadding(this); }, // 0: forEach
 	if(!this.bouncingMaterial_isRoot()) return;
 	return this._bouncingMaterial_updateRoot();
 }).addBase('_bouncingMaterial_updateRoot',function f(){
-	const ptTbl=this._bouncingMaterial_pointsTbl;
-	if(ptTbl){
-			const maxSpeed=this.bouncingMaterial_getMaxSpeed();
-		const dxy=[];
-		for(let y=ptTbl.length;y--;){ dxy[y]=[]; if(ptTbl[y]) for(let x=ptTbl[y].length;x--;){
-			const pt=ptTbl[y][x];
-			let ptU=ptTbl[y-1]&&ptTbl[y-1][x]; // ||[pt[0],pt[1]-pt[3]];
-			let ptD=ptTbl[y+1]&&ptTbl[y+1][x]; // ||[pt[0],pt[1]+pt[3]];
-			let ptL=ptTbl[y]&&ptTbl[y][x-1]; // ||[pt[0]-pt[2],pt[1]];
-			let ptR=ptTbl[y]&&ptTbl[y][x+1]; // ||[pt[0]+pt[2],pt[1]];
-			if(!ptL&&ptR){
-				ptL=[pt[0]-ptR[0],pt[1]-ptR[1],];
-				const c=pt[2]/Math.sqrt(ptL[0]*ptL[0]+ptL[1]*ptL[1]);
-				ptL[0]=ptL[0]*c+pt[0];
-				ptL[1]=ptL[1]*c+pt[1];
-			}
-			if(!ptR&&ptL){
-				ptR=[pt[0]-ptL[0],pt[1]-ptL[1],];
-				const c=pt[2]/Math.sqrt(ptR[0]*ptR[0]+ptR[1]*ptR[1]);
-				ptR[0]=ptR[0]*c+pt[0];
-				ptR[1]=ptR[1]*c+pt[1];
-			}
-			if(!ptU&&ptD){
-				ptU=[pt[0]-ptD[0],pt[1]-ptD[1],];
-				const c=pt[3]/Math.sqrt(ptU[0]*ptU[0]+ptU[1]*ptU[1]);
-				ptU[0]=ptU[0]*c+pt[0];
-				ptU[1]=ptU[1]*c+pt[1];
-			}
-			if(!ptD&&ptU){
-				ptD=[pt[0]-ptU[0],pt[1]-ptU[1],];
-				const c=pt[3]/Math.sqrt(ptD[0]*ptD[0]+ptD[1]*ptD[1]);
-				ptD[0]=ptD[0]*c+pt[0];
-				ptD[1]=ptD[1]*c+pt[1];
-			}
-			if(pt._fixedPos) dxy[y][x]=[0,0];
-			else dxy[y][x]=[(((ptU[0]+ptD[0]+ptL[0]+ptR[0])/4)-pt[0])/2,(((ptU[1]+ptD[1]+ptL[1]+ptR[1])/4)-pt[1])/2];
-			const dx=dxy[y][x][0];
-			const dy=dxy[y][x][1];
-			const ds=Math.sqrt(dx*dx+dy*dy);
-			if(maxSpeed<ds){
-				const r=maxSpeed/ds;
-				dxy[y][x][0]*=r;
-				dxy[y][x][1]*=r;
-			}else if(ds<0.0625) dxy[y][x][1]=dxy[y][x][0]=0;
-		} }
-		for(let y=ptTbl.length;y--;){ if(ptTbl[y]) for(let x=ptTbl[y].length;x--;){
-			ptTbl[y][x][0]+=dxy[y][x][0];
-			ptTbl[y][x][1]+=dxy[y][x][1];
-		} }
-	}
+	const ptTbl=this._bouncingMaterial_pointsTbl; if(!ptTbl) return;
+	const maxSpeed=this.bouncingMaterial_getMaxSpeed();
+	const dxy=[];
+	let dbg_maxDs=0; // debug
+	for(let y=ptTbl.length;y--;){ dxy[y]=[]; if(ptTbl[y]) for(let x=ptTbl[y].length;x--;){
+		const pt=ptTbl[y][x];
+		let ptU=ptTbl[y-1]&&ptTbl[y-1][x]; // ||[pt[0],pt[1]-pt[3]];
+		let ptD=ptTbl[y+1]&&ptTbl[y+1][x]; // ||[pt[0],pt[1]+pt[3]];
+		let ptL=ptTbl[y]&&ptTbl[y][x-1]; // ||[pt[0]-pt[2],pt[1]];
+		let ptR=ptTbl[y]&&ptTbl[y][x+1]; // ||[pt[0]+pt[2],pt[1]];
+		if(!ptL&&ptR){
+			ptL=[pt[0]-ptR[0],pt[1]-ptR[1],];
+			const c=pt[2]/Math.sqrt(ptL[0]*ptL[0]+ptL[1]*ptL[1]);
+			ptL[0]=ptL[0]*c+pt[0];
+			ptL[1]=ptL[1]*c+pt[1];
+		}
+		if(!ptR&&ptL){
+			ptR=[pt[0]-ptL[0],pt[1]-ptL[1],];
+			const c=pt[2]/Math.sqrt(ptR[0]*ptR[0]+ptR[1]*ptR[1]);
+			ptR[0]=ptR[0]*c+pt[0];
+			ptR[1]=ptR[1]*c+pt[1];
+		}
+		if(!ptU&&ptD){
+			ptU=[pt[0]-ptD[0],pt[1]-ptD[1],];
+			const c=pt[3]/Math.sqrt(ptU[0]*ptU[0]+ptU[1]*ptU[1]);
+			ptU[0]=ptU[0]*c+pt[0];
+			ptU[1]=ptU[1]*c+pt[1];
+		}
+		if(!ptD&&ptU){
+			ptD=[pt[0]-ptU[0],pt[1]-ptU[1],];
+			const c=pt[3]/Math.sqrt(ptD[0]*ptD[0]+ptD[1]*ptD[1]);
+			ptD[0]=ptD[0]*c+pt[0];
+			ptD[1]=ptD[1]*c+pt[1];
+		}
+		if(pt._fixedPos) dxy[y][x]=[0,0];
+		else dxy[y][x]=[(((ptU[0]+ptD[0]+ptL[0]+ptR[0])/4)-pt[0])/2,(((ptU[1]+ptD[1]+ptL[1]+ptR[1])/4)-pt[1])/2];
+		const dx=dxy[y][x][0];
+		const dy=dxy[y][x][1];
+		const ds=Math.sqrt(dx*dx+dy*dy);
+		if(maxSpeed<ds){
+			const r=maxSpeed/ds;
+			dxy[y][x][0]*=r;
+			dxy[y][x][1]*=r;
+		}else if(ds<0.0625) dxy[y][x][1]=dxy[y][x][0]=0;
+		dbg_maxDs=Math.max(dbg_maxDs,ds);
+	} }
+	for(let y=ptTbl.length;y--;){ if(ptTbl[y]) for(let x=ptTbl[y].length;x--;){
+		ptTbl[y][x][0]+=dxy[y][x][0];
+		ptTbl[y][x][1]+=dxy[y][x][1];
+	} }
+	return;
 }).addBase('bouncingMaterial_findNearestPoints_local',function f(x,y){
 	return this._bouncingMaterial_pointsList.map(f.tbl[0].bind(this,x,y)).sort(f.tbl[1]).map(f.tbl[2]);
 },[
