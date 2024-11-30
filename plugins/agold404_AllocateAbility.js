@@ -84,6 +84,13 @@
  * @desc Set CostPoint property for allocation point on an actor. this is casted to Number via String-0
  * @default _allocPointProperty
  * 
+ * @param AllocatingCostPointCondFunc
+ * @parent AllocatingCostPointRoot
+ * @type string
+ * @text CostPoint condition
+ * @desc Set script how an actor can cost points to allocate an ability. use actor or a to represent the actor.
+ * @default lv>=0&&a._allocPointProperty>=0
+ * 
  * 
  * 
  * @param AllocatingAbilitiesRoot
@@ -97,12 +104,33 @@
  * @desc Set custom entries. format: item name \n object property name \n eval for cond. \n eval for alloc.
  * @default ["\"\\\"a item 1 \\\"+Date.now()\\n_exampleAbilityProperty\\ntrue\\n(itemLv,actor)=>itemLv\""]
  * 
+ * @param AllocatingAbilityPrevLevelWidth
+ * @parent AllocatingAbilitiesRoot
+ * @type number
+ * @text Ability previous lv. num. width
+ * @desc width reserved for displaying the previous level number.
+ * @default 64
+ * 
+ * @param AllocatingAbilityNextArrowWidth
+ * @parent AllocatingAbilitiesRoot
+ * @type number
+ * @text Ability next arrow width
+ * @desc width reserved for displaying the next level arrow.
+ * @default 32
+ * 
  * @param AllocatingAbilityLevelWidth
  * @parent AllocatingAbilitiesRoot
  * @type number
  * @text Ability lv. num. width
  * @desc width reserved for displaying the level number.
  * @default 64
+ * 
+ * @param AllocatingAbilityWindowWidth
+ * @parent AllocatingAbilitiesRoot
+ * @type number
+ * @text Ability items window width
+ * @desc width reserved for displaying the ability items window.
+ * @default 512
  * 
  * 
  * 
@@ -115,7 +143,21 @@
  * @type note[]
  * @text Result items to be shown
  * @desc Set custom entries. format: item name \n eval for value. 
- * @default ["\"\\\"atk\\\"\\na.atk\\nthis is an example item\"","\"\\\"def\\\"\\nactor.def\\nthis is an example item\""]
+ * @default ["\"\\\"atk\\\"\\na.atk\\nthis is an example item\"","\"\\\"def\\\"\\nactor.def\\nthis is an example item\"","\"\\\"example\\\"\\nactor._exampleAbilityProperty\\nthe corresponding example property\""]
+ * 
+ * @param ResultPrevNumberWidth
+ * @parent ShowingResultsRoot
+ * @type number
+ * @text Result previous num. width
+ * @desc width reserved for displaying the previous number.
+ * @default 64
+ * 
+ * @param ResultNextArrowWidth
+ * @parent ShowingResultsRoot
+ * @type number
+ * @text Result next arrow width
+ * @desc width reserved for displaying the next arrow.
+ * @default 32
  * 
  * @param ResultNumberWidth
  * @parent ShowingResultsRoot
@@ -133,6 +175,19 @@
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_AllocateAbility";
 const params=PluginManager._parameters[pluginName];
 
+// set default
+{
+if(isNaN(params.AllocatingAbilityLevelWidth-=0))     params.AllocatingAbilityLevelWidth=64;
+if(isNaN(params.AllocatingAbilityPrevLevelWidth-=0)) params.AllocatingAbilityPrevLevelWidth=64;
+if(isNaN(params.AllocatingAbilityNextArrowWidth-=0)) params.AllocatingAbilityNextArrowWidth=32;
+if(isNaN(params.AllocatingAbilityWindowWidth-=0))    params.AllocatingAbilityWindowWidth=512;
+}
+{
+if(isNaN(params.ResultNumberWidth-=0))     params.ResultNumberWidth=64;
+if(isNaN(params.ResultPrevNumberWidth-=0)) params.ResultPrevNumberWidth=64;
+if(isNaN(params.ResultNextArrowWidth-=0))  params.ResultNextArrowWidth=32;
+}
+
 { const dp=params.AllocatingCostPointProperty.replace(re_allR,''),np="_"+dp;
 Object.defineProperty(Game_BattlerBase.prototype,dp,{
 set:function(val){
@@ -143,6 +198,8 @@ set:function(val){
 });
 params._costPointProperty=dp;
 }
+
+params._arrowText=" -> ";
 
 new cfc(params).addBase('getAllocItemsSetting',function f(){
 	if(f.tbl[0]) return f.tbl[0];
@@ -207,7 +264,7 @@ set:function(val){
 });
 
 Window_Command.prototype._allocateAbility_getText_termsCommand=function f(key,defaultValue){
-	const obj=$dataSystem.temrs&&$dataSystem.temrs.commands;
+	const obj=$dataSystem.terms&&$dataSystem.terms.commands;
 	return obj&&obj[key]||defaultValue;
 };
 
@@ -220,7 +277,7 @@ makeCommandList(){
 	this.addCommand("<", 'prevActor');
 	this.addCommand(this.getText_adjust(), 'adjust');
 	this.addCommand(this.getText_confirm(), 'confirm');
-	this.addCommand(TextManager.cancel, 'cancel');
+	this.addCommand(this.getText_quitWithoutSaving(), 'cancel');
 	this.addCommand(">", 'nextActor');
 }
 
@@ -257,11 +314,14 @@ const a=class Window_AllocateAbility_FinCmd extends Window_Command{
 makeCommandList(){
 	this.addCommand(this.getText_confirm(), 'confirm');
 	this.addCommand(TextManager.cancel, 'cancel');
+	this.addCommand(this.getText_quitWithoutSaving(), 'quit');
 }
 };
 a.ori=Window_Command;
 window[a.name]=a;
-a.prototype.getText_confirm=Window_AllocateAbility_Actions.prototype.getText_confirm;
+const p=a.prototype;
+p.getText_confirm=Window_AllocateAbility_Actions.prototype.getText_confirm;
+p.getText_quitWithoutSaving=Window_AllocateAbility_Actions.prototype.getText_quitWithoutSaving;
 }
 
 {
@@ -285,11 +345,15 @@ new cfc(a.prototype).addBase('initialize',function f(x,y,w,h){
 	for(let x=0,xs=conf.length;x!==xs;++x) this.addCommand(eval(conf[x].text)+'',conf[x].key,eval(conf[x].cond),conf[x]);
 }).addBase('getSetting',function f(){
 	return f.tbl[1].getAllocItemsSetting();
+},t).addBase('getPrevLevelNumberWidth',function f(idx){
+	return f.tbl[1].AllocatingAbilityPrevLevelWidth-0||0;
+},t).addBase('getNextArrowWidth',function f(idx){
+	return f.tbl[1].AllocatingAbilityNextArrowWidth-0||0;
 },t).addBase('getLevelNumberWidth',function f(idx){
 	return f.tbl[1].AllocatingAbilityLevelWidth-0||0;
 },t).addBase('itemRectForText',function f(idx){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
-	rtv.width-=this.getLevelNumberWidth.apply(this,arguments);
+	rtv.width-=this.getPrevLevelNumberWidth.apply(this,arguments)+this.getNextArrowWidth.apply(this,arguments)+this.getLevelNumberWidth.apply(this,arguments);
 	return rtv;
 },t).addBase('drawItem',function f(idx){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
@@ -298,11 +362,37 @@ new cfc(a.prototype).addBase('initialize',function f(x,y,w,h){
 },t).addBase('drawItem_level',function f(idx){
 	if(!this._actor) return;
 	const rect=this.itemRectForText(idx);
-	this.drawText(this._actor[this.commandExt(idx).key],rect.x+rect.width,rect.y,this.getLevelNumberWidth(),'right');
-}).addBase('setActor',function f(actor){
-	if(this._actor===actor) return;
-	this._actor=actor;
+	const prevNumWidth=this.getPrevLevelNumberWidth.apply(this,arguments);
+	const arrowWidth=this.getNextArrowWidth.apply(this,arguments);
+	const numWidth=this.getLevelNumberWidth.apply(this,arguments);
+	let ende=rect.x+rect.width,w;
+	const v=this._actor[this.commandExt(idx).key];
+	const pv=this._previewActor[this.commandExt(idx).key];
+	this.resetTextColor();
+	if(pv===v){
+		ende+=prevNumWidth+arrowWidth;
+		this.drawText(v,ende,rect.y,w=numWidth,'right');
+		ende+=w;
+	}else{
+		this.drawText(v,ende,rect.y,w=prevNumWidth,'right');
+		ende+=w;
+		this.changeTextColor(this.paramchangeTextColor(pv-v));
+		const arrowText=f.tbl[1]._arrowText;
+		this.drawText(arrowText,ende,rect.y,w=arrowWidth,'center');
+		ende+=w;
+		this.drawText(pv,ende,rect.y,w=numWidth,'right');
+		ende+=w;
+		this.resetTextColor();
+	}
+},t).addBase('setActor',function f(isForcedRefresh,actor,previewActor){
+	if(!isForcedRefresh&&!this.setActor_refreshCondOk(actor,previewActor)) return;
+	this.setActor_refreshCondUpdate(actor,previewActor);
 	this.refresh();
+}).addBase('setActor_refreshCondOk',function f(actor){
+	if(this._actor!==actor) return true;
+}).addBase('setActor_refreshCondUpdate',function f(actor,previewActor){
+	this._actor=actor;
+	this._previewActor=previewActor;
 });
 }
 
@@ -321,20 +411,27 @@ params=>{
 	{ let params; { return eval(s); } }
 }, // 3: eval CostPoint name
 ];
-new cfc(a.prototype).addBase('setActor',function f(actor,isForcedRefresh){
-	if(!isForcedRefresh&&!this.setActor_refreshCondOk(actor)) return;
-	this.setActor_refreshCondUpdate(actor);
-	this.setText(this.getActorString(actor));
-}).addBase('setActor_refreshCondOk',function f(actor){
+new cfc(a.prototype).addBase('setActor',function f(isForcedRefresh,actor,previewActor){
+	if(!isForcedRefresh&&!this.setActor_refreshCondOk(actor,previewActor)) return;
+	this.setActor_refreshCondUpdate(actor,previewActor);
+	this.setText(this.getActorString(actor,previewActor));
+}).addBase('setActor_refreshCondOk',function f(actor,previewActor){
 	if(this._actor!==actor) return true;
-	const costPoint=this.getActorAbilityPoints(actor);
+	const costPoint=this.getActorAbilityPoints(previewActor);
 	if(this._costPoint!==costPoint) return true;
-}).addBase('setActor_refreshCondUpdate',function f(actor){
+}).addBase('setActor_refreshCondUpdate',function f(actor,previewActor){
 	this._actor=actor;
-	this._costPoint=this.getActorAbilityPoints(actor);
-}).addBase('getActorString',function f(actor){
-	return actor.name()+'\n'+
-		f.tbl[3](f.tbl[1])+" : "+this.getActorAbilityPoints(actor);
+	this._previewActor=previewActor;
+	this._costPoint=this.getActorAbilityPoints(previewActor);
+}).addBase('getActorString',function f(actor,previewActor){
+	const oriPoints=this.getActorAbilityPoints(actor);
+	let rtv=actor.name()+'\n'+
+		f.tbl[3](f.tbl[1])+" : "+oriPoints;
+	const previewPoints=this.getActorAbilityPoints(previewActor);
+	if(previewPoints===oriPoints) return rtv;
+	rtv+=f.tbl[1]._arrowText;
+	rtv+=previewPoints;
+	return rtv;
 },t).addBase('getActorAbilityPoints',function f(actor){
 	return actor[params._costPointProperty];
 });
@@ -346,40 +443,67 @@ const a=class Window_AllocateAbility_Results extends Window_Base{
 a.ori=Window_Base;
 window[a.name]=a;
 t=[
-a.ori.prototype, // 0:
-params, // 1: PluginManager.parameters(pluginName)
+a.ori.prototype, // 0: 
+params, // 1: PluginManager.parameters(pluginName) 
 pluginName, // 2: 
 (conf1,actr)=>{
 	const a=actr,actor=a,s=conf1.text;
 	{ let k,r,t,params,conf1,actr; { return eval(s); } }
-}, // 3: eval result name
+}, // 3: eval result name 
 (conf1,actr)=>{
 	const a=actr,actor=a,s=conf1.get;
 	{ let k,r,t,params,conf1,actr; { return eval(s); } }
-}, // 4: eval result num
+}, // 4: eval result value 
 ];
-new cfc(a.prototype).addBase('setActor',function f(futureActor,isForcedRefresh){
-	if(!isForcedRefresh&&!this.setActor_refreshCondOk(futureActor)) return;
-	this.setActor_refreshCondUpdate(futureActor);
+new cfc(a.prototype).addBase('setActor',function f(isForcedRefresh,actor,previewActor){
+	if(!isForcedRefresh&&!this.setActor_refreshCondOk(actor,previewActor)) return;
+	this.setActor_refreshCondUpdate(actor,previewActor);
 	this.redraw();
-}).addBase('setActor_refreshCondOk',function f(futureActor){
-	if(this._futureActor!==futureActor) return true;
-}).addBase('setActor_refreshCondUpdate',function f(futureActor){
-	this._actor=futureActor;
+}).addBase('setActor_refreshCondOk',function f(actor,previewActor){
+	if(this._actor!==actor) return true;
+}).addBase('setActor_refreshCondUpdate',function f(actor,previewActor){
+	this._actor=actor;
+	this._previewActor=previewActor;
 }).addBase('redraw',function f(){
 	const bmp=this.contents; if(!bmp) return;
 	bmp.clear();
-	const a=this._actor,actor=a; if(!a) return;
+	const a=this._actor;
+	const pa=this._previewActor;
+	if(!a||!pa) return;
 	const conf=f.tbl[1].getResultItemsSetting();
+	const prevNumWidth=this.getResultPrevNumberWidth();
+	const arrowWidth=this.getResultNextArrowWidth();
+	const arrowText=f.tbl[1]._arrowText;
 	const numWidth=this.getResultNumberWidth(),tp=this.textPadding();
 	const W=~~(this.contentsWidth()-tp*2);
-	const w1=W-numWidth;
+	const w1=W-(prevNumWidth+arrowWidth+numWidth);
+	let padX=0;
 	let y=tp;
+	this.resetTextColor();
 	for(let x=0,xs=conf.length;x!==xs;++x,y+=this.lineHeight()){
-		this.drawText(f.tbl[3](conf[x],a)+'',0   ,y,w1);
-		this.drawText(f.tbl[4](conf[x],a)+'',0+w1,y,numWidth,'right');
+		let ende=w1,w;
+		this.drawText(f.tbl[3](conf[x],a)+'', padX+0,y,ende);
+		const v=f.tbl[4](conf[x],a);
+		const pv=f.tbl[4](conf[x],pa);
+		if(pv===v){
+			ende+=prevNumWidth+arrowWidth;
+			this.drawText(v+'',  padX+ende,y,w=numWidth,     'right');
+		}else{
+			this.drawText(v+'',  padX+ende,y,w=prevNumWidth, 'right');
+			ende+=w;
+			this.changeTextColor(this.paramchangeTextColor(pv-v));
+			this.drawText(arrowText+'',   padX+ende,y,w=arrowWidth,'center');
+			ende+=w;
+			this.drawText(pv+'', padX+ende,y,w=numWidth,     'right');
+			ende+=w;
+			this.resetTextColor();
+		}
 	}
 	return y;
+},t).addBase('getResultPrevNumberWidth',function f(){
+	return f.tbl[1].ResultPrevNumberWidth-0||0;
+},t).addBase('getResultNextArrowWidth',function f(){
+	return f.tbl[1].ResultNextArrowWidth-0||0;
 },t).addBase('getResultNumberWidth',function f(){
 	return f.tbl[1].ResultNumberWidth-0||0;
 },t);
@@ -402,6 +526,42 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	const bmp=this._backgroundBitmap=SceneManager.snap();
 	bmp.blur();
 	return bmp;
+}).addBase('initialize_previewActors',function f(){
+	const rtv=this._previewActors=new Map();
+	rtv._rev=new Map();
+	return rtv;
+}).addBase('previewActors_getCont',function f(){
+	const rtv=this._previewActors;
+	if(!rtv) return this.initialize_previewActors();
+	return rtv;
+}).addBase('previewActors_getMapped',function f(actor){
+	if(!actor) return;
+	const cont=this.previewActors_getCont();
+	let rtv=cont.get(actor);
+	if(!rtv){
+		cont.set(actor,rtv=JsonEx.makeDeepCopy(actor));
+		cont._rev.set(rtv,actor);
+	}
+	return rtv;
+}).addBase('initialize_allocLog',function f(){
+	return this._allocLog=new Map();
+}).addBase('allocLog_getCont',function f(){
+	const rtv=this._allocLog;
+	if(!rtv) return this.initialize_allocLog();
+	return rtv;
+}).addBase('allocLog_clearAll',function f(){
+	this.allocLog_getCont().clear();
+}).addBase('allocLog_getList',function f(actor){
+	const cont=this.allocLog_getCont();
+	let rtv=cont.get(actor);
+	if(!rtv) cont.set(actor,rtv=[]);
+	return rtv;
+}).addBase('allocLog_clear1',function f(actor){
+	this.allocLog_getList(actor).length=0;
+}).addBase('allocLog_addLog',function f(actor,itemExt,delta){
+	const arr=this.allocLog_getList(actor);
+	if(arr.back&&arr.back[0]===itemExt) arr.back[1]+=delta;
+	else arr.push([itemExt,delta]);
 }).addBase('createBackground',function f(){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
 	const bgSp=this._backgroundSprite; bgSp.bitmap=this._backgroundBitmap;
@@ -412,11 +572,12 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	this.create_windows_setHandlers();
 	return rtv;
 },t).addBase('create_windows',function f(){
-	let last,tmp,sp;
+	let last,tmp,sp,val;
 	this.addChild(sp=this._layoutRoot=new Sprite());
 	sp.addChild(tmp=this._window_header=new Window_AllocateAbility_Header(2)); last=tmp;
 	sp.addChild(tmp=this._window_actions=new Window_AllocateAbility_Actions(last.x,last.y+last.height)); last=tmp;
-	sp.addChild(tmp=this._window_selects=new Window_AllocateAbility_Allocate(last.x,last.y+last.height,Graphics.boxWidth>>1,Graphics.boxHeight-(last.y+last.height))); last=tmp;
+	val=f.tbl[1].AllocatingAbilityWindowWidth; if(isNaN(val)) val=Graphics.boxWidth>>1;
+	sp.addChild(tmp=this._window_selects=new Window_AllocateAbility_Allocate(last.x,last.y+last.height,val,Graphics.boxHeight-(last.y+last.height))); last=tmp;
 	tmp.deactivate();
 	sp.addChild(tmp=this._window_results=new Window_AllocateAbility_Results(last.x+last.width,last.y,Graphics.boxWidth-last.width,last.height)); last=tmp;
 	
@@ -426,40 +587,44 @@ new cfc(a.prototype).addBase('initialize',function f(){
 		(Graphics.boxWidth-this._window_finCmd.width)>>1,
 		(Graphics.boxHeight-this._window_finCmd.height)>>1,
 	);
-}).addBase('create_windows_setHandlers',function f(){
+},t).addBase('create_windows_setHandlers',function f(){
 	let tmp;
 	this._window_actions.setHandler('prevActor', tmp=this.userInput_actionPrevActor.bind(this));
 	this._window_actions.setHandler('pageup',tmp);
 	this._window_actions.setHandler('adjust',    this.userInput_actionAdjust.bind(this));
 	this._window_actions.setHandler('confirm',   this.userInput_actionConfirm.bind(this));
-	this._window_actions.setHandler('cancel',    this.popScene.bind(this));
+	this._window_actions.setHandler('cancel',    this.userInput_actionCancel.bind(this));
 	this._window_actions.setHandler('nextActor', tmp=this.userInput_actionNextActor.bind(this));
 	this._window_actions.setHandler('pagedown',tmp);
 	
 	this._window_selects.setHandler('cancel',    this.userInput_selectCancel.bind(this));
 	this._window_selects.setHandler('ok',        this.userInput_selectOk.bind(this));
 	
+	this._window_finCmd.setHandler('confirm',    this.userInput_finCmdConfirm.bind(this));
 	this._window_finCmd.setHandler('cancel',     this.userInput_finCmdCancel.bind(this));
+	this._window_finCmd.setHandler('quit',       this.userInput_finCmdQuit.bind(this));
 }).addBase('update',function f(){
 	this.update_input();
 	this.update_actor();
 	return f.tbl[0][f._funcName].apply(this,arguments);
 },t).addBase('update_input',function f(){
 	
-}).addBase('update_actor',function f(){
-	this.update_actorHeader();
-	this.update_actorAbilities();
-	this.update_actorResults();
-}).addBase('update_actorHeader',function f(){
+}).addBase('update_actor',function f(isForcedRefresh){
+	this.update_actorHeader(isForcedRefresh);
+	this.update_actorAbilities(isForcedRefresh);
+	this.update_actorResults(isForcedRefresh);
+}).addBase('update_actorHeader',function f(isForcedRefresh){
 	const actr=this.actor();
-	this._window_header.setActor(actr);
-}).addBase('update_actorAbilities',function f(){
+	const preview=this.previewActors_getMapped(actr);
+	this._window_header.setActor(isForcedRefresh,actr,preview);
+}).addBase('update_actorAbilities',function f(isForcedRefresh){
 	const actr=this.actor();
-	this._window_selects.setActor(actr);
-}).addBase('update_actorResults',function f(){
-	const wnd=this._window_results;
+	const preview=this.previewActors_getMapped(actr);
+	this._window_selects.setActor(isForcedRefresh,actr,preview);
+}).addBase('update_actorResults',function f(isForcedRefresh){
 	const actr=this.actor();
-	this._window_results.setActor(actr);
+	const preview=this.previewActors_getMapped(actr);
+	this._window_results.setActor(isForcedRefresh,actr,preview);
 },t).addBase('userInput_updateFocus',function f(wnd){
 	if(this._nowFocusOn) this._nowFocusOn.deactivate();
 	this._nowFocusOn=wnd;
@@ -467,9 +632,17 @@ new cfc(a.prototype).addBase('initialize',function f(){
 }).addBase('userInput_actionAdjust',function f(){
 	this.userInput_updateFocus(this._window_selects);
 }).addBase('userInput_actionConfirm',function f(){
-	this._window_finCmd.open();
+	const wnd=this._window_finCmd;
+	wnd.select(wnd.findSymbol('confirm'));
+	wnd.open();
 	this._layoutRoot.alpha=0.75;
-	this.userInput_updateFocus(this._window_finCmd);
+	this.userInput_updateFocus(wnd);
+}).addBase('userInput_actionCancel',function f(){
+	const wnd=this._window_finCmd;
+	wnd.select(wnd.findSymbol('quit'));
+	wnd.open();
+	this._layoutRoot.alpha=0.75;
+	this.userInput_updateFocus(wnd);
 }).addBase('userInput_actionPrevActor',function f(){
 	this.previousActor();
 	this.userInput_updateFocus(this._window_actions);
@@ -482,22 +655,75 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	let func=this._window_selects.currentExt().cost;
 	if(!(func instanceof Function)) func=f.tbl[1]._defaultCostPointFunction;
 	return func(itemLv,actor);
-},t).addBase('userInput_selectLevelUp',function f(itemExt,actor){
+},t).addBase('userInput_selectLevel_condOk',function f(actor,itemLv){
+	const a=actor,lv=itemLv,s=f.tbl[1].AllocatingCostPointCondFunc;
+	{ let f; if(!eval(s)) return false; }
+	return true;
+},t).addBase('userInput_selectLevelUp',function f(itemExt,actor,isPreview){
 	if(!itemExt) return;
-	actor[f.tbl[1]._costPointProperty]-=this.userInput_selectGetCost(actor[itemExt.key],actor);
+	const oriActor=actor;
+	if(isPreview) actor=this.previewActors_getMapped(actor);
+	const cost=this.userInput_selectGetCost(actor[itemExt.key],actor);
+	actor[f.tbl[1]._costPointProperty]-=cost;
 	++actor[itemExt.key];
-},t).addBase('userInput_selectLevelDown',function f(itemExt,actor){
+	if(!this.userInput_selectLevel_condOk(actor,actor[itemExt.key])){
+		SoundManager.playBuzzer();
+		// restore
+		--actor[itemExt.key];
+		actor[f.tbl[1]._costPointProperty]+=cost;
+		return;
+	}
+	this.allocLog_addLog(actor,itemExt,1);
+	if(isPreview) this.update_actor(true);
+	return true;
+},t).addBase('userInput_selectLevelDown',function f(itemExt,actor,isPreview){
+	// internal use
 	if(!itemExt) return;
+	const oriActor=actor;
+	if(isPreview) actor=this.previewActors_getMapped(actor);
 	--actor[itemExt.key];
-	actor[f.tbl[1]._costPointProperty]+=this.userInput_selectGetCost(actor[itemExt.key],actor);
+	const cost=this.userInput_selectGetCost(actor[itemExt.key],actor);
+	actor[f.tbl[1]._costPointProperty]+=cost;
+	if(!this.userInput_selectLevel_condOk(actor,actor[itemExt.key])){
+		SoundManager.playBuzzer();
+		// restore
+		actor[f.tbl[1]._costPointProperty]-=cost;
+		++actor[itemExt.key];
+		return;
+	}
+	this.allocLog_addLog(actor,itemExt,-1);
+	if(isPreview) this.update_actor(true);
+	return true;
 },t).addBase('userInput_selectOk',function f(){
 	const ext=this._window_selects.currentExt();
-	this.userInput_selectLevelUp(ext,this._actor);
+	this.userInput_selectLevelUp(ext,this._actor,true);
 	this.userInput_updateFocus(this._window_selects);
+}).addBase('userInput_finCmdConfirm',function f(){
+	this._replayAllocLogToActualActors();
+	this.userInput_finCmdQuit();
+}).addBase('_replayAllocLogToActualActors',function f(){
+	const previewRev=this.previewActors_getCont()._rev;
+	const allocLogs=this.allocLog_getCont();
+	const unpacked=[];
+	allocLogs.forEach((v,k)=>unpacked.push([k,v]));
+	unpacked.forEach(info=>{
+		const actr=previewRev.get(info[0]); if(!actr) return;
+		const arr=info[1];
+		for(let x=0,xs=arr.length;x<xs;++x){
+			const itemExt=arr[x][0];
+			const delta=arr[x][1]-0;
+			if(!delta) continue;
+			if(delta<0) for(let d=0|-delta;d--;) this.userInput_selectLevelDown(itemExt,actr);
+			else for(let d=0|delta;d--;) this.userInput_selectLevelUp(itemExt,actr);
+		}
+		this.allocLog_clear1(actr);
+	});
 }).addBase('userInput_finCmdCancel',function f(){
 	this._window_finCmd.close();
 	this._layoutRoot.alpha=1;
 	this.userInput_updateFocus(this._window_actions);
+}).addBase('userInput_finCmdQuit',function f(){
+	this.popScene();
 });
 }
 
