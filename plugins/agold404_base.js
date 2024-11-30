@@ -1234,6 +1234,7 @@ new cfc(p).add('_createAllParts',function f(){
 
 (()=>{ let k,r,t;
 
+
 new cfc(Input).addBase('_getKeyName',function f(event){
 	return this.keyMapper[event.keyCode]||event.keyCode;
 }).addBase('_onKeyUp',function f(event){
@@ -1351,6 +1352,7 @@ child=>child.update&&child.update(), // 0: forEach
 ]).addBase('update_before',none,
 ).addBase('update_after',none,
 );
+
 
 })(); // refine for future extensions
 
@@ -3940,6 +3942,44 @@ Input.keyMapper[18]='alter';
 for(let x=96;x<=105;++x) delete Input.keyMapper[x]; // num pad when num lock on
 
 })(); // modify key map
+
+// ---- ---- ---- ---- Window_NumberInput can cancel
+
+(()=>{ let k,r,t;
+
+new cfc(Game_Interpreter.prototype).add('command103',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._isNumInputCancel=false;
+	return rtv;
+}).add('setupNumInput',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	$gameMessage._numInputInpterpreter=this;
+	return rtv;
+});
+
+new cfc(Window_NumberInput.prototype).addBase('isCancelEnabled',function f(){
+	return true;
+}).add('start',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	if($gameMessage._numInputInpterpreter) $gameMessage._numInputInpterpreter._isNumInputCancel=false;
+	return rtv;
+}).addBase('callCancelHandler',function f(){
+	SoundManager.playCancel();
+	$gameMessage._numInputInpterpreter._isNumInputCancel=true;
+	this._messageWindow.terminateMessage();
+	this.updateInputData();
+	this.deactivate();
+	this.close();
+	this.terminateNumInput();
+}).add('processOk',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.terminateNumInput();
+	return rtv;
+}).add('terminateNumInput',function f(){
+	$gameMessage._numInputInpterpreter=undefined;
+});
+
+})(); // Window_NumberInput can cancel
 
 // ---- ---- ---- ---- Window_MenuCommand.prototype.needsCommand
 
