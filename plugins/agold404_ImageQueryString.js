@@ -55,18 +55,8 @@ if(p[k]) new cfc(p).add(k,function f(){
 });
 }
 
-new cfc(ImageManager).addBase('_parseQs_uqh',function f(uqh,idx){
-	idx=idx===undefined?1:idx;
-	const rtv={};
-	if(uqh&&uqh[idx]) uqh[idx].slice(1).split("&").forEach(f.tbl[0],rtv);
-	return rtv;
-},[
-function(x){
-	const idxe=x.indexOf('=');
-	if(idxe===-1) this[x]=true;
-	else this[x.slice(0,idxe)]=decodeURIComponent(x.slice(idxe+1));
-}, // 0: forEach
-]).addBase('_parseQs',function(path){
+ImageManager._parseQs_uqh=window.parseQs_uqh;
+new cfc(ImageManager).addBase('_parseQs',function(path){
 	return this._parseQs_uqh(ImageManager.splitUrlQueryHash(path),1);
 }).addBase('_parseHs',function(path){
 	return this._parseQs_uqh(ImageManager.splitUrlQueryHash(path),2);

@@ -834,14 +834,37 @@ const listMapParents=window.listMapParents=mapId=>{
 	}
 	return rtv.reverse();
 };
+const splitUrlQueryHash=window.splitUrlQueryHash=path=>{ if(!path) return ['','',''];
+	const idx_sharp=path.indexOf("#");
+	const rtv=idx_sharp<0?[path,'','',]:[path.slice(0,idx_sharp),'',path.slice(idx_sharp),];
+	const idx_question=rtv[0].indexOf("?");
+	if(idx_question>=0){
+		rtv[1]=rtv[0].slice(idx_question);
+		rtv[0]=rtv[0].slice(0,idx_question);
+	}
+	return rtv;
+};
+const parseQs_uqh=window.parseQs_uqh=function f(uqh,idx){
+	idx=idx===undefined?1:idx;
+	const rtv={};
+	if(uqh&&uqh[idx]) uqh[idx].slice(1).split("&").forEach(f.tbl[0],rtv);
+	return rtv;
+};
+parseQs_uqh.tbl=[
+function(x){
+	const idxe=x.indexOf('=');
+	if(idxe===-1) this[x]=true;
+	else this[x.slice(0,idxe)]=decodeURIComponent(x.slice(idxe+1));
+}, // 0: forEach
+];
 const getUrlParamVal=window.getUrlParamVal=key=>{
-	const h0=ImageManager.splitUrlQueryHash(location.href);
-	const ht=ImageManager.splitUrlQueryHash(getTopFrameWindow().location.href);
+	const h0=window.splitUrlQueryHash(location.href);
+	const ht=window.splitUrlQueryHash(getTopFrameWindow().location.href);
 	let r;
-	if(r===undefined) r=ImageManager._parseQs_uqh(ht,2)[key];
-	if(r===undefined) r=ImageManager._parseQs_uqh(ht,1)[key];
-	if(r===undefined) r=ImageManager._parseQs_uqh(h0,2)[key];
-	if(r===undefined) r=ImageManager._parseQs_uqh(h0,1)[key];
+	if(r===undefined) r=window.parseQs_uqh(ht,2)[key];
+	if(r===undefined) r=window.parseQs_uqh(ht,1)[key];
+	if(r===undefined) r=window.parseQs_uqh(h0,2)[key];
+	if(r===undefined) r=window.parseQs_uqh(h0,1)[key];
 	return r;
 };
 const addUrlParamVal_qs=window.addUrlParamVal_qs=(key,val,isSetToTop)=>{

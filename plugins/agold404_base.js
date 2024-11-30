@@ -2286,7 +2286,7 @@ new cfc(SceneManager).addBase('push',function f(sceneClass,shouldRecordCurrentSc
 ]).add('changeScene',function f(){
 	const sc=this._scene;
 	const rtv=f.ori.apply(this,arguments);
-	if(this._scene && sc && this._scene!==sc) this.onSceneChange();
+	if(this._scene && sc && this._scene!==sc && this.onSceneChange) this.onSceneChange();
 	return rtv;
 });
 
@@ -3116,16 +3116,7 @@ new cfc(Bitmap.prototype).add('_onLoad',function f(){
 
 { const p=ImageManager;
 p.isDirectPath=ResourceHandler.isDirectPath;
-p.splitUrlQueryHash=path=>{ if(!path) return ['','',''];
-	const idx_sharp=path.indexOf("#");
-	const rtv=idx_sharp<0?[path,'','',]:[path.slice(0,idx_sharp),'',path.slice(idx_sharp),];
-	const idx_question=rtv[0].indexOf("?");
-	if(idx_question>=0){
-		rtv[1]=rtv[0].slice(idx_question);
-		rtv[0]=rtv[0].slice(0,idx_question);
-	}
-	return rtv;
-}
+p.splitUrlQueryHash=window.splitUrlQueryHash;
 k='_loadBitmap';
 r=p[k]; (p[k]=function(isReserve, folder, filename, hue, smooth, reservationId){
 	if(filename){
