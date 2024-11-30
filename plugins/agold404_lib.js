@@ -35,6 +35,7 @@ const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri,moduleName)=>{
 	//if(f._funcName && f!==none) console.warn("already having '_funcName' proterty for",f);
 	f._funcName=k;
 	f._moduleName=moduleName;
+	f._super=pre;
 	return p;
 };
 const a=function cfc(p){
@@ -1010,6 +1011,7 @@ const pow32gf2=window.pow32gf2=(b,e,poly,revPoly)=>{
 
 const undef=undefined,none=()=>{},filterArg0=x=>x,isNum=n=>!isNaN(n),cmpFunc_num=(a,b)=>a-b;
 const re_allR=/\r/g;
+const EVAL=s=>{ return eval(s); };
 const PNG_HEADER=new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, ]);
 const PNG_CHUNK_HEADER_IHDR=new Uint8Array([0, 0, 0, 13, 73, 72, 68, 82, ]);
 const PNG_16B_HEADER=new Uint8Array(16);
