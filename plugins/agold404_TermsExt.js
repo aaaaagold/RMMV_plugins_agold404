@@ -41,6 +41,12 @@
  * DataManager.termExt_updateDataSystemTerms();
  * 
  * 
+ * About $dataSystem.terms.evals:
+ * Automatically adds 'evals' property to $dataSystem.terms
+ * Basically as same as the above, except text field is sent to eval and takes its output as final value.
+ * // the evaluated value is determined on DataManager.termExt_updateDataSystemTerms is called.
+ * 
+ * 
  * @param TermsCommands
  * @type note[]
  * @text $dataSystem.terms.commands
@@ -65,6 +71,12 @@
  * @desc $dataSystem.terms.basic[key]=text
  * @default ["\"exampleBasic\\nExample default basic text\\n\\nen-US\\nExample en-US basic text\""]
  * 
+ * @param TermsEvals
+ * @type note[]
+ * @text $dataSystem.terms.evals
+ * @desc $dataSystem.terms.evals[key]=eval(text)
+ * @default ["\"exampleEvals\\n\\\"Example default eval text\\\"\\n\\nen-US\\n\\\"Example en-US eval text\\\"\""]
+ * 
  * This plugin can be renamed as you want.
  */
 
@@ -85,20 +97,28 @@ new cfc(DataManager).add('onLoad_before_system',function f(obj,name,src,msg){
 	const obj=dataSystem||$dataSystem;
 	const parameters=PluginManager.parameters(f.tbl[0]); if(!parameters) return;
 	const locale=DataManager.getLocale();
+	const tEvals=this.termExt_pasrseSetting1(parameters.TermsEvals);
+	const infos=[
+		['evals',tEvals],
+	];
+	{
 	const tCmds=this.termExt_pasrseSetting1(parameters.TermsCommands);
 	const tMsgs=this.termExt_pasrseSetting1(parameters.TermsMessages);
 	const tParams=this.termExt_pasrseSetting1(parameters.TermsParams);
 	const tBasic=this.termExt_pasrseSetting1(parameters.TermsBasic);
-	const infos=[
+	infos.push(
 		['commands',tCmds],
 		['messages',tMsgs],
 		['params',tParams],
 		['basic',tBasic],
-	];
+	);
+	}
+	if(!obj.terms.evals) obj.terms.evals={};
 	for(let x=0,xs=infos.length;x!==xs;++x) this._termExt_updateDataSystemTerms(obj,locale,infos[x][0],infos[x][1]);
+	this._termExt_updateDataSystemTerms_eval(obj,tEvals);
 },t).addBase('termExt_pasrseSetting1',function f(setting){
 	// rtv = [ [key,{locale:textWithTheLocale, ... },text], ... ]
-	const rtv=[];
+	const rtv=[]; if(!setting) return rtv;
 	const raw=JSON.parse(setting);
 	for(let x=0,xs=raw.length;x<xs;++x){
 		const lines=JSON.parse(raw[x]).replace(re_allR,'').split('\n').filter(filterArg0);
@@ -109,8 +129,12 @@ new cfc(DataManager).add('onLoad_before_system',function f(obj,name,src,msg){
 	}
 	return rtv;
 }).addBase('_termExt_updateDataSystemTerms',function f($dataSystem,locale,category,parsedInfo){
-	const obj=$dataSystem.terms&&$dataSystem.terms[category];
+	const obj=$dataSystem.terms[category];
 	for(let x=0,xs=parsedInfo.length;x!==xs;++x) obj[parsedInfo[x][0]]=(locale in parsedInfo[x][1])?parsedInfo[x][1][locale]:parsedInfo[x][2];
+	return obj;
+}).addBase('_termExt_updateDataSystemTerms_eval',function f($dataSystem,tEvals){
+	const obj=$dataSystem.terms.evals,parsedInfo=tEvals;
+	for(let x=0,xs=parsedInfo.length;x!==xs;++x) obj[parsedInfo[x][0]]=EVAL(obj[parsedInfo[x][0]]);
 	return obj;
 });
 }
