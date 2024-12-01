@@ -9,13 +9,67 @@
  *  [ false-like, skill_id, ... ],
  *  [],
  *  0,
+ *  [ [skill_id,"cond","callback",connection_lines], ]
  *  ...
  * ]>
+ * 
+ * cond: text for condition evaluate using eval()
+ * use 'a' or 'actor' to represent the current actor.
+ * 
+ * callback: text for callback evaluate using eval() after the skill is learnt
+ * 
+ * connection_lines: the lines drew
+ *   8
+ * 4   6
+ *   2
+ * =>
+ *   8
+ * 4  16
+ *   2
+ * 
+ * 
+ * @param ShowSkillPoint
+ * @type boolean
+ * @text showing skill point?
+ * @desc Set wheather showing skill point in skill tree window
+ * @default true
+ * 
+ * @param SkillPointEvalText
+ * @type boolean
+ * @text skill point infos
+ * @desc Showing skill points info with eval()
+ * @default "SP: "+a.skillTreePoint_get()
+ * 
+ * @param SkillPointTextX
+ * @type number
+ * @text x offset of skill point infos
+ * @desc x offset of skill point infos
+ * @default 168
+ * 
+ * @param SkillPointTextY
+ * @type number
+ * @text y offset of skill point infos
+ * @desc y offset of skill point infos
+ * @default 100
+ * 
+ * @param SkillPointTotalWidth
+ * @type number
+ * @text width of skill point infos
+ * @desc width of skill point infos
+ * @default 128
+ * 
  * 
  * This plugin can be renamed as you want.
  */
 
-(()=>{
+(()=>{ let k,r,t;
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_SkillTree";
+const params=PluginManager._parameters[pluginName]||{};
+params._showSkillPoint=JSON.parse(params.ShowSkillPoint);
+params._skillPointEvalText=params.SkillPointEvalText||"''";
+params._skillPointTextX=params.SkillPointTextX-0||0;
+params._skillPointTextY=params.SkillPointTextY-0||0;
+params._skillPointTotalWidth=params.SkillPointTotalWidth-0||0;
 
 
 const itemAct_use="使用";
@@ -202,6 +256,7 @@ arr=>arr&&arr.length||0,
 	return !!item;
 }).add('refresh',function f(){
 	const rtv=f.ori.apply(this,arguments);
+	this.refreshStatusWindow();
 	if(!this.isTree()) return rtv;
 	// const padding1=this.standardPadding(); // already in-padding view
 	const maxCols=this.maxCols();
@@ -316,7 +371,16 @@ if(0)	for(let idx=this._data.length;idx--;){
 },[
 '000 000 000',
 undefined,
-]);
+]).addBase('refreshStatusWindow',function f(){
+	if(!this.refreshStatusWindow_condOk()) return -1;
+	this._statusWindow.refresh();
+}).addBase('refreshStatusWindow_condOk',function f(){
+	if(!this._statusWindow) return false;
+	const lastIsTree=this._refreshStatusWindow_lastIsTree;
+	const isTree=this._refreshStatusWindow_lastIsTree=this.isTree();
+	if(!isTree&&isTree===lastIsTree) return false;
+	return true;
+});
 } // Window_SkillList
 const a=class Window_ItemActions extends Window_Command{
 	initialize(x,y,chMethods){
@@ -338,6 +402,7 @@ new cfc(Scene_Skill.prototype).add('initialize',function f(){
 	this.create_itemNameWindow();
 	this.create_itemActionWindow();
 	this.create_tuneParams();
+	this.create_addLink();
 	return rtv;
 }).addBase('create_itemNameWindow',function f(){
 	const wnd=this._itemActionWindow=new Window_Help(2);
@@ -357,6 +422,9 @@ new cfc(Scene_Skill.prototype).add('initialize',function f(){
 }).addBase('create_tuneParams',function f(){
 	this._skillTypeWindow._skillTree_skillTreeAtFirst=this._skillTree_skillTreeAtFirst;
 	this._skillTypeWindow._skillTree_noSkillTree=!this._skillTree_showTree;
+}).addBase('create_addLink',function f(){
+	this._statusWindow._itemWindow=this._itemWindow;
+	this._itemWindow._statusWindow=this._statusWindow;
 }).add('itemActionWindow_makeCommandList',function f(){
 	for(let x=0,arr=f.tbl[1],xs=arr.length;x!==xs;++x){
 		if(!this._skillTree_bothUseAndLearn){
@@ -417,7 +485,7 @@ new Set([
 		a.learnSkill(item.id);
 		const consume=w._skillTree_learnMeta[idx].consume;
 		if(consume){ eval(consume); }
-		this._itemWindow.refresh();
+		this.refreshInfoWindows();
 	}
 	this._itemActionWindow.activate();
 }).add('itemActionWindow_cancel',function f(){
@@ -443,7 +511,43 @@ new Set([
 	this.itemActionWindow_updatePlacement();
 	this._itemActionWindow.show();
 	this._itemActionWindow.activate();
-},undefined,false,true);
+},undefined,false,true).addBase('refreshInfoWindows',function f(){
+	this._itemWindow.refresh(); // refresh others
+});
+
+
+new cfc(Window_SkillStatus.prototype).add('refresh_hasActor',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	if(f.tbl[1]._showSkillPoint) this.drawSkillPoint();
+	return rtv;
+},t=[
+undefined,
+params, // 1: plugin params
+]).addBase('drawSkillPoint',function f(){
+	const a=this._actor,actor=a;
+	if(!this.drawSkillPoint_condOk(a)) return -1;
+	this.drawText(
+		eval(f.tbl[1]._skillPointEvalText),
+		f.tbl[1]._skillPointTextX,
+		f.tbl[1]._skillPointTextY,
+		f.tbl[1]._skillPointTotalWidth,
+	);
+},t).addBase('drawSkillPoint_condOk',function f(actor){
+	if(!actor) return false;
+	if(!this._itemWindow||!this._itemWindow.isTree()) return false;
+	return true;
+});
+
+
+new cfc(Game_Actor.prototype).addBase('skillTreePoint_get',function f(){
+	return this._skillTreePoint-0||0;
+}).addBase('skillTreePoint_set',function f(val){
+	return this._skillTreePoint=val;
+}).addBase('skillTreePoint_gain',function f(val){
+	const rtv=this.skillTreePoint_get()+val;
+	this.skillTreePoint_set(rtv);
+	return rtv;
+});
 
 
 new cfc(Game_Temp.prototype).addBase('openSkillTree',function f(){
