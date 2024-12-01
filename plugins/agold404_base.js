@@ -1343,6 +1343,20 @@ new cfc(Window.prototype).addBase('_updateCursor',function f(){
 ]);
 
 
+new cfc(Window_SkillStatus.prototype).addBase('refresh',function f(){
+	this.contents.clear();
+	if(!this._actor) return -1;
+	this.refresh_hasActor();
+}).addBase('refresh_hasActor',function f(){
+	const w = this.width - this.padding * 2;
+	const h = this.height - this.padding * 2;
+	const y = h / 2 - this.lineHeight() * 1.5;
+	const width = w - 162 - this.textPadding();
+	this.drawActorFace(this._actor, 0, 0, 144, h);
+	this.drawActorSimpleStatus(this._actor, 162, y, width);
+});
+
+
 new cfc(Sprite.prototype).addBase('update',function f(){
 	this.update_before();
 	this.children.forEach(f.tbl[0]);
@@ -4178,6 +4192,11 @@ new cfc(Window_Selectable.prototype).addBase('maxPageRows',function(isReturnReal
 	const idx=this.index();
 	const rtv=f.ori.apply(this,arguments);
 	if(isNaN(this.index())) this.select(idx);
+	return rtv;
+}).addBase('drawAllItems',function f(){
+	let rtv=0;
+	const idxB=this.topIndex(),sz=this.maxPageItems()+1,cnt=this.maxItems();
+	for(let i=0;i!==sz;++i) if(idxB+i<cnt) ++rtv,this.drawItem(idxB+i);
 	return rtv;
 });
 
