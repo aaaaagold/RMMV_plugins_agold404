@@ -482,7 +482,8 @@ p.kvPop=function(k){
 
 const a=class LruCache{
 static supportedMaxItemCount=(1<<23)-1;
-constructor(maxItemCount,maxItemSize){
+constructor(maxItemCount,maxItemSize,popCallback){
+	// popCallback( item=info.data , info=info ): optional, as destructor if needed
 	this._count=0;
 	this._countMax=maxItemCount|0||this.constructor.supportedMaxItemCount;
 	if(this._countMax<0||this.constructor.supportedMaxItemCount<this._countMax) this._countMax=this.constructor.supportedMaxItemCount;
@@ -493,6 +494,7 @@ constructor(maxItemCount,maxItemSize){
 	this._serialMask=(1<<30)-1; // must > supportedMaxItemCount*2
 	this._infoHeap=new Heap((a,b)=>((b.serial-this._serialBase)&this._serialMask)-((a.serial-this._serialBase)&this._serialMask));
 	this._key2info=new Map();
+	this._popCallback=(popCallback instanceof Function)?popCallback:undefined;
 }
 gc(n){
 	const h=this._infoHeap;
@@ -519,6 +521,7 @@ remove(key){
 	this._size-=info.size;
 	if(h.length) this._serialBase=h.top.serial;
 	else this._serialBase=this._serial=0;
+	if(this._popCallback) this._popCallback(info.data,info);
 	return info;
 }
 setCache(key,data,size){
