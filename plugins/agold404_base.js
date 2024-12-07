@@ -1033,13 +1033,15 @@ function(xhr,url,putCacheOnly){ if(xhr.status<400) this._onXhrLoad(xhr,url,undef
 ]).addBase('_onXhrLoad',function f(xhr,url,cache,putCacheOnly){
 	const src=cache&&cache[0]||xhr&&xhr.response;
 	let array=src;
+	const isBlobUrl=ResourceHandler.isBlobUrl(url);
 	if(!cache){
 		if(xhr._needDecrypt && Decrypter.hasEncryptedAudio && !ResourceHandler.isDirectPath(url)) array=Decrypter.decryptArrayBuffer(src);
-		this._setCache(url,cache=[array.slice(),]);
+		cache=[array.slice(), /* decoded buffer which can be re-used */ ];
+		if(!isBlobUrl) this._setCache(url,cache);
 	}
 	if(putCacheOnly) return;
 	if(cache[1]) return f.tbl[0].call(this,undefined,cache[1]),array;
-	if(array===cache[0]) array=array.slice();
+	if(array===src) array=array.slice();
 	this._readLoopComments(new Uint8Array(array));
 	const func=f.tbl[0].bind(this,cache);
 	WebAudio._context.decodeAudioData(
@@ -1113,7 +1115,12 @@ arrayBuffer=>{
 },[404,1<<26]);
 //
 Decrypter._notFoundCache=new Set();
-new cfc(Decrypter).addBase('decryptImg',function f(url,bitmap){
+new cfc(Decrypter).add('readEncryptionkey',function f(){
+	if(!$dataSystem.encryptionKey) $dataSystem.encryptionKey=f.tbl[0];
+	return f.ori.apply(this,arguments);
+},[
+'0'.repeat(32), // 0: empty encryptionKey
+]).addBase('decryptImg',function f(url,bitmap){
 	url=this.extToEncryptExt(url);
 	const cache=this._getCache(url); if(cache) return this._onXhrLoad(bitmap,cache.slice());
 	
@@ -3173,7 +3180,11 @@ p.createLoader=function(url, retryMethod, resignMethod, retryInterval){
 (t=p.isDirectPath=function f(fname){
 	return fname && fname.constructor===String && f.tbl.some(p=>fname.match(p));
 }).ori=undefined;
-t.tbl=[/^(data:|\.\/\/)/,];
+t.tbl=[/^((blob|data):|\.\/\/)/,];
+(t=ResourceHandler.isBlobUrl=function f(url){
+	return url && url.constructor===String && url.match(f.tbl[0]);
+}).ori=undefined;
+t.tbl=[/^blob:/,];
 }
 new cfc(Bitmap).addBase('giveUpUrl_getCont',function f(){
 	let rtv=Bitmap._giveUpUrl; if(!rtv) rtv=Bitmap._giveUpUrl=new Set();
