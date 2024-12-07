@@ -156,6 +156,7 @@ undefined,
 	const fh1=this.fittingHeight(1),lh=this.lineHeight();
 	const ch=this.contentsHeight(),yInit=isCalcH?0:-this._scrollTxtY;
 	const textState={x:undefined,left:undefined,y:yInit,height:0,isMeasureOnly:isCalcH};
+	const tp=this.textPadding();
 	let clean=true,dy=0;
 	for(let x=0;x!==arr.length;++x){
 		if(x){
@@ -175,20 +176,27 @@ undefined,
 			$gameMessage._faceName=face.name;
 			this.resetFontSettings();
 			const y=textState.y+nameFieldHeight;
-			if(!isCalcH && hasNameField){
-				let ga,ctx;
-				if(ctx=this.contents.context){
-					ga=ctx.globalAlpha;
-					ctx.globalAlpha=ga*f.tbl[0].nfIconMulAlpha;
-					this.drawIcon(f.tbl[0].nfIcon,f.tbl[0].x+f.tbl[0].nfIconDx,y-lh);
-					ctx.globalAlpha=ga;
+			if(hasNameField){
+				if(!isCalcH){
+					let ga,ctx;
+					if(ctx=this.contents.context){
+						ga=ctx.globalAlpha;
+						ctx.globalAlpha=ga*f.tbl[0].nfIconMulAlpha;
+						this.drawIcon(f.tbl[0].nfIcon,f.tbl[0].x+f.tbl[0].nfIconDx,y-lh);
+						ctx.globalAlpha=ga;
+					}
+					textState.index=0;
+					this.drawTextEx(arr[x].nameField,
+						textState.x=textState.left=tp+f.tbl[0].x+f.tbl[0].nfDx,y-lh,
+						0,0,textState,
+					);
 				}
-				this.drawText(arr[x].nameField,f.tbl[0].x+f.tbl[0].nfDx,y-lh);
+				textState.y+=nameFieldHeight;
 			}
 			if(!isCalcH && face.name) this.drawFace(face.name, face.idx, f.tbl[0].x, y);
 			textState.index=0;
 			this.drawTextEx(arr[x].txt,
-				textState.x=textState.left=this.newLineX(),y,
+				textState.x=textState.left=tp+this.newLineX(),y,
 				0,0,textState,
 			);
 			// calcTextHeight(txt,false) called when '\n' ; returns 1 line height at a time
@@ -204,7 +212,7 @@ undefined,
 	//console.log('isCalcH',isCalcH,yInit,dy); // debug
 	return dy;
 },[
-{x:0,nfDx:16,nfIcon:83,nfIconMulAlpha:0.75,nfIconDx:-16},
+{x:0,nfDx:16,nfIcon:83,nfIconMulAlpha:0.625,nfIconDx:-16},
 ]).add('redrawtxt',function f(forced){
 	if(( !this._shouldRedraw ||
 		this._lastRedrawFrame===Graphics.frameCount ||
