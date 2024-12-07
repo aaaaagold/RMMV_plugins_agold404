@@ -1404,10 +1404,16 @@ new cfc(Game_Interpreter.prototype).addBase('command101',function f(){
 	$gameMessage.setBackground(this._params[2]);
 	$gameMessage.setPositionType(this._params[3]);
 }).addBase('command101_text',function f(){
-	while(this.nextEventCode()===401){  // Text data
+	const rtv=[];
+	while(this.command101_text_isContinueMessageString()){  // Text data
 		this._index++;
-		$gameMessage.add(this.currentCommand().parameters[0]);
+		const params=this.currentCommand().parameters;
+		$gameMessage.add(params[0]);
+		rtv.push(params[0]);
 	}
+	return rtv;
+}).addBase('command101_text_isContinueMessageString',function f(){
+	return this.nextEventCode()===401;
 }).addBase('command101_peek',function f(){
 	const func=Game_Interpreter.cmd101Peek_get(this.nextEventCode());
 	if(func){
