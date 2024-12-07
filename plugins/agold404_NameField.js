@@ -56,8 +56,6 @@ new cfc(Window_Message.prototype).add('startMessage',function f(){
 		this._nameField.drawTextEx($gameMessage._nameField,this.textPadding(),0,w-pad,'center');
 		this._nameField.enabled=1;
 		this.addChild(this._nameField);
-		if(this.toGlobal({x:0,y:-this._nameField.height,}).y<0) this._nameField.y=this.height;
-		else this._nameField.y=-this._nameField.height;
 	}else if(this._nameField) this._nameField.enabled=0;
 	return f.ori.apply(this,arguments);
 }).add('update',function f(){
@@ -65,10 +63,24 @@ new cfc(Window_Message.prototype).add('startMessage',function f(){
 	this.update_nameField();
 	return rtv;
 }).add('update_nameField',function f(){
-	if(this._nameField){
-		//this._nameField.openness=this.openness;
-		if(!this._nameField.enabled||this.isClosing()||this.isClosed()) this._nameField.close();
-		else if(this.isOpening()||this.isOpen()) this._nameField.open();
+	if(!this._nameField) return;
+	//this._nameField.openness=this.openness;
+	if(!this._nameField.enabled||this.isClosing()||this.isClosed()) this._nameField.close();
+	else if(this.isOpening()||this.isOpen()) this._nameField.open();
+	this._updateBackground_nameField();
+}).add('updatePlacement',function f(){
+	const pos0=this._positionType;
+	const rtv=f.ori.apply(this,arguments);
+	if(pos0!==this._positionType) this.updatePlacement_nameField();
+	return rtv;
+}).add('updatePlacement_nameField',function f(){
+	if(!this._nameField) return;
+	if(this.toGlobal({x:0,y:-this._nameField.height,}).y<0) this._nameField.y=this.height;
+	else this._nameField.y=-this._nameField.height;
+}).add('_updateBackground_nameField',function f(){
+	if(this._background!==this._nameField._background){
+		if(!this._nameField.isClosed()) this._nameField.close();
+		else this._nameField.setBackgroundType(this._nameField._background=this._background);
 	}
 }).add('onclosed',function f(){
 	if(this._nameField) this._nameField.openness=this._nameField.enabled=0;
