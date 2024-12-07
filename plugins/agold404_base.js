@@ -820,6 +820,84 @@ new cfc(Window_Message.prototype).addBase('updateClose',function f(){
 	return rtv;
 });
 }
+// ==== escapeCode ==== 
+new cfc(Window_Base.prototype).addBase('obtainEscapeCode',function f(textState){
+	++textState.index; // \ 
+	const regExp=this.obtainEscapeCode_getPattern();
+	const arr=regExp.exec(textState.text.slice(textState.index));
+	if(arr){
+		textState.index+=arr[0].length;
+		return arr[0];
+	}
+	return '';
+}).addBase('obtainEscapeCode_getPattern',function f(){
+	return Window_Base.getEscapeCodePattern();
+});
+new cfc(Window_Base).addBase('getEscapeCodePattern',function f(){
+	return f.tbl[0];
+},[
+/^[\$\.\|\^!><\{\}\\;]|^[A-Z]+/i, // 0: pattern
+]);
+// ==== escapeCode - wnd base ==== 
+new cfc(Window_Base.prototype).addBase('processEscapeCharacter',function(code,textState){
+	const func=Window_Base.escapeFunction_get(code);
+	if(func instanceof Function) return func.apply(this,arguments);
+});
+new cfc(Window_Base).addBase('escapeFunction_set',function f(code,func){
+	if(!(func instanceof Function)||!this.getEscapeCodePattern().exec(code)) return console.warn('invalid code'),this;
+	f.tbl[0][code]=func;
+	return this;
+},t=[
+{}, // 0: escape functions [code] => (code,textState){ ... } // see below 'Window_Base.escapeFunction_set' for the content
+]).addBase('escapeFunction_getCont',function f(){
+	return f.tbl[0];
+},t).addBase('escapeFunction_get',function f(code){
+	return f.tbl[0][code];
+},t);
+Window_Base.escapeFunction_set('C',function f(code,textState){
+	return this.changeTextColor(this.textColor(this.obtainEscapeParam(textState)));
+}).escapeFunction_set('I',function f(code,textState){
+	return this.processDrawIcon(this.obtainEscapeParam(textState),textState);
+}).escapeFunction_set('{',function f(code,textState){
+	return this.makeFontBigger();
+}).escapeFunction_set('}',function f(code,textState){
+	return this.makeFontSmaller();
+}).escapeFunction_set(';',none);
+// ==== escapeCode - wnd msg ====
+new cfc(Window_Message.prototype).addBase('processEscapeCharacter',function(code,textState){
+	const func=Window_Message.escapeFunction_get(code);
+	if(func instanceof Function) return func.apply(this,arguments);
+});
+new cfc(Window_Message).addBase('getEscapeCodePattern',function f(){
+	return Window_Base[f._funcName]();
+}).addBase('escapeFunction_set',function f(code,func){
+	if(!(func instanceof Function)||!this.getEscapeCodePattern().exec(code)) return console.warn('invalid code'),this;
+	f.tbl[0][code]=func;
+	return this;
+},t=[
+{}, // 0: escape functions [code] => (code,textState){ ... } // see below 'Window_Message.escapeFunction_set' for the content
+]).addBase('escapeFunction_getCont',function f(){
+	return f.tbl[0];
+},t).addBase('escapeFunction_get',function f(code){
+	return f.tbl[0][code]||Window_Base.escapeFunction_get(code);
+},t);
+Window_Message.escapeFunction_set('$',function f(code,textState){
+	return this._goldWindow.open();
+}).escapeFunction_set('.',function f(code,textState){
+	return this.startWait(15);
+}).escapeFunction_set('|',function f(code,textState){
+	return this.startWait(60);
+}).escapeFunction_set('!',function f(code,textState){
+	return this.startPause();
+}).escapeFunction_set('>',function f(code,textState){
+	return this._lineShowFast=true;
+}).escapeFunction_set('<',function f(code,textState){
+	return this._lineShowFast=false;
+}).escapeFunction_set('^',function f(code,textState){
+	return this._pauseSkip=true;
+}).escapeFunction_set('WAIT',function f(code,textState){
+	return this.startWait(this.obtainEscapeParam(textState));
+});
 //
 new cfc(Scene_Base.prototype).addBase('_prevScene_store',function f(){
 	// called when 'scene.initialize'
