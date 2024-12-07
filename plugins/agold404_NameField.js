@@ -53,9 +53,11 @@ new cfc(Window_Message.prototype).add('startMessage',function f(){
 		}
 		this._nameField.width=w;
 		this._nameField.contents.clear();
-		this._nameField.drawText($gameMessage._nameField,this.textPadding(),0,w-pad,'center');
+		this._nameField.drawTextEx($gameMessage._nameField,this.textPadding(),0,w-pad,'center');
 		this._nameField.enabled=1;
 		this.addChild(this._nameField);
+		if(this.toGlobal({x:0,y:-this._nameField.height,}).y<0) this._nameField.y=this.height;
+		else this._nameField.y=-this._nameField.height;
 	}else if(this._nameField) this._nameField.enabled=0;
 	return f.ori.apply(this,arguments);
 }).add('update',function f(){
