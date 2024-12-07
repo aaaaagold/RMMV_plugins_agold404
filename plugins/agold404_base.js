@@ -867,6 +867,7 @@ Window_Base.escapeFunction_set('C',function f(code,textState){
 new cfc(Window_Message.prototype).addBase('processEscapeCharacter',function(code,textState){
 	const func=Window_Message.escapeFunction_get(code);
 	if(func instanceof Function) return func.apply(this,arguments);
+	return Window_Base.prototype.processEscapeCharacter.apply(this,arguments);
 });
 new cfc(Window_Message).addBase('getEscapeCodePattern',function f(){
 	return Window_Base[f._funcName]();
@@ -1387,6 +1388,52 @@ new cfc(DataManager).addBase('getLocale',function f(){
 	let rtv=$gameSystem&&$gameSystem.getLocale(); if(rtv) return rtv;
 	try{ rtv=Intl.DateTimeFormat().resolvedOptions().locale; }catch(e){ console.warn("get locale failed"); rtv=''; }
 	return rtv;
+});
+
+new cfc(Game_Interpreter.prototype).addBase('command101',function f(){
+	if(!this.command101_condOk()) return false;
+	this.command101_conf();
+	this.command101_text();
+	this.command101_peek();
+	this.command101_tail();
+	return false;
+}).addBase('command101_condOk',function f(){
+	return !$gameMessage.isBusy();
+}).addBase('command101_conf',function f(){
+	$gameMessage.setFaceImage(this._params[0],this._params[1]);
+	$gameMessage.setBackground(this._params[2]);
+	$gameMessage.setPositionType(this._params[3]);
+}).addBase('command101_text',function f(){
+	while(this.nextEventCode()===401){  // Text data
+		this._index++;
+		$gameMessage.add(this.currentCommand().parameters[0]);
+	}
+}).addBase('command101_peek',function f(){
+	const func=Game_Interpreter.cmd101Peek_get(this.nextEventCode());
+	if(func){
+		this._index++;
+		return func.call(this,arguments);
+	}
+}).addBase('command101_tail',function f(){
+	this._index++;
+	this.setWaitMode('message');
+});
+new cfc(Game_Interpreter).addBase('cmd101Peek_getCont',function f(){
+	return f.tbl[0];
+},[
+{}, // 0: container
+]).addBase('cmd101Peek_set',function f(code,func){
+	this.cmd101Peek_getCont()[code]=func;
+	return this;
+}).addBase('cmd101Peek_get',function f(code){
+	return this.cmd101Peek_getCont()[code];
+});
+Game_Interpreter.cmd101Peek_set(102,function f(argv){
+	this.setupChoices(this.currentCommand().parameters);
+}).cmd101Peek_set(103,function f(argv){
+	this.setupNumInput(this.currentCommand().parameters);
+}).cmd101Peek_set(104,function f(argv){
+	this.setupItemChoice(this.currentCommand().parameters);
 });
 
 new cfc(Game_Interpreter.prototype).add('setupChoices',function f(params){
