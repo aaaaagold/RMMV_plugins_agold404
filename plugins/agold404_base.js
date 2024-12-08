@@ -232,7 +232,22 @@ new cfc(PIXI.DisplayObject.prototype).addBase('getRect_local',function f(){
 }).addBase('containsPoint_local',function f(xy){
 	return this.getRect_local().contains(xy.x,xy.y);
 }).addBase('containsPoint_global',function f(xy){
-	return this.containsPoint_local(this.toLocal(xy));
+	return this.containsPoint_local(this.toLocal(xy,undefined,undefined,true));
+}).addBase('isOverlap',function f(obj,oxy){
+	// TODO: rotated
+	// oxy: origin xy in local view. default = {x:0,y:0}
+	const xy0=this.parent?this.parent.toLocal(obj,obj.parent,undefined,true):obj.toGlobal(obj,undefined,true);
+	const xy1=this.parent?this.parent.toLocal({x:obj.x+obj.width,y:obj.y+obj.height},obj.parent,undefined,true):obj.toGlobal({x:obj.x+obj.width,y:obj.y+obj.height},undefined,true);
+	if(oxy){
+		xy0.x-=oxy.x; xy0.y-=oxy.y;
+		xy1.x-=oxy.x; xy1.y-=oxy.y;
+	}
+	if(xy1.x<xy0.x){ const tmp=xy0.x; xy0.x=xy1.x; xy1.x=tmp; }
+	if(xy1.y<xy0.y){ const tmp=xy0.y; xy0.y=xy1.y; xy1.y=tmp; }
+	return new Rectangle(
+		xy0.x,xy0.y,
+		xy1.x-xy0.x,xy1.y-xy0.y
+	).overlap(this);
 });
 new cfc(Graphics).addBase('isInScreen_rect',function(rect){
 	return !(rect.x>=this.boxWidth || rect.x+rect.width<0 || rect.y>=this.boxHeight || rect.y+rect.height<0);
