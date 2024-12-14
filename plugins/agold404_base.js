@@ -576,18 +576,21 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	if(!text) return 0;
 	textState.text=this.convertEscapeCharacters(text);
 	textState.height=this.calcTextHeight(textState,false);
-	this.resetFontSettings();
+	if(!textState.isMeasureOnly) this.resetFontSettings();
 	for(const len=textState.text.length;textState.index<len;) this.processCharacter(textState);
 	return textState.x-x;
 }).addBase('processNormalCharacter',function f(textState){
 	const c=textState.text[textState.index++];
-	const w=this.textWidth(c);
+	let wRaw=this.textWidth(c);
+	const w=wRaw;
 	if(!textState.isMeasureOnly) this.contents.drawText(c,textState.x,textState.y,w*2,textState.height,undefined,textState);
 	textState.x+=w;
 	textState.right=Math.max(textState.right,textState.x);
 	return w;
 }).addBase('measure_drawTextEx',function f(text, x, y, _3, _4, out_textState){
 	// reserved for auto-line-break or something automatically changed by window size
+	out_textState=out_textState||{};
+	out_textState.isMeasureOnly=true;
 	return this.drawTextEx.apply(this,arguments);
 }).add('drawText',function f(text,x,y,maxWidth,align,opt){
 	if(opt&&opt.isMeasureOnly) return;
@@ -1363,7 +1366,35 @@ new cfc(Input).addBase('_getKeyName',function f(event){
 		const it0=s.keys().next(); if(!it0.done){ const btn=it0.value; btn.click(); s.delete(btn); }
 	} }
 	return rtv;
-});
+}).addBase('update',function f(){
+	this._pollGamepads();
+	this._updateLastPressedInfos();
+	this._updateDirection();
+}).addBase('_updateLastPressedInfos',function f(){
+	if(this._currentState[this._latestButton]) this._pressedTime++;
+	else this._latestButton=null;
+	for(var name in this._currentState){
+		if(this._currentState[name] && !this._previousState[name]){
+			this._latestButton=name;
+			this._pressedTime=0;
+			this._date=Date.now();
+		}
+		this._previousState[name]=this._currentState[name];
+	}
+}).addBase('isTriggered',function f(keyName){
+	if(this._isEscapeCompatible(keyName)) keyName=f.tbl[0];
+	return this._latestButton===keyName && this._pressedTime===0;
+},t=[
+'escape', // 0: key-escape
+]).addBase('isRepeated',function f(keyName){
+	if(this._isEscapeCompatible(keyName)) keyName=f.tbl[0];
+	return (this._latestButton === keyName && (
+		this._pressedTime === 0 || (
+			this._pressedTime >= this.keyRepeatWait &&
+			this._pressedTime % this.keyRepeatInterval === 0
+		)
+	));
+},t);
 
 new cfc(DataManager).addBase('loadGlobalInfo',function(){
 	return this.loadGlobalInfo_parseData(this.loadGlobalInfo_loadRaw());
@@ -2395,6 +2426,12 @@ new cfc(Bitmap.prototype).addBase('mirror_h',function f(forceRegen){
 	rtv._loadingState='loaded';
 	return this._mirrorBmp_v=rtv;
 });
+
+
+new cfc(Window_Base.prototype).addBase('duplicateTextState',(textState,assignProperties)=>{
+	return Object.assign({},textState,assignProperties);
+});
+
 
 })(); // shorthand
 
@@ -4335,6 +4372,45 @@ if(1)new cfc(SceneManager).add('changeScene_do_before',function f(){
 // ---- ---- ---- ---- fix bug
 
 (()=>{ let k,r,t;
+
+new cfc(Window_Base.prototype).addBase('convertEscapeCharacters',function f(text){
+	const func=this.convertEscapeCharacters_defaultPreprocess.bind(this);
+	for(let oldText;oldText!==text;) text=(oldText=text).replace(f.tbl[0],func);
+	return text.replace(f.tbl[1],"$1"+TextManager.currencyUnit);
+},[
+/(?<![\\])((\\\\)*)\\([^\\])\[(-?(0x[A-Fa-f0-9]+|\d+))\]/g, // 0: re \X[n]
+/(?<![\\])((\\\\)*)\\G(?![A-Z])/g, // 1: re \G
+]).addBase('convertEscapeCharacters_defaultPreprocess',function f(){
+	const code=arguments[3];
+	const func=f.tbl[0][code];
+	return func?arguments[1]+func(this,arguments):arguments[0];
+},[
+{
+V:(self,argv)=>{
+	return $gameVariables.value(parseInt(argv[4]));
+}, // vars
+N:(self,argv)=>{
+	return self.actorName(parseInt(argv[4]));
+}, // actor name
+P:(self,argv)=>{
+	return self.partyMemberName(parseInt(argv[4]));
+}, // party member name
+}, // 0: func tbl
+]).addBase('processCharacter',function f(textState){
+	const chr=textState.text[textState.index];
+	const func=f.tbl[0][chr]||f.tbl[0]._default;
+	return func&&func(this,textState);
+},[
+{
+'\n':(self,textState)=>self.processNewLine(textState),
+'\f':(self,textState)=>self.processNewPage(textState),
+'\\':(self,textState)=>{
+	if(textState.text[textState.index+1]==='\\'){ ++textState.index; return self.processNormalCharacter(textState); }
+	self.processEscapeCharacter(self.obtainEscapeCode(textState),textState);
+},
+_default:(self,textState)=>self.processNormalCharacter(textState),
+}, // 0: func tbl
+]);
 
 new cfc(Window_Selectable.prototype).addBase('maxPageRows',function(isReturnReal){
 	const pageHeight=this.height-this.padding*2;
