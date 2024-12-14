@@ -16,7 +16,7 @@
  * Format:
  *   specify an absolute (in the window) offset: \TXTAPOS:"eval()-ed text to get an array of length=2"
  *   specify an difference offset from current position: \TXTDPOS:"eval()-ed text to get an array of length=2" 
- * The value is parsed from eval(). Use 'self' as 'this' window.
+ * The value is parsed from eval().
  * 
  * 
  * This plugin can be renamed as you want.
@@ -68,9 +68,17 @@ TXTRIGHT:function(tmpState,textState){
 		tmpState
 	))-1;
 },
-TXTAPOS:function(code,textState,m){
+TXTAPOS:function(tmpState,textState){
+	const pos=EVAL.call(this,tmpState.text); if(!pos) return;
+	if(!isNaN(pos[0]-=0)) textState.x=pos[0];
+	if(!isNaN(pos[1]-=0)) textState.y=pos[1];
+	textState.index+=tmpState.text.length+1;
 },
-TXTDPOS:function(code,textState,m){
+TXTDPOS:function(tmpState,textState){
+	const pos=EVAL.call(this,tmpState.text); if(!pos) return;
+	if(!isNaN(pos[0]-=0)) textState.x+=pos[0];
+	if(!isNaN(pos[1]-=0)) textState.y+=pos[1];
+	textState.index+=tmpState.text.length+1;
 },
 }, // 0: functionalities
 [
