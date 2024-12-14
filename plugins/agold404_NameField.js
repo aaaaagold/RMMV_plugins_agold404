@@ -47,18 +47,22 @@ new cfc(Game_Interpreter.prototype).add('command101_text',function f(){
 new cfc(Window_Message.prototype).add('startMessage_nameField',function f(){
 	this.startMessage_nameField_ensureObject();
 	if($gameMessage._nameField!=null){
-		let w=this.textWidth($gameMessage._nameField);
+		this._nameField._currentText=$gameMessage._nameField;
+		let w;
+		{ const textState={};
+		this._nameField.measure_drawTextEx(this._nameField._currentText,this.textPadding(),0,undefined,'center',textState);
+		w=~~(textState.right+1); }
 		if(w<Window_Base._faceWidth) w=Window_Base._faceWidth;
 		const pad=((this.standardPadding()+this.textPadding())<<1)+1;
 		w+=pad;
 		if(this.width<w) w=this.width;
 		this._nameField.width=w;
 		this._nameField.contents.clear();
-		this._nameField.drawTextEx(this._nameField._currentText=$gameMessage._nameField,this.textPadding(),0,w-pad,'center');
+		this._nameField.drawTextEx(this._nameField._currentText,this.textPadding(),0,w-pad,'center');
 		this._nameField.enabled=1;
 	}else if(this._nameField) this._nameField.enabled=0;
 }).addBase('startMessage_nameField_ensureObject',function f(){
-	if(this._nameField) return;
+	if(this._nameField) return this._nameField;
 	this._nameField=new Window_Help(1);
 	this._nameField.y=-this._nameField.height;
 	this._nameField.openness=0;
