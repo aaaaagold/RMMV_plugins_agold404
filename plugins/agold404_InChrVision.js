@@ -32,7 +32,7 @@
  * <detectedEval />
  * specify what to do (by eval() ) if detecting a target
  * 
- * selfSwitches=A,B,C,D,...
+ * selfSwitch=A,B,C,D,...
  * specify what self-switches will be turned on when detecting a target
  * 
  * blockR=id,id,id
@@ -74,8 +74,8 @@ evtd=>{ if(!evtd) return;
 			}else if(code===108 && cmd.parameters[0]==="@inVision") isInVision=true;
 		}
 		if(!pgv[p].inChrVisions) pgv[p].inChrVisions=[];
-		const txt=txtv.slice(1).join('\n');
-		if(txt) pgv[p].inChrVisions.push(txtv.slice(1).join('\n'));
+		const txt=txtv.join('\n');
+		if(txt) pgv[p].inChrVisions.push(txt);
 	}
 },
 ]);
@@ -107,8 +107,8 @@ new cfc(Game_Character.prototype).addBase('inVision_getAll',function f(){
 		const line=this.inVision_parseFromRaw_cutComments(lines[x]);
 		if(line==="<shapeDraw>") x=this._inVision_parseFromRaw_shapeDraw(rtv,lines,x+1);
 		else if(line==="<shapeEval>") x=this._inVision_parseFromRaw_shapeEval(rtv,lines,x+1);
-		else if(line==="<detectedEval>") x=this._inVision_parseFromRaw_detectedEval(rtv,lines,x+1);
 		else if(line==="<targetsEval>") x=this._inVision_parseFromRaw_targetsEval(rtv,lines,x+1);
+		else if(line==="<detectedEval>") x=this._inVision_parseFromRaw_detectedEval(rtv,lines,x+1);
 		else{
 			const eqIdx=lines[x].indexOf('=');
 			if(eqIdx<0) continue;
@@ -118,7 +118,7 @@ new cfc(Game_Character.prototype).addBase('inVision_getAll',function f(){
 	}
 	return rtv;
 },[
-new Set(["<shapeDraw>","<shapeEval>","<detectedEval>",]), // 1: avoid set
+new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: avoid set
 ]).addBase('_inVision_parseFromRaw_common',function f(rtv,lines,strt,key){
 	let ende=lines.indexOf("</"+key+">",strt); if(ende<0) ende=lines.length;
 /*
@@ -256,6 +256,10 @@ new Set(["<shapeDraw>","<shapeEval>","<detectedEval>",]), // 1: avoid set
 		}
 	}
 	if(!detecteds.length) return;
+	if(this.eventId){ for(let letters=this._inVision_getSelfSwitches(inChrVision),x=letters.length,tmp=[$gameMap.mapId(),this.eventId(),undefined];x--;){
+		if(!(tmp[2]=letters[x])) continue;
+		$gameSelfSwitches.setValue(tmp,true);
+	} }
 	this._inVision_doDetectedEval(detecteds,inChrVision["<detectedEval>"]);
 }).addBase('_inVision_getDetectTargets',function f(inChrVision){
 	const raw=inChrVision["<targetsEval>"];
@@ -279,6 +283,10 @@ arr=>{
 	return inChrVision.blockedR&&inChrVision.blockedR.match(f.tbl[0]).map(Number)||[];
 },[
 /([0-9]+)/g,
+]).addBase('_inVision_getSelfSwitches',function f(inChrVision){
+	return inChrVision.selfSwitch&&inChrVision.selfSwitch.split(f.tbl[0])||[];
+},[
+/[^A-Z]+/,
 ]);
 
 })();
