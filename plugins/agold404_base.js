@@ -990,7 +990,9 @@ function(src,e) {
 }).addBase('_onLoad_after_map',function f(obj,name,src,msg){
 	return this.onLoad_after_map.apply(this,arguments);
 }).addBase('onLoad_before_map',function f(obj,name,src,msg){
-	// dummy
+	const evtds=obj&&obj.events; if(!evtds) return;
+	evtds[0]={"id":0,"name":"","note":"","pages":[{"conditions":{"actorId":0,"actorValid":false,"itemId":0,"itemValid":false,"selfSwitchCh":"","selfSwitchValid":false,"switch1Id":0,"switch1Valid":false,"switch2Id":0,"switch2Valid":false,"variableId":0,"variableValid":false,"variableValue":0},"directionFix":false,"image":{"characterIndex":0,"characterName":"","direction":2,"pattern":0,"tileId":0},"list":[{"code":0,"indent":0,"parameters":[]}],"moveFrequency":0,"moveRoute":{"list":[{"code":0,"parameters":[]}],"repeat":true,"skippable":true,"wait":false},"moveSpeed":0,"moveType":0,"priorityType":0,"stepAnime":false,"through":true,"trigger":null,"walkAnime":false}],"x":-8,"y":-8};
+	// empty event data (null-trigger)
 }).addBase('onLoad_after_map',function f(obj,name,src,msg){
 	// dummy
 }).addBase('_onLoad_before_skill',function f(obj,name,src,msg){
@@ -1940,15 +1942,14 @@ evtd=>{ if(!evtd) return;
 		const pg=pgs[pgi],noteLines=[];
 		for(let isNote=false,li=0,L=pg.list,lsz=L.length;li!==lsz;++li){
 			const cmd=L[li];
-			if(cmd.code===108){
-				if(cmd.parameters[0]==="@NOTE") isNote=true;
-			}else if(cmd.code===408){
-			}else isNote=false;
+			if(cmd.code===108){ if(cmd.parameters[0]==="@NOTE") isNote=true; }
+			else if(cmd.code===408){}
+			else isNote=false;
 			if(isNote) noteLines.push(cmd.parameters[0]);
 		}
 		pg.note=noteLines.join('\n');
 		DataManager.extractMetadata(pg);
-		if(evtd.meta) Object.assign(pg.meta,evtd.meta);
+		if(evtd.meta) pg.meta=Object.assign({},evtd.meta,pg.meta,);
 	}
 },
 ]);
