@@ -986,13 +986,16 @@ function(src,e) {
 	const func=f.tbl.get(name);
 	return func && func.apply(this,arguments);
 }).addBase('_onLoad_before_map',function f(obj,name,src,msg){
+	const evtds=obj&&obj.events; if(evtds) evtds._template=evtds[0]=JSON.parse(JSON.stringify(f.tbl[0])); // 'evtds[0]' is restored to 'null' after onLoad
 	return this.onLoad_before_map.apply(this,arguments);
-}).addBase('_onLoad_after_map',function f(obj,name,src,msg){
-	return this.onLoad_after_map.apply(this,arguments);
+},[
+{"id":0,"name":"","note":"","pages":[{"conditions":{"actorId":0,"actorValid":false,"itemId":0,"itemValid":false,"selfSwitchCh":"","selfSwitchValid":false,"switch1Id":0,"switch1Valid":false,"switch2Id":0,"switch2Valid":false,"variableId":0,"variableValid":false,"variableValue":0},"directionFix":false,"image":{"characterIndex":0,"characterName":"","direction":2,"pattern":0,"tileId":0},"list":[{"code":0,"indent":0,"parameters":[]}],"moveFrequency":0,"moveRoute":{"list":[{"code":0,"parameters":[]}],"repeat":true,"skippable":true,"wait":false},"moveSpeed":0,"moveType":0,"priorityType":0,"stepAnime":false,"through":true,"trigger":null,"walkAnime":false}],"x":-8,"y":-8}, // 0: evtd template
+]).addBase('_onLoad_after_map',function f(obj,name,src,msg){
+	const rtv=this.onLoad_after_map.apply(this,arguments);
+	const evtds=obj&&obj.events; if(evtds) evtds[0]=null; // restored to 'null'
+	return rtv;
 }).addBase('onLoad_before_map',function f(obj,name,src,msg){
-	const evtds=obj&&obj.events; if(!evtds) return;
-	evtds[0]={"id":0,"name":"","note":"","pages":[{"conditions":{"actorId":0,"actorValid":false,"itemId":0,"itemValid":false,"selfSwitchCh":"","selfSwitchValid":false,"switch1Id":0,"switch1Valid":false,"switch2Id":0,"switch2Valid":false,"variableId":0,"variableValid":false,"variableValue":0},"directionFix":false,"image":{"characterIndex":0,"characterName":"","direction":2,"pattern":0,"tileId":0},"list":[{"code":0,"indent":0,"parameters":[]}],"moveFrequency":0,"moveRoute":{"list":[{"code":0,"parameters":[]}],"repeat":true,"skippable":true,"wait":false},"moveSpeed":0,"moveType":0,"priorityType":0,"stepAnime":false,"through":true,"trigger":null,"walkAnime":false}],"x":-8,"y":-8};
-	// empty event data (null-trigger)
+	// dummy
 }).addBase('onLoad_after_map',function f(obj,name,src,msg){
 	// dummy
 }).addBase('_onLoad_before_skill',function f(obj,name,src,msg){
