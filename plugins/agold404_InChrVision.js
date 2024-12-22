@@ -41,6 +41,7 @@
  * showHint=(any)
  * specify wheather to vision hint
  * anything besides an empty string indicates to show the hint
+ * needs agold404_CopyEvent.js
  * 
  * 
  * the later overwrites the former.
@@ -345,23 +346,22 @@ arr=>{
 	this.inVision_updateHint_hideLast();
 	this.inVision_updateHint_placing(posKeys);
 }).addBase('inVision_updateHint_hideLast',function f(){
-	const last=this._inVision_lastHintEvtids;
-	if(last) for(let x=last.length;x--;) $gameMap.event(last[x]).locate(-8,-8);
+	const last=this._inVision_lastHintEvts;
+	if(last) for(let x=last.length;x--;) last[x].locate(-8,-8);
 }).addBase('inVision_updateHint_placing',function f(posKeys){
 	if(!posKeys||!posKeys.length||!$gameMap||!$gameMap.cpevt) return;
-	const newEvtids=[];
-	const last=this._inVision_lastHintEvtids;
+	const newEvts=[];
+	const last=this._inVision_lastHintEvts;
 	for(let i=posKeys.length;i--;){
 		const xy=$gameMap.posKeyToXy(posKeys[i]); if(!xy) continue;
-		const evtid=last&&last.length?last.pop():$gameMap.cpevt(0,xy.x,xy.y);
-		newEvtids.push(evtid);
-		const evt=$gameMap.event(evtid);
+		const evt=last&&last.length?last.pop():$gameMap.event($gameMap.cpevt(0,xy.x,xy.y));
+		newEvts.push(evt);
 		evt.setChrIdxName(0,f.tbl[0],0,false);
 		evt.setOpacity(f.tbl[1]);
 		evt.setPriorityType(0);
 		evt.locate(xy.x,xy.y);
 	}
-	this._inVision_lastHintEvtids=last?last.concat_inplace(newEvtids):newEvtids;
+	this._inVision_lastHintEvts=last?last.concat_inplace(newEvts):newEvts;
 },[
 "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYAAAAEAAQMAAACAuTMkAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAADUExURf8AABniCTcAAAAjSURBVGje7cExAQAAAMKg9U9tDQ+gAAAAAAAAAAAAAAAAvg0xAAABNYQU4gAAAABJRU5ErkJggg==", // 0: 384x256 red
 127, // 1: opacity
