@@ -354,7 +354,7 @@ arr=>{
 	const last=this._inVision_lastHintEvts;
 	for(let i=posKeys.length;i--;){
 		const xy=$gameMap.posKeyToXy(posKeys[i]); if(!xy) continue;
-		const evt=last&&last.length?last.pop():$gameMap.event($gameMap.cpevt(0,xy.x,xy.y));
+		const evt=last&&last.length?last.pop():$gameMap.event($gameMap.cpevt('_template',xy.x,xy.y));
 		newEvts.push(evt);
 		evt.setChrIdxName(0,f.tbl[0],0,false);
 		evt.setOpacity(f.tbl[1]);
