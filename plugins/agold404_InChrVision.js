@@ -38,6 +38,10 @@
  * blockR=id,id,id
  * specify what ids in R region blocks the vision
  * 
+ * showHint=(any)
+ * specify wheather to vision hint
+ * anything besides an empty string indicates to show the hint
+ * 
  * 
  * the later overwrites the former.
  * 
@@ -186,12 +190,16 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 	this.update_inVision();
 	return rtv;
 }).addBase('update_inVision',function f(){
+	const posKeys=this._update_inVision();
+	this.inVision_updateHint(posKeys);
+}).addBase('_update_inVision',function f(){
 	const all=this.inVision_getAll(); if(!all||!all.length) return;
 	const tbl=f.tbl[0][this.direction()]; if(!tbl) return;
 	const dFront=tbl[0],dRight=tbl[1];
 	const x0=this.x,y0=this.y;
-	for(let x=0,xs=all.length;x!==xs;++x) this._update_inVision1(all[x],tbl,x0,y0);
-	return;
+	const posKeys=[];
+	for(let x=0,xs=all.length;x!==xs;++x) posKeys.uniquePushContainer(this._update_inVision1(all[x],tbl,x0,y0));
+	return posKeys;
 },[
 {
 2:[[ 0, 1],[-1, 0]],
@@ -200,10 +208,12 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 8:[[ 0,-1],[ 1, 0]],
 }, // 0: dir->[dFront,dRight]
 ]).addBase('_update_inVision1',function f(inChrVision,dTbl,x0,y0){
-	if(!inChrVision) return;
+	const rtv=[]; // seen points
+	if(!inChrVision) return rtv;
 	const targets=this._inVision_getDetectTargets(inChrVision);
 	const isDetectingPlayer=targets.uniqueHas($gamePlayer);
 	const blockedRs=this._inVision_getBlockedRs(inChrVision);
+	const showHint=$gameMap&&this._inVision_getShowHint(inChrVision);
 	const dFront=dTbl[0],dRight=dTbl[1];
 	const draw=inChrVision["<shapeDraw>"];
 	const matrix=draw&&draw.matrix;
@@ -224,12 +234,16 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 		// mostly for dev-debug
 		for(let i=points.length;i--;){
 			const x1=points[i][0],y1=points[i][1];
-			const curr=$gameMap.eventsXy(x1,y1);
+			const x1r=$gameMap.roundX(x1),y1r=$gameMap.roundY(y1);
+			
+			const curr=$gameMap.eventsXy(x1r,y1r);
 			for(let z=0,zs=curr.length;z!==zs;++z) if(targets.uniqueHas(curr[z])) detecteds.uniquePush(curr[z]);
+			if(showHint) rtv.push($gameMap.getPosKey(x1,y1));
 		}
 	}else{
 		for(let i=points.length;i--;){
 			const x1=points[i][0],y1=points[i][1];
+			const x1r=$gameMap.roundX(x1),y1r=$gameMap.roundY(y1);
 			const dx=x1-x0,dy=y1-y0;
 			const dx1=dx<0?-1:1,dy1=dy<0?-1:1;
 			let blocked=false;
@@ -250,17 +264,20 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 				}
 			}
 			if(blocked) continue;
-			const curr=$gameMap.eventsXy(x1,y1);
+			
+			const curr=$gameMap.eventsXy(x1r,y1r);
 			for(let z=0,zs=curr.length;z!==zs;++z) if(targets.uniqueHas(curr[z])) detecteds.uniquePush(curr[z]);
-			if(isDetectingPlayer && $gamePlayer.pos(x1,y1)) detecteds.uniquePush($gamePlayer);
+			if(isDetectingPlayer && $gamePlayer.pos(x1r,y1r)) detecteds.uniquePush($gamePlayer);
+			if(showHint) rtv.push($gameMap.getPosKey(x1,y1));
 		}
 	}
-	if(!detecteds.length) return;
+	if(!detecteds.length) return rtv;
 	if(this.eventId){ for(let letters=this._inVision_getSelfSwitches(inChrVision),x=letters.length,tmp=[$gameMap.mapId(),this.eventId(),undefined];x--;){
 		if(!(tmp[2]=letters[x])) continue;
 		$gameSelfSwitches.setValue(tmp,true);
 	} }
 	this._inVision_doDetectedEval(detecteds,inChrVision["<detectedEval>"]);
+	return rtv;
 }).addBase('_inVision_getDetectTargets',function f(inChrVision){
 	const raw=inChrVision["<targetsEval>"];
 	if(raw===undefined) return [$gamePlayer];
@@ -287,6 +304,67 @@ arr=>{
 	return inChrVision.selfSwitch&&inChrVision.selfSwitch.split(f.tbl[0])||[];
 },[
 /[^A-Z]+/,
+]).addBase('_inVision_getShowHint',function f(inChrVision){
+	return inChrVision.showHint;
+}).addBase('inVision_getFrontPoints',function f(n){
+	const rtv=[];
+	const d=this._direction;
+	const N=Math.abs(n)|0;
+	let x=this.x,y=this.y;
+	if(0<N){
+		if(n<0) this._direction=f.tbl[0][d];
+		for(let _=N;_--;){
+			const xy=this.frontPos(x,y,true);
+			rtv.push([x=xy.x,y=xy.y]);
+		}
+		this._direction=d;
+	}
+	return rtv;
+},t=[
+{
+2:8,
+4:6,
+6:4,
+8:2,
+}, // 0: 
+]).addBase('inVision_getRightPoints',function f(n){
+	const rtv=[];
+	const d=this._direction;
+	const N=Math.abs(n)|0;
+	let x=this.x,y=this.y;
+	if(0<N){
+		if(n<0) this._direction=f.tbl[0][d];
+		for(let _=N;_--;){
+			const xy=this.rightPos(x,y,true);
+			rtv.push([x=xy.x,y=xy.y]);
+		}
+		this._direction=d;
+	}
+	return rtv;
+},t).addBase('inVision_updateHint',function f(posKeys){
+	this.inVision_updateHint_hideLast();
+	this.inVision_updateHint_placing(posKeys);
+}).addBase('inVision_updateHint_hideLast',function f(){
+	const last=this._inVision_lastHintEvtids;
+	if(last) for(let x=last.length;x--;) $gameMap.event(last[x]).locate(-8,-8);
+}).addBase('inVision_updateHint_placing',function f(posKeys){
+	if(!posKeys||!posKeys.length||!$gameMap||!$gameMap.cpevt) return;
+	const newEvtids=[];
+	const last=this._inVision_lastHintEvtids;
+	for(let i=posKeys.length;i--;){
+		const xy=$gameMap.posKeyToXy(posKeys[i]); if(!xy) continue;
+		const evtid=last&&last.length?last.pop():$gameMap.cpevt(0,xy.x,xy.y);
+		newEvtids.push(evtid);
+		const evt=$gameMap.event(evtid);
+		evt.setChrIdxName(0,f.tbl[0],0,false);
+		evt.setOpacity(f.tbl[1]);
+		evt.setPriorityType(0);
+		evt.locate(xy.x,xy.y);
+	}
+	this._inVision_lastHintEvtids=last?last.concat_inplace(newEvtids):newEvtids;
+},[
+"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYAAAAEAAQMAAACAuTMkAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAADUExURf8AABniCTcAAAAjSURBVGje7cExAQAAAMKg9U9tDQ+gAAAAAAAAAAAAAAAAvg0xAAABNYQU4gAAAABJRU5ErkJggg==", // 0: 384x256 red
+127, // 1: opacity
 ]);
 
 })();
