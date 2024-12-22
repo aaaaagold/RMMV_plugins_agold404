@@ -1819,7 +1819,7 @@ new cfc(Game_Interpreter.prototype).add('command111',function f(){
 				console.warn(this._params);
 				e.message+='\n\nScript:\n'+this._params[1];
 				//e.message+=getStr_英文不好齁()+f.tbl[1][1];
-				e.message+='\n'+DataManager.getDebugInfoStr()+'\n';
+				//e.message+='\n\n'+DataManager.getDebugInfoStr()+'\n'; // in _makeErrorHtml
 			}
 			e.name+=' in Game_Interpreter.prototype.command111';
 			e._msgOri=e.message;
@@ -1849,10 +1849,10 @@ new cfc(Game_Interpreter.prototype).add('command111',function f(){
 		if(script){
 			e.message+='\n\nScript:\n'+script;
 			//e.message+=getStr_英文不好齁()+f.tbl[1][1];
-			e.message+='\n'+DataManager.getDebugInfoStr()+'\n';
+			//e.message+='\n\n'+DataManager.getDebugInfoStr()+'\n'; // in _makeErrorHtml
 		}
 		e.name+=' in ';
-		e.name+=f.tbl[0];
+		e.name+=f.tbl[1][0];
 		e._msgOri=e.message;
 		throw e;
 	}
@@ -1881,7 +1881,7 @@ new cfc(Game_Action.prototype).addBase('evalDamageFormula',function f(target){
 				console.warn(item.damage.formula);
 				e.message+='\n\nDamage Formula:\n'+item.damage.formula;
 				//e.message+=getStr_英文不好齁()+f.tbl[1][1];
-				e.message+='\n'+DataManager.getDebugInfoStr()+'\n';
+				//e.message+='\n\n'+DataManager.getDebugInfoStr()+'\n'; // in _makeErrorHtml
 			}
 			e.name+=' in damage formula of '+f.tbl[2](item);
 			e._msgOri=e.message;
@@ -3942,6 +3942,15 @@ new cfc(Game_Event.prototype).add('moveStraight',function f(d){
 
 (()=>{ let k,r,t;
 
+new cfc(SceneManager).addBase('catchException',function f(e){
+	this.catchException_print(e);
+	console.error(e);
+	AudioManager.stopAll();
+	this.stop();
+}).addBase('catchException_print',function f(e,opt){
+	if(e) Graphics.printError(e.name,e.message,e,opt);
+});
+
 new cfc(Graphics).addBase('_forEachCss',function f(item){
 	// bind 'this' to dom.style
 	// 'item' = [cssKey , the value]
@@ -3966,14 +3975,17 @@ new cfc(Graphics).addBase('_forEachCss',function f(item){
 },[
 function(div){ if(this&&this!==window) this.push(div); const p=div.parentNode; if(p) p.removeChild(div); }, // 0:
 function(div){ this.uniquePop(div); }, // 1:
-]).addBase('_makeErrorHtml',function f(name,message,opt){
+]).addBase('_makeErrorHtml',function f(name,message,e,opt){
 	const d=document;
 	let main;
 	const rtv=d.ce('div').ac(main=d.ce('div').ac(
 		d.ce('pre').sa('style',f.tbl[0][0]).ac(d.ce('b').atxt(name)).ac(d.ce('br'))
 	).ac(
-		d.ce('pre').sa('style',f.tbl[0][1]).atxt(message).ac(d.ce('br'))
+		d.ce('pre').sa('style',f.tbl[0][1]).atxt(message).ac(d.ce('br')).ac(d.ce('br')).atxt(DataManager.getDebugInfoStr())
 	).sa('style',f.tbl[0][2])).sa('style',f.tbl[0][3]);
+	if(e && e.stack) main.ac(
+		d.ce('pre').sa('style',f.tbl[0][1]).atxt(e.stack.replaceAll(location.origin,'')).ac(d.ce('br'))
+	);
 	rtv._main=main;
 	return rtv;
 },[
@@ -3984,7 +3996,7 @@ function(div){ this.uniquePop(div); }, // 1:
 }).addBase('printLoadingError_do',function f(url,opt){
 	// can continue
 	this._updateErrorPrinter_setShow(true);
-	const div=this._makeErrorHtml('Loading Error', 'Failed to load: ' + url);
+	const div=this._makeErrorHtml('Loading Error','Failed to load: '+url,undefined,opt);
 	div._opt=opt;
 	div._url=url;
 	this._errorPrinter.ac(div);
@@ -4096,12 +4108,12 @@ function(event){
 }, // 5: always give up this
 ]).addBase('printLoadingError_can',function f(){
 	return this._errorPrinter;
-}).addBase('printError',function f(name,message,opt){
+}).addBase('printError',function f(name,message,e,opt){
 	// cannot continue
 	this._updateErrorPrinter_setShow(true);
 	const ep=this._errorPrinter;
 	if(ep){
-		ep.ac(this._makeErrorHtml(name, message,opt));
+		ep.ac(this._makeErrorHtml(name,message,e,opt));
 		this._updateErrorPrinter();
 	}
 	this._applyCanvasFilter();
