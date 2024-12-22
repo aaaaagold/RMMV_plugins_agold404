@@ -2078,13 +2078,16 @@ new cfc(Game_Character.prototype).addBase('jumpTo',function f(x,y,facingAfterJum
 	this.jump(x-this.x,y-this.y);
 	this._jump_remapDir_facingAfterJump(d,facingAfterJump);
 	return this;
-},t).addBase('frontPos',function f(xy,y){
+},t).addBase('frontPos',function f(xy,y,isNoRounded){
 	let x;
 	if(typeof xy==='number') x=xy;
 	else if(xy){ x=xy.x; y=xy.y; }
 	else{ x=this.x; y=this.y; }
 	const d=this.direction();
-	return ({
+	return isNoRounded?({
+		x:$gameMap.xWithDirection(x,d),
+		y:$gameMap.yWithDirection(y,d),
+	}):({
 		x:$gameMap.roundXWithDirection(x,d),
 		y:$gameMap.roundYWithDirection(y,d),
 	});
@@ -2093,13 +2096,16 @@ new cfc(Game_Character.prototype).addBase('jumpTo',function f(x,y,facingAfterJum
 	rtv._realX=rtv.x;
 	rtv._realY=rtv.y;
 	return rtv;
-}).addBase('rightPos',function f(xy,y){
+}).addBase('rightPos',function f(xy,y,isNoRounded){
 	let x;
 	if(typeof xy==='number') x=xy;
 	else if(xy){ x=xy.x; y=xy.y; }
 	else{ x=this.x; y=this.y; }
 	const d=this.rightPos_dirRemap(this.direction());
-	return ({
+	return isNoRounded?({
+		x:$gameMap.xWithDirection(x,d),
+		y:$gameMap.yWithDirection(y,d),
+	}):({
 		x:$gameMap.roundXWithDirection(x,d),
 		y:$gameMap.roundYWithDirection(y,d),
 	});
@@ -3738,6 +3744,12 @@ new cfc(Game_Character.prototype).addBase('getPosKey',function(dx,dy){
 
 new cfc(Game_Map.prototype).addBase('getPosKey',function f(x,y){
 	return $dataMap&&$gameMap.roundX(0|x)+$dataMap.width*(($gameMap.roundY(0|y)<<2)|2);
+}).add('posKeyToXy',function f(posKey){
+	// x,y in posKey is rounded, so they must be >= 0
+	return isNaN(posKey)?undefined:({
+		x:~~(posKey%$dataMap.width),
+		y:(posKey/$dataMap.width)>>2,
+	});
 }).add('update',function f(){
 	this.update_locTbl();
 	return f.ori.apply(this,arguments);
