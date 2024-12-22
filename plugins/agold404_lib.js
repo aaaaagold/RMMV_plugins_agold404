@@ -678,6 +678,44 @@ p.minus=function(set2){ return new Set(this).minus_inplace(set2); };
 })(); // extend Set
 
 
+// string capability - replaceAll
+(()=>{
+
+const replaceAll_str=window.replaceAll_str=(s,p,r)=>{
+	let rtv='',x=0,n;
+	while((n=s.indexOf(p,x))>=0){
+		rtv+=s.slice(x,n);
+		rtv+=r;
+		x=n+p.length;
+	}
+	rtv+=s.slice(x);
+	return rtv;
+};
+const replaceAll_re=window.replaceAll_re=(s,p,r)=>{
+	let rtv='',x=0,m;
+	while((m=s.slice(x).match(p))){
+		rtv+=s.slice(x,x+m.index);
+		rtv+=r;
+		x+=m.index+m[0].length;
+	}
+	rtv+=s.slice(x);
+	return rtv;
+};
+const replaceAll=window.replaceAll=function f(s,p,r){
+	if(!p) return s;
+	return window[f.tbl[p.constructor.name]](s,p,r);
+};
+replaceAll.tbl={
+String:'replaceAll_str',
+RegExp:'replaceAll_re',
+};
+const p=String.prototype;
+if(p.replaceAll) return;
+p.replaceAll=function f(p,r){ return window.replaceAll(this,p,r); };
+
+})(); // string capability - replaceAll
+
+
 // shorthand HTMLElement
 (()=>{
 
