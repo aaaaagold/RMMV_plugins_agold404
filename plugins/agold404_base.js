@@ -2028,8 +2028,8 @@ new Map([
 
 (()=>{ let k,r,t;
 
-window.addEnum=window.addEnum||function(key){
-	if(this[key]) return;
+window.addEnum=window.addEnum||function(key,isShouldRenew){
+	if(!isShouldRenew&&this[key]) return;
 	this._enumMax|=0;
 	this[key]=++this._enumMax;
 	return this;
