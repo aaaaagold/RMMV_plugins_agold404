@@ -1413,6 +1413,7 @@ new cfc(DataManager).addBase('loadGlobalInfo',function(){
 }).addBase('loadGlobalInfo_parseData',function f(jsonStr){
 	if(jsonStr){
 		const globalInfo=JSON.parse(jsonStr),sz=this.maxSavefiles();
+		globalInfo[0]=globalInfo[0]||{};
 		for(let i=1,shouldDel;i<=sz;++i){
 			shouldDel=false;
 			if(!globalInfo[i]) shouldDel=true;
@@ -1428,6 +1429,9 @@ new cfc(DataManager).addBase('loadGlobalInfo',function(){
 		return globalInfo;
 	}
 	return [];
+}).add('saveGameWithoutRescue',function f(savefileId){
+	if(savefileId==0) throw new Error('savefile id 0 is reserved for global info');
+	return f.ori.apply(this,arguments);
 });
 
 new cfc(Game_System.prototype).addBase('getLocale',function f(){
