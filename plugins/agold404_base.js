@@ -4469,6 +4469,13 @@ new cfc(Window_ChoiceList.prototype).add('contentsHeight',function f(){
 	return Math.max(Math.min(this.windowHeight()-(this.standardPadding()<<1),f.ori.apply(this,arguments)),0)||0;
 });
 
+// handling too early refresh on sprites
+new cfc(Bitmap.prototype).add('_callLoadListeners',function f(){
+	let rtv; try{
+		rtv=f.ori.apply(this,arguments);
+	}catch(e){} return rtv;
+});
+
 })(); // fix bug
 
 // ---- ---- ---- ---- 
