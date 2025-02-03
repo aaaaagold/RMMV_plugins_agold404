@@ -1561,6 +1561,50 @@ child=>child.update&&child.update(), // 0: forEach
 );
 
 
+new cfc(Scene_Title.prototype).addBase('drawGameTitle',function f(){
+    const x = this.drawGameTitle_getX();
+    const y = this.drawGameTitle_getY();
+    const maxWidth = this.drawGameTitle_getMaxWidth();
+    const text = this.drawGameTitle_getTitle();
+    this._gameTitleSprite.bitmap.outlineColor = this.drawGameTitle_getOutlineColor();
+    this._gameTitleSprite.bitmap.outlineWidth = this.drawGameTitle_getOutlineWidth();
+    this._gameTitleSprite.bitmap.fontSize = this.drawGameTitle_getFontSize();
+    this._gameTitleSprite.bitmap.drawText(text, x, y, maxWidth, this.drawGameTitle_getLineHeight(), 'center');
+}).addBase('drawGameTitle_getX',function f(){
+	return isNaN()?20:f.tbl[0]-0;
+},[
+undefined,
+]).addBase('drawGameTitle_getY',function f(){
+	return isNaN(f.tbl[0])?Graphics.height/4:f.tbl[0]-0;
+},[
+undefined,
+]).addBase('drawGameTitle_getMaxWidth',function f(){
+	return isNaN(f.tbl[0])?Graphics.width - this.drawGameTitle_getX()*2:f.tbl[0]-0;
+},[
+undefined,
+]).addBase('drawGameTitle_getTitle',function f(){
+	return f.tbl[0]==null?$dataSystem.gameTitle:f.tbl[0];
+},[
+undefined,
+]).addBase('drawGameTitle_getOutlineColor',function f(){
+	return f.tbl[0];
+},[
+'black',
+]).addBase('drawGameTitle_getOutlineWidth',function f(){
+	return f.tbl[0]==null?8:f.tbl[0];
+},[
+undefined,
+]).addBase('drawGameTitle_getFontSize',function f(){
+	return isNaN(f.tbl[0])?72:f.tbl[0]-0;
+},[
+undefined,
+]).addBase('drawGameTitle_getLineHeight',function f(){
+	return isNaN(f.tbl[0])?48:f.tbl[0]-0;
+},[
+undefined,
+]);
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
@@ -2184,7 +2228,7 @@ t=new cfc(Game_Event.prototype).addBase('setChrIdxName',function f(chrIdx,chrNam
 	this._characterIndex=chrIdx===undefined?this._characterIndex:chrIdx;
 	this._characterName=chrName===undefined?this._characterName:chrName;
 	this._characterHue=hue||0;
-	this._isObjectCharacter=isObj===undefined?ImageManager.isObjectCharacter(chrName):isObj;
+	this._isObjectCharacter=isObj===undefined?ImageManager.isObjectCharacter(this._characterName):isObj;
 	return this;
 }).add('setupPageSettings',function f(){
 	const rtv=this.page();
