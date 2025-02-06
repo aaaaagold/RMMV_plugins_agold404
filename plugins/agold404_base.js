@@ -2072,6 +2072,33 @@ new Map([
 
 })(); // gameObj2sprite
 
+// ---- ---- ---- ---- performance
+
+(()=>{ let k,r,t; return;
+
+if(0){
+// since 'this._loadListeners' will not be long enough to reduce performance consumption by this, not using this.
+new cfc(Bitmap.prototype).add('initialize',function f(w,h){
+	const rtv=f.ori.apply(this,arguments);
+	if(!(this._loadListeners instanceof Queue)) this._loadListeners=new Queue(this._loadListeners);
+	return rtv;
+});
+}else{
+new cfc(Bitmap.prototype).add('initialize',function f(w,h){
+	const rtv=f.ori.apply(this,arguments);
+	this._loadListeners_strt=0;
+	return rtv;
+}).addBase('_callLoadListeners',function f(){
+	while(this._loadListeners_strt<this._loadListeners.length){
+		const listener=this._loadListeners[this._loadListeners_strt++];
+		listener(this);
+	}
+	this._loadListeners.length=this._loadListeners_strt=0;
+});
+}
+
+})(); // performance
+
 // ---- ---- ---- ---- shorthand
 
 (()=>{ let k,r,t;
@@ -4514,11 +4541,23 @@ new cfc(Window_ChoiceList.prototype).add('contentsHeight',function f(){
 });
 
 // handling too early refresh on sprites
+if(0){
 new cfc(Bitmap.prototype).add('_callLoadListeners',function f(){
 	let rtv; try{
 		rtv=f.ori.apply(this,arguments);
 	}catch(e){} return rtv;
 });
+}else{
+new cfc(Bitmap.prototype).add('_callLoadListeners',function f(){
+	let rtv;
+	while(0<this._loadListeners.length){
+		try{
+			rtv=f.ori.apply(this,arguments);
+		}catch(e){}
+	}
+	return rtv;
+});
+}
 
 })(); // fix bug
 
