@@ -469,34 +469,37 @@ SceneManager._updateSceneCnt=0|0;
 new cfc(SceneManager).addBase('isMapOrIsBattle',function f(){
 	return this._scene&&f.tbl.has(this._scene.constructor);
 },new Set([Scene_Map,Scene_Battle])).addBase('updateMain',function f(){
+	this.updateMain_data();
+	this.updateMain_render();
+	this.updateMain_final();
+}).addBase('updateMain_data',function f(){
 	if(Utils.isMobileSafari()){
 		// this.updateInputData(); // already in .update
-		this.changeScene_before();
-		this.changeScene();
-		this.changeScene_after();
-		this.updateScene_before();
-		this.updateScene();
-		this.updateScene_after();
+		this.updateMain_data1(true);
 	}else{
 		const newTime=this._getTimeInMsWithoutMobileSafari();
-		const fTime=Math.min((newTime-this._currentTime)/1000,f.tbl[0]);
+		const fTime=Math.min((newTime-this._currentTime)/1000.0,f.tbl[0]);
 		this._currentTime=newTime;
 		this._accumulator+=fTime;
 		for(;this._accumulator>=this._deltaTime;this._accumulator-=this._deltaTime){
-			this.updateInputData();
-			this.changeScene_before();
-			this.changeScene();
-			this.changeScene_after();
-			this.updateScene_before();
-			this.updateScene();
-			this.updateScene_after();
+			this.updateMain_data1(false);
 		}
 	}
+},[0.25,]).addBase('updateMain_data1',function f(isNotToUpdateInputData){
+	if(!isNotToUpdateInputData) this.updateInputData();
+	this.changeScene_before();
+	this.changeScene();
+	this.changeScene_after();
+	this.updateScene_before();
+	this.updateScene();
+	this.updateScene_after();
+}).addBase('updateMain_render',function f(){
 	this.renderScene_before();
 	this.renderScene();
 	this.renderScene_after();
+}).addBase('updateMain_final',function f(){
 	this.requestUpdate();
-},[0.25,]).addBase('additionalUpdate_doArr',function f(arr){
+}).addBase('additionalUpdate_doArr',function f(arr){
 	const rtv=[],popup=[]; // remained funcs
 	const src=arr.slice();
 	arr.length=0;
