@@ -1348,7 +1348,9 @@ new cfc(p).add('_createAllParts',function f(){
 
 
 new cfc(Input).addBase('_getKeyName',function f(event){
-	return this.keyMapper[event.keyCode]||event.keyCode;
+	return this._remapKeyName(event.keyCode);
+}).addBase('_remapKeyName',function f(keyName){
+	return this.keyMapper[keyName]||keyName;
 }).addBase('_onKeyUp',function f(event){
 	return this._onKeyUp_do.apply(this,arguments);
 }).addBase('_onKeyUp_do',function f(event){
@@ -1389,12 +1391,17 @@ new cfc(Input).addBase('_getKeyName',function f(event){
 		}
 		this._previousState[name]=this._currentState[name];
 	}
+}).add('isPressed',function f(keyName){
+	arguments[0]=this._remapKeyName(keyName);
+	return f.ori.apply(this,arguments);
 }).addBase('isTriggered',function f(keyName){
+	keyName=this._remapKeyName(keyName);
 	if(this._isEscapeCompatible(keyName)) keyName=f.tbl[0];
 	return this._latestButton===keyName && this._pressedTime===0;
 },t=[
 'escape', // 0: key-escape
 ]).addBase('isRepeated',function f(keyName){
+	keyName=this._remapKeyName(keyName);
 	if(this._isEscapeCompatible(keyName)) keyName=f.tbl[0];
 	return (this._latestButton === keyName && (
 		this._pressedTime === 0 || (
