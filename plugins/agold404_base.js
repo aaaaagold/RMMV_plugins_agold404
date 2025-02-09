@@ -4482,6 +4482,27 @@ if(1)new cfc(SceneManager).add('changeScene_do_before',function f(){
 
 })(); // fading scene change
 
+// ---- ---- ---- ---- Scene_Waiting
+
+(()=>{ let k,r,t;
+
+// used between two scene. i.e. hooked in changeScene
+
+const a=class Scene_Waiting extends Scene_Base{
+};
+window[a.name]=a;
+new cfc(a.prototype).addBase('initialize',function f(){
+	f._super[f._funcName].apply(this,arguments);
+	this._nextScene=SceneManager._nextScene.constructor; // use something global to handling the scene arguments
+}).addBase('update',function f(){
+	f._super[f._funcName].apply(this,arguments);
+	this.update_gotoNextScene();
+}).addBase('update_gotoNextScene',function f(){
+	SceneManager.goto(this._nextScene);
+});
+
+})(); // Scene_Waiting
+
 // ---- ---- ---- ---- fix bug
 
 (()=>{ let k,r,t;
