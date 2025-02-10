@@ -3,7 +3,7 @@
  * @plugindesc 能力分配，掛JS屬性到被配點的角色身上
  * @author agold404
  * 
- * @help A abilities allocating system which can leveling up custom properties.
+ * @help An abilities allocating system which can leveling up custom properties.
  * there're two parts of the setting. AllocatingAbilities and DisplayedItems
  * to enter the scene: SceneManager.push(Scene_AllocateAbility);
  * 
@@ -90,6 +90,13 @@
  * @text CostPoint condition
  * @desc Set script how an actor can cost points to allocate an ability. use actor or a to represent the actor.
  * @default lv>=0&&a._allocPointProperty>=0
+ * 
+ * @param AllocatingCostPointLevelUpGain
+ * @parent AllocatingCostPointRoot
+ * @type string
+ * @text CostPoint level up gain
+ * @desc Set script how an actor can get points to allocate an ability when leveling up. use actor or a to represent the actor.
+ * @default a.name().length
  * 
  * 
  * 
@@ -725,6 +732,25 @@ new cfc(a.prototype).addBase('initialize',function f(){
 }).addBase('userInput_finCmdQuit',function f(){
 	this.popScene();
 });
+}
+
+{
+new cfc(Game_Actor.prototype).add('levelUp',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.allocating_getLevelUpPoints();
+	return rtv;
+}).addBase('allocating_getLevelUpPoints',function f(){
+	this.allocating_getPoints(f.tbl[2](this,f.tbl[1]));
+},t=[
+undefined, // 0: 
+params, // 1: 
+(a,params)=>{
+	const actor=a,s=params.AllocatingCostPointLevelUpGain;
+	{ let k,r,t,params; { return eval(s); } }
+}, // 2: get gain points number 
+]).addBase('allocating_getPoints',function f(n){
+	this[f.tbl[1]._costPointProperty]+=n-0||0;
+},t);
 }
 
 })();
