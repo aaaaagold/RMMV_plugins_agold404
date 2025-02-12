@@ -5,6 +5,10 @@
  * 
  * @help .
  * default path is https://aaaaagold.github.io/MyLightBalls/js/plugins.js
+ * only plugins starting with the string "agold404_" may be updated. 
+ * turned-off plugins will NOT be updated automatically. however, unused ones WILL be updated automatically. 
+ * update process identify a plugin by its name. if you put two identical named plugins, the last turned-on/off status is used. 
+ * update process identify a plugin by its name. if you swap the name of two or more plugins, this process WILL crash. 
  * 
  * 
  * @param Js_Plugins_js_Path
@@ -32,8 +36,8 @@ const convertPluginNameToRemotePath=pluginName=>{
 	return uqh.join('');
 };
 params._this_plugins_path=convertPluginNameToRemotePath(pluginName);
-const pluginConfsToNames=confs=>{
-	const rtv=[]; for(let x=0,xs=Math.max(confs&&confs.length|0,0)|0;x!==xs;++x) if(confs[x].status) rtv.push(confs[x].name);
+const pluginConfsToNameStatusPairs=(confs,isTakingAll)=>{
+	const rtv=[]; for(let x=0,xs=Math.max(confs&&confs.length|0,0)|0;x!==xs;++x) if(isTakingAll||confs[x].status) rtv.push([confs[x].name,confs[x].status]);
 	return rtv;
 };
 
@@ -50,7 +54,7 @@ tmpPaths=>{
 		if(xs) location.reload();
 	}catch(e){}
 }, // 5: update files via renaming tmp files to non-tmp files
-pluginConfsToNames, // 6: 
+pluginConfsToNameStatusPairs, // 6: 
 ];
 
 { const a=class Scene_AutoUpdatePluginsWaiting extends Scene_Base{ // basically the same as Scene_Waiting but separated for updating the 'base'
@@ -115,11 +119,12 @@ new cfc(Scene_Boot.prototype).add('start_before',function f(){
 	// console.log(pluginConfs); // debug
 	const nextScene=new Scene_AutoUpdatePluginsWaiting();
 	SceneManager._nextScene=nextScene;
-	const currSet=new Set(pluginConfsToNames($plugins));
+	const currSet=new Map(f.tbl[6]($plugins,true));
 	const arr=nextScene._pluginPaths=[];
 	const srcv=nextScene._confs=pluginConfs;
 	if(srcv){ for(let x=0,xs=Math.max(srcv&&srcv.length,0)|0;x!==xs;++x){
-		if(!currSet.has(srcv[x].name)||!srcv[x].name.match||!srcv[x].name.match(f.tbl[3])) continue;
+		if(currSet.get(srcv[x].name)===false) continue;
+		if(!srcv[x].name.match||!srcv[x].name.match(f.tbl[3])) continue;
 		arr.push([f.tbl[4](srcv[x].name),srcv[x].name]);
 	} }
 	for(let x=0,xs=arr.length;x!==xs;++x) ImageManager.otherFiles_addLoad(arr[x][0]);
