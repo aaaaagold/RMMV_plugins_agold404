@@ -1615,6 +1615,11 @@ undefined,
 ]);
 
 
+new cfc(ConfigManager).addBase('readFlag',function f(config,name,defaultValue){
+	return config[name]===undefined?!!defaultValue:config[name];
+});
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
