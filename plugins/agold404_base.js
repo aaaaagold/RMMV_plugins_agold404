@@ -41,6 +41,28 @@ new cfc(Decrypter).addBase('checkImgIgnore',function(url){
 c=>c.toString(16).padStart(2,'0'), // 0: map
 ]);
 
+new cfc(Game_Event.prototype).add('start',function f(triggerer){
+	f.ori.apply(this,arguments);
+	if(this.isStarting()) this._triggerer=triggerer;
+	return this;
+}).add('clearStartingFlag',function f(){
+	this._triggerer=undefined;
+	f.ori.apply(this,arguments);
+	return this;
+});
+new cfc(Game_Map.prototype).addBase('setupStartingMapEvent',function f(){
+	for(let arr=this._events,xs=arr.length,x=0;x<xs;++x){
+		const evt=arr[x];
+		if(evt&&evt.isStarting()){
+			return this.setupStartingMapEvent_setup(evt);
+		}
+	}
+	return false;
+}).addBase('setupStartingMapEvent_setup',function f(evt){
+	this._interpreter.setup(evt.list(),evt.eventId(),evt._triggerer);
+	evt.clearStartingFlag();
+	return true;
+});
 { const a=Game_Interpreter,p=a.prototype;
 a.NOP={code:0,indent:0,parameters:[],};
 // prevent being slow due to getting non-exists property
@@ -82,6 +104,13 @@ cancel:()=>TouchInput.isCancelled(),
 		const cmd=cmds[x]; if(cmd.code===118&&cmd.parameters[0]===label){ this._index=x; break; }
 	}
 	return this._index;
+}).addBase('setup',function f(list,eventId,triggerer){
+	this.clear();
+	this._mapId=$gameMap.mapId();
+	this._eventId=eventId||0;
+	this._list=list;
+	this._triggerer=triggerer;
+	//if(isRecurrsiveRequestImages) Game_Interpreter.requestImages(list);
 });
 }
 new cfc(Game_System.prototype).add('initialize',function f(){
@@ -1618,6 +1647,40 @@ undefined,
 new cfc(ConfigManager).addBase('readFlag',function f(config,name,defaultValue){
 	return config[name]===undefined?!!defaultValue:config[name];
 });
+
+
+new cfc(Game_CharacterBase.prototype).
+addBase('updateMove',function f(){
+	// only called when 'this.isMoving()' is true
+	this.updateMove_1stepWork();
+	if(!this.isMoving()) this.updateMove_1stepDone();
+}).
+addBase('updateMove_1stepWork',function f(){
+	const dpf=this.distancePerFrame();
+	if(this._x<this._realX) this._realX=Math.max(this._realX-dpf,this._x);
+	if(this._x>this._realX) this._realX=Math.min(this._realX+dpf,this._x);
+	if(this._y<this._realY) this._realY=Math.max(this._realY-dpf,this._y);
+	if(this._y>this._realY) this._realY=Math.min(this._realY+dpf,this._y);
+}).
+addBase('updateMove_1stepDone',function f(){
+	this.refreshBushDepth();
+}).
+addBase('updateJump',function f(){
+	// only called when 'this.isJumping()' is true
+	this.updateJump_1stepWork();
+	this.refreshBushDepth();
+	if(!this.isJumping()) this.updateJump_1stepDone();
+}).
+addBase('updateJump_1stepWork',function f(){
+	const d=1.0+--this._jumpCount;
+	this._realX=(this._realX*this._jumpCount+this._x)/d;
+	this._realY=(this._realY*this._jumpCount+this._y)/d;
+}).
+addBase('updateJump_1stepDone',function f(){
+	this._realX=this._x=$gameMap.roundX(this._x);
+	this._realY=this._y=$gameMap.roundY(this._y);
+}).
+getP;
 
 
 })(); // refine for future extensions
@@ -3969,22 +4032,20 @@ function(evt,i,a){
 		this.update_locTbl_delEvt(evt,this._events.coordsNt[-1],x,y);
 		this.update_locTbl_delEvt(evt,this._events.coordsNt[evt._priorityType],x,y);
 	}
-}).addBase('eventsXy',function f(x,y){
+}).addBase('eventsXy',function f(x,y,p=-1){
 	this.update_locTbl_evts();
-	const coord=this._events&&this._events.coords&&this._events.coords[-1];
+	const coord=this._events&&this._events.coords&&this._events.coords[p];
 	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
 },[
 [],
-]).addBase('eventsXyNt',function f(x,y){
+]).addBase('eventsXyNt',function f(x,y,p=-1){
 	this.update_locTbl_evts();
-	const coord=this._events&&this._events.coordsNt&&this._events.coordsNt[-1];
+	const coord=this._events&&this._events.coordsNt&&this._events.coordsNt[p];
 	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
 },[
 [],
 ]).addBase('eventsXyNtNp',function f(x,y){ // normal priority
-	this.update_locTbl_evts();
-	const coord=this._events&&this._events.coordsNt&&this._events.coordsNt[DataManager._def_normalPriority];
-	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
+	return this.eventsXyNt(x,y,DataManager._def_normalPriority);
 },[
 [],
 ]);
@@ -4415,13 +4476,6 @@ function f(command){
 t[0].tbl=t[1];
 for(let k in t[1]) t[1][k].tbl=t[2];
 t[1][337]=t[1][212];
-
-new cfc(Game_Interpreter.prototype).addBase('setup',function f(list,eventId,isNoRecurrsiveRequestImages){
-	this.clear();
-	this._mapId=$gameMap.mapId();
-	this._eventId=eventId||0;
-	this._list=list;
-});
 
 new cfc(DataManager).add('onLoad_after_map',function f(obj){
 	const rtv=f.ori&&f.ori.apply(this,arguments);
