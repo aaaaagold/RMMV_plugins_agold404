@@ -35,9 +35,10 @@ params, // 1: plugin params
 new cfc(Game_Temp.prototype).addBase('anywhereText',function f(id,msg,x,y){
 	const cont=this._anywhereText_getCont(),sc=SceneManager._scene;
 	let sp=cont.get(id); if(!sp||sp.parent!==sc) sc.addChild(sp=this._anywhereText_createNew());
-	if(sp.transform) sp.position.set(x,y);
+	if(sp.transform) sp.position.set(x===undefined?sp.x:x,y===undefined?sp.y:y);
 	else cont._waitForPositioning.push([sp,x,y]);
-	sp._anywhereText_txt.setText(msg);
+	if(msg===true) sp._anywhereText_txt.reApplyText();
+	else if(msg!==undefined) sp._anywhereText_txt.setText(msg);
 	cont.set(id,sp);
 }).addBase('_anywhereText_getCont',function f(){
 	let rtv=this._anywhereText_cont; if(!rtv) (rtv=this._anywhereText_cont=new Map())._waitForPositioning=new Queue();
@@ -57,7 +58,7 @@ new cfc(SceneManager).add('updateMain_final',function f(){
 	const q=cont._waitForPositioning;
 	for(let ctr=q.length;ctr--;){
 		const curr=q.front; q.pop(); if(!curr) continue;
-		if(curr[0].transform) curr[0].position.set(curr[1],curr[2]);
+		if(curr[0].transform) curr[0].position.set(curr[1]===undefined?curr[0].x:curr[1],curr[2]===undefined?curr[0].y:curr[2]);
 		else q.push(curr);
 	}
 });
