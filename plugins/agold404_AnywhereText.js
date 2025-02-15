@@ -41,7 +41,8 @@ new cfc(Game_Temp.prototype).addBase('anywhereText',function f(id,msg,x,y){
 	else if(msg!==undefined) sp._anywhereText_txt.setText(msg);
 	cont.set(id,sp);
 }).addBase('_anywhereText_getCont',function f(){
-	let rtv=this._anywhereText_cont; if(!rtv) (rtv=this._anywhereText_cont=new Map())._waitForPositioning=new Queue();
+	const sc=SceneManager._scene;
+	let rtv=sc._anywhereText_cont; if(!rtv) (rtv=sc._anywhereText_cont=new Map())._waitForPositioning=new Queue();
 	return rtv;
 }).addBase('_anywhereText_createNew',function f(){
 	const sp=new Sprite();
