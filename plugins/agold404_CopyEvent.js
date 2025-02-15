@@ -3,11 +3,39 @@
  * @plugindesc 複製事件
  * @author agold404
  * @help $gameMap.cpevt(evtId,x,y,direction=undefined);
+ * $gameMap.cpevtFromTemplate(evtIdOnTheTemplateMap,x,y,direction=undefined);
+ * 
+ * 回傳值皆為玩家所在的地圖上的新增事件的 id 。
+ * 
+ * template map path: 指定的地圖檔案路徑，預設空字串。只要不是填空字串，都會在一開始遊戲時去讀取，
+ * 沒讀到就不能使用 $gameMap.cpevtFromTemplate ， playtest 時會在遊戲一開始讀取沒讀到時，以 alert 來提醒沒讀到。
+ * 例如填 data/Map001.json 
+ * 
+ * 
+ * @param TemplateMapPath
+ * @type text
+ * @text template map path
+ * @desc map path for using as the template map
+ * 
  * 
  * This plugin can be renamed as you want.
  */
 
 (()=>{ let k,r,t;
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_CopyEvent";
+const params=PluginManager.parameters(pluginName)||{};
+params._templateMapPath=params.TemplateMapPath||"";
+
+t=[
+undefined,
+params, // 1: plugin params
+{
+notFound:"[WARNING] template map not found",
+notJson:"[ERROR] template map source data is not JSON format",
+noTemplate:"[ERROR] template map not loaded",
+}, // 2: err msg
+Utils.isOptionValid('test'), // 3: isTest
+];
 
 new cfc(Game_System.prototype).add('cpevt_loadevt',function(mapid){
 	if(!this._cpevt) this._cpevt={ mapid:0 , evts:[] , };
@@ -68,12 +96,48 @@ new cfc(Game_Map.prototype).add('setup',function f(mapid){
 		sp._tilemap.addChild(spc);
 	}
 	return newid;
-},undefined,true,true);
+},undefined,true,true).
+addBase('cpevtFromTemplate',function f(evtid,x,y,d){
+	if(!DataManager._templateMapData) return f.tbl[3]&&alert(f.tbl[2].noTemplate)
+	const evtd=DataManager._templateMapData.events[evtid];
+	const idx=$dataMap.events.push(evtd)-1;
+	arguments[0]=idx;
+	const rtv=this.cpevt.apply(this,arguments);
+	arguments[0]=evtid;
+	return rtv;
+},t).
+getP;
 
 new cfc(Game_Event.prototype).add('update',function f(){
 	return this.event()&&f.ori.apply(this,arguments);
 }).add('findProperPageIndex',function f(){
 	return this.event()?f.ori.apply(this,arguments):-1;
 });
+
+
+new cfc(Scene_Boot.prototype).
+add('start',function f(){
+	this.cpevt_loadTemplateMap();
+	return f.ori.apply(this,arguments);
+}).
+addBase('cpevt_loadTemplateMap',function f(){
+	if(f.tbl[1]._templateMapPath) ImageManager.otherFiles_addLoad(f.tbl[1]._templateMapPath);
+},t).
+addBase('cpevt_parseLoadedTemplateMap',function f(){
+	if(!f.tbl[1]._templateMapPath) return;
+	const raw=ImageManager.otherFiles_getData(f.tbl[1]._templateMapPath);
+	const isTest=f.tbl[3];
+	if(raw===undefined) return isTest&&alert(f.tbl[2].notFound);
+	try{
+		DataManager._templateMapData=JSON.parse(raw);
+	}catch(e){
+		isTest&&alert(f.tbl[2].notJson);
+	}
+},t).
+add('terminate',function f(){
+	this.cpevt_parseLoadedTemplateMap();
+	return f.ori.apply(this,arguments);
+}).
+getP;
 
 })();
