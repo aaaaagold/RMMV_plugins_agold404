@@ -5,6 +5,10 @@
  * 
  * @help in event's note: <triggeredByEvents>
  * 
+ * use 'this.setOptionPlayerAsTriggerer();' in event commands to let "effect to player" or somewhat similar options become "effect to triggerer"
+ * use 'this.clearOptionPlayerAsTriggerer();' to revert the above
+ * starting from every event list, 'this.clearOptionPlayerAsTriggerer();' is called.
+ * 
  * 
  * This plugin can be renamed as you want.
  */
@@ -40,6 +44,28 @@ add('updateJump_1stepDone',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.startEventAt(this.x,this.y,0);
 	this.startEventAt(this.x,this.y,2);
+	return rtv;
+}).
+getP;
+
+
+new cfc(Game_Interpreter.prototype).
+add('clear',function f(){
+	this.clearOptionPlayerAsTriggerer();
+	return f.ori.apply(this,arguments);
+}).
+addBase('clearOptionPlayerAsTriggerer',function f(){
+	this._optionPlayerAsTriggerer=undefined;
+}).
+addBase('setOptionPlayerAsTriggerer',function f(val){
+	this._optionPlayerAsTriggerer=val===undefined?true:!!val;
+}).
+addBase('getOptionPlayerAsTriggerer',function f(val){
+	return !!this._optionPlayerAsTriggerer;
+}).
+add('character',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	if(rtv===$gamePlayer&&this.getOptionPlayerAsTriggerer()) return this.getTriggerer();
 	return rtv;
 }).
 getP;
