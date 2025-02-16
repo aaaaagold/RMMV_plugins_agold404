@@ -89,6 +89,7 @@ cancel:()=>TouchInput.isCancelled(),
 	if(this._childInterpreter){
 		this._childInterpreter._parentInterpreter=this;
 		this._childInterpreter._rootInterpreter=this._rootInterpreter||this;
+		this._childInterpreter._triggerer=this._triggerer;
 	}
 	return rtv;
 }).addBase('getParentInterpreter',function f(){
