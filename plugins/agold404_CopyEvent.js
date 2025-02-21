@@ -151,27 +151,33 @@ if(f.tbl[1]._templateMapPath){
 	const isTest=f.tbl[3];
 if(raw===undefined) isTest&&alert(f.tbl[2].notFound+": "+f.tbl[1]._templateMapPath);
 else{
+	const oriMap=$dataMap;
 	try{
-		DataManager._templateMapData=JSON.parse(raw);
+		$dataMap=DataManager._templateMapData=JSON.parse(raw);
+		DataManager.onLoad($dataMap,'$dataMap',f.tbl[1]._templateMapPath,'cpevt',);
 	}catch(e){
 		isTest&&alert(f.tbl[2].notJson+": "+f.tbl[1]._templateMapPath);
 	}
+	$dataMap=oriMap;
 }
 } // ._templateMapPath
 
 // ._templateMapIdPaths BEG
 	DataManager._templateMapIdsData={};
+	const oriMap=$dataMap;
 	for(let arr=f.tbl[1]._templateMapIdPaths,xs=arr.length,x=0;x!==xs;++x){
 		const raw=ImageManager.otherFiles_getData(arr[x][0]);
 if(raw===undefined) isTest&&alert(f.tbl[2].notFound+": "+arr[x][0]);
 else{
 		try{
-			DataManager._templateMapIdsData[arr[x][1]]=JSON.parse(raw);
+			$dataMap=DataManager._templateMapIdsData[arr[x][1]]=JSON.parse(raw);
+			DataManager.onLoad($dataMap,'$dataMap',arr[x][0],'cpevt',);
 		}catch(e){
 			isTest&&alert(f.tbl[2].notJson+": "+arr[x][0]);
 		}
 }
 	}
+	$dataMap=oriMap;
 // ._templateMapIdPaths END
 },t).
 add('terminate',function f(){
