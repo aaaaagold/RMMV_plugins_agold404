@@ -264,7 +264,8 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 			
 			const curr=$gameMap.eventsXy(x1r,y1r);
 			for(let z=0,zs=curr.length;z!==zs;++z) if(targets.uniqueHas(curr[z])) detecteds.uniquePush(curr[z]);
-			if(showHint) rtv.push($gameMap.getPosKey(x1,y1));
+			if(isDetectingPlayer && $gamePlayer.pos(x1r,y1r)) detecteds.uniquePush($gamePlayer);
+			if(showHint&&$gameMap.isValid(x1,y1)) rtv.push($gameMap.getPosKey(x1,y1));
 		}
 	}else{
 		for(let i=points.length;i--;){
@@ -294,7 +295,7 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 			const curr=$gameMap.eventsXy(x1r,y1r);
 			for(let z=0,zs=curr.length;z!==zs;++z) if(targets.uniqueHas(curr[z])) detecteds.uniquePush(curr[z]);
 			if(isDetectingPlayer && $gamePlayer.pos(x1r,y1r)) detecteds.uniquePush($gamePlayer);
-			if(showHint) rtv.push($gameMap.getPosKey(x1,y1));
+			if(showHint&&$gameMap.isValid(x1,y1)) rtv.push($gameMap.getPosKey(x1,y1));
 		}
 	}
 	if(!detecteds.length){
