@@ -1039,6 +1039,14 @@ function(src,e) {
 	// dummy
 }).addBase('onLoad_after_skill',function f(obj,name,src,msg){
 	// dummy
+}).addBase('_onLoad_before_troop',function f(obj,name,src,msg){
+	return this.onLoad_before_troop.apply(this,arguments);
+}).addBase('_onLoad_after_troop',function f(obj,name,src,msg){
+	return this.onLoad_after_troop.apply(this,arguments);
+}).addBase('onLoad_before_troop',function f(obj,name,src,msg){
+	// dummy
+}).addBase('onLoad_after_troop',function f(obj,name,src,msg){
+	// dummy
 }).addBase('_onLoad_before_tileset',function f(obj,name,src,msg){
 	return this.onLoad_before_tileset.apply(this,arguments);
 }).addBase('_onLoad_after_tileset',function f(obj,name,src,msg){
@@ -1046,6 +1054,14 @@ function(src,e) {
 }).addBase('onLoad_before_tileset',function f(obj,name,src,msg){
 	// dummy
 }).addBase('onLoad_after_tileset',function f(obj,name,src,msg){
+	// dummy
+}).addBase('_onLoad_before_commonEvent',function f(obj,name,src,msg){
+	return this.onLoad_before_commonEvent.apply(this,arguments);
+}).addBase('_onLoad_after_commonEvent',function f(obj,name,src,msg){
+	return this.onLoad_after_commonEvent.apply(this,arguments);
+}).addBase('onLoad_before_commonEvent',function f(obj,name,src,msg){
+	// dummy
+}).addBase('onLoad_after_commonEvent',function f(obj,name,src,msg){
 	// dummy
 }).addBase('_onLoad_before_system',function f(obj,name,src,msg){
 	return this.onLoad_before_system.apply(this,arguments);
@@ -1060,13 +1076,17 @@ function(src,e) {
 p.onLoad_before.tbl=new Map([
 	['$dataMap',	p._onLoad_before_map],
 	['$dataSkills',	p._onLoad_before_skill],
+	['$dataTroops',	p._onLoad_before_troop],
 	['$dataTilesets',	p._onLoad_before_tileset],
+	['$dataCommonEvents',	p._onLoad_before_commonEvent],
 	['$dataSystem',	p._onLoad_before_system],
 ]);
 p.onLoad_after.tbl=new Map([
 	['$dataMap',	p._onLoad_after_map],
 	['$dataSkills',	p._onLoad_after_skill],
+	['$dataTroops',	p._onLoad_after_troop],
 	['$dataTilesets',	p._onLoad_after_tileset],
+	['$dataCommonEvents',	p._onLoad_after_commonEvent],
 	['$dataSystem',	p._onLoad_after_system],
 ]);
 }
