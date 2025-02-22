@@ -6,8 +6,8 @@
  * @help editor comment starting with (at-sign)inView in event command pages
  * 
  * 
- * starting with a single line of a clear <shapeDraw>, <shapeEval>, <targetEval>, or <detectedEval>
- * and ends with a single line of a clear </shapeDraw>, </shapeEval>, </targetEval>, or </detectedEval>, correspondingly.
+ * starting with a single line of a clear <shapeDraw>, <shapeEval>, <targetEval>, <detectedEval>, <nondetectedEval>, <onDetectedEval>, or <onNondetectedEval>
+ * and ends with a single line of a clear </shapeDraw>, </shapeEval>, </targetEval>, </detectedEval>, </nondetectedEval>, </onDetectedEval>, or </onNondetectedEval>, correspondingly.
  * one of each above appears at most once.
  * 
  * <shapeDraw />
@@ -50,6 +50,11 @@
  * showHint=(any)
  * specify wheather to vision hint
  * anything besides an empty string indicates to show the hint
+ * needs agold404_CopyEvent.js
+ * 
+ * showHintCond=(cond)
+ * specify wheather to vision hint with cond
+ * anything besides an empty string indicates to decided by the above option ( showHint= )
  * needs agold404_CopyEvent.js
  * 
  * 
@@ -339,7 +344,8 @@ arr=>{
 },[
 /[^A-Z]+/,
 ]).addBase('_inVision_getShowHint',function f(inChrVision){
-	return inChrVision.showHint;
+	if(!inChrVision.showHintCond) return inChrVision.showHint;
+	return eval(inChrVision.showHintCond);
 }).addBase('inVision_getFrontPoints',function f(n){
 	const rtv=[];
 	const d=this._direction;
