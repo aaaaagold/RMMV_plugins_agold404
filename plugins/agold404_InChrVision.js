@@ -32,6 +32,15 @@
  * <detectedEval />
  * specify what to do (by eval() ) if detecting a target
  * 
+ * <nondetectedEval />
+ * specify what to do (by eval() ) if not detecting a target
+ * 
+ * <onDetectedEval />
+ * specify what to do (by eval() ) if changing from not detecting a target to detecting a target
+ * 
+ * <onNondetectedEval />
+ * specify what to do (by eval() ) if changing from detecting a target to not detecting a target
+ * 
  * selfSwitch=A,B,C,D,...
  * specify what self-switches will be turned on when detecting a target
  * 
@@ -114,6 +123,9 @@ new cfc(Game_Character.prototype).addBase('inVision_getAll',function f(){
 		else if(line==="<shapeEval>") x=this._inVision_parseFromRaw_shapeEval(rtv,lines,x+1);
 		else if(line==="<targetsEval>") x=this._inVision_parseFromRaw_targetsEval(rtv,lines,x+1);
 		else if(line==="<detectedEval>") x=this._inVision_parseFromRaw_detectedEval(rtv,lines,x+1);
+		else if(line==="<nondetectedEval>") x=this._inVision_parseFromRaw_nondetectedEval(rtv,lines,x+1);
+		else if(line==="<onDetectedEval>") x=this._inVision_parseFromRaw_onDetectedEval(rtv,lines,x+1);
+		else if(line==="<onNondetectedEval>") x=this._inVision_parseFromRaw_onNondetectedEval(rtv,lines,x+1);
 		else{
 			const eqIdx=lines[x].indexOf('=');
 			if(eqIdx<0) continue;
@@ -183,6 +195,18 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 	const ende=this._inVision_parseFromRaw_common(rtv,lines,strt,"detectedEval");
 	rtv["<detectedEval>"]=rtv["<detectedEval>"].join('\n');
 	return ende;
+}).addBase('_inVision_parseFromRaw_nondetectedEval',function f(rtv,lines,strt){
+	const ende=this._inVision_parseFromRaw_common(rtv,lines,strt,"nondetectedEval");
+	rtv["<nondetectedEval>"]=rtv["<nondetectedEval>"].join('\n');
+	return ende;
+}).addBase('_inVision_parseFromRaw_onDetectedEval',function f(rtv,lines,strt){
+	const ende=this._inVision_parseFromRaw_common(rtv,lines,strt,"onDetectedEval");
+	rtv["<onDetectedEval>"]=rtv["<onDetectedEval>"].join('\n');
+	return ende;
+}).addBase('_inVision_parseFromRaw_onNondetectedEval',function f(rtv,lines,strt){
+	const ende=this._inVision_parseFromRaw_common(rtv,lines,strt,"onNondetectedEval");
+	rtv["<onNondetectedEval>"]=rtv["<onNondetectedEval>"].join('\n');
+	return ende;
 }).addBase('inVision_setFromRaws',function f(raws){
 	this._inChrVisions=this.inVision_parseFromRaws(raws);
 	return this;
@@ -209,6 +233,7 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 8:[[ 0,-1],[ 1, 0]],
 }, // 0: dir->[dFront,dRight]
 ]).addBase('_update_inVision1',function f(inChrVision,dTbl,x0,y0){
+	const lastDetectState=this._inVision_isDetected;
 	const rtv=[]; // seen points
 	if(!inChrVision) return rtv;
 	const targets=this._inVision_getDetectTargets(inChrVision);
@@ -272,12 +297,19 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 			if(showHint) rtv.push($gameMap.getPosKey(x1,y1));
 		}
 	}
-	if(!detecteds.length) return rtv;
+	if(!detecteds.length){
+		if(lastDetectState&&inChrVision["<onNondetectedEval>"]) this._inVision_doDetectedEval(detecteds,inChrVision["<onNondetectedEval>"]);
+		if(inChrVision["<nondetectedEval>"]) this._inVision_doDetectedEval(detecteds,inChrVision["<nondetectedEval>"]);
+		this._inVision_isDetected=false;
+		return rtv;
+	}
 	if(this.eventId){ for(let letters=this._inVision_getSelfSwitches(inChrVision),x=letters.length,tmp=[$gameMap.mapId(),this.eventId(),undefined];x--;){
 		if(!(tmp[2]=letters[x])) continue;
 		$gameSelfSwitches.setValue(tmp,true);
 	} }
+	if(!lastDetectState&&inChrVision["<onDetectedEval>"]) this._inVision_doDetectedEval(detecteds,inChrVision["<onDetectedEval>"]);
 	this._inVision_doDetectedEval(detecteds,inChrVision["<detectedEval>"]);
+	this._inVision_isDetected=true;
 	return rtv;
 }).addBase('_inVision_getDetectTargets',function f(inChrVision){
 	const raw=inChrVision["<targetsEval>"];
