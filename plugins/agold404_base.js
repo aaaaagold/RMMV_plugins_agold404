@@ -42,8 +42,10 @@ c=>c.toString(16).padStart(2,'0'), // 0: map
 ]);
 
 new cfc(Game_Event.prototype).add('start',function f(triggerer){
+	const oriTriggerer=this._triggerer; this._triggerer=triggerer;
 	f.ori.apply(this,arguments);
 	if(this.isStarting()) this._triggerer=triggerer;
+	else this._triggerer=oriTriggerer;
 	return this;
 }).add('clearStartingFlag',function f(){
 	this._triggerer=undefined;
@@ -1712,7 +1714,7 @@ addBase('lock_cond',function f(){
 }).
 addBase('lock_do',function f(){
 	this._prelockDirection=this.direction();
-	if(this.lock_shouldTurnToPlayerOnlock()) this.turnTowardPlayer();
+	if(this.lock_shouldTurnToTriggererOnlock()) this.turnTowardCharacter(this._triggerer||$gamePlayer);
 	this._locked=true;
 	this.onlock();
 }).
@@ -1721,7 +1723,7 @@ addBase('lock_isNever',function f(){
 },[
 'dontLock',
 ]).
-addBase('lock_shouldTurnToPlayerOnlock',function f(){
+addBase('lock_shouldTurnToTriggererOnlock',function f(){
 	return !this.getMeta()[f.tbl[0]];
 },[
 'dontTurnOnStart',
