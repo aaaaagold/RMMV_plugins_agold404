@@ -1733,6 +1733,28 @@ addBase('onlock',function f(){
 getP;
 
 
+new cfc(Game_BattlerBase.prototype).
+addBase('param',function f(paramId){
+	return this.param_clamp(this.param_real(paramId),paramId,);
+}).
+addBase('param_base',function f(paramId){
+	return this.paramBase(paramId)+this.paramPlus(paramId);
+}).
+addBase('param_rate',function f(paramId){
+	return this.paramRate(paramId)*this.paramBuffRate(paramId);
+}).
+addBase('param_real',function f(paramId){
+	return this.param_base(paramId)*this.param_rate(paramId);
+}).
+addBase('param_clamp',function f(value,paramId){
+	return Math.round(value.clamp(
+		this.paramMin(paramId),
+		this.paramMax(paramId),
+	));
+}).
+getP;
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
