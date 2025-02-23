@@ -1704,6 +1704,33 @@ addBase('updateJump_1stepDone',function f(){
 getP;
 
 
+new cfc(Game_Event.prototype).addBase('lock',function f(){
+	if(this.lock_cond()) this.lock_do();
+}).
+addBase('lock_cond',function f(){
+	return !this._locked && !this.lock_isNever();
+}).
+addBase('lock_do',function f(){
+	this._prelockDirection=this.direction();
+	if(this.lock_shouldTurnToPlayerOnlock()) this.turnTowardPlayer();
+	this._locked=true;
+	this.onlock();
+}).
+addBase('lock_isNever',function f(){
+	return this.getMeta()[f.tbl[0]];
+},[
+'dontLock',
+]).
+addBase('lock_shouldTurnToPlayerOnlock',function f(){
+	return !this.getMeta()[f.tbl[0]];
+},[
+'dontTurnOnStart',
+]).
+addBase('onlock',function f(){
+}).
+getP;
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
