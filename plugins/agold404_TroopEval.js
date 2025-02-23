@@ -38,8 +38,9 @@ troopd=>{ if(!troopd) return;
 DataManager._pasteCommonEvents_pendingOnLoads=[];
 new cfc(DataManager).
 add('onLoad_before_troop',function f(obj,name,src,msg){
+	const rtv=f.ori.apply(this,arguments);
 	this.onLoad_troop_runBefore.apply(this,arguments);
-	return f.ori.apply(this,arguments);
+	return rtv;
 }).
 add('onLoad_troop_runBefore',function f(obj,name,src,msg){
 	obj.forEach(f.tbl[4],this);
