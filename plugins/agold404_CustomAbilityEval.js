@@ -212,6 +212,8 @@ t=[
 undefined, // 0: dev-reserve
 params, // 1: plugin params
 ['mhp','mmp','atk','def','mat','mdf','agi','luk',], // 2: params
+Utils.isOptionValid('test')||Utils.isOptionValid('btest')||Utils.isOptionValid('etest'), // 3: isTest
+"[ERROR] [CustomAbilityEval] param error: {} {}", // 4: err msg
 ];
 
 
@@ -220,27 +222,48 @@ add('param',function f(paramId){
 	let value=f.ori.apply(this,arguments);
 	const s=f.tbl[1]._final[f.tbl[2][paramId]];
 	if(s){
+		const a=this,user=a;
 		let f;
 		eval(s);
 	}
+	if(f.tbl[3]&&s&&isNaN(value)){
+		const msg=f.tbl[4].replace("{}","final").replace("{}",f.tbl[2][paramId]);
+		console.error(msg);
+		alert(msg);
+	}
+	value=value-0||0;
 	return value;
 },t).
 add('param_real',function f(paramId){
 	let value=f.ori.apply(this,arguments);
 	const s=f.tbl[1]._real[f.tbl[2][paramId]];
 	if(s){
+		const a=this,user=a;
 		let f;
 		eval(s);
 	}
+	if(f.tbl[3]&&s&&isNaN(value)){
+		const msg=f.tbl[4].replace("{}","real").replace("{}",f.tbl[2][paramId]);
+		console.error(msg);
+		alert(msg);
+	}
+	value=value-0||0;
 	return value;
 },t).
 add('paramBase',function f(paramId){
 	let value=f.ori.apply(this,arguments);
 	const s=f.tbl[1]._base[f.tbl[2][paramId]];
 	if(s){
+		const a=this,user=a;
 		let f;
 		eval(s);
 	}
+	if(f.tbl[3]&&s&&isNaN(value)){
+		const msg=f.tbl[4].replace("{}","base").replace("{}",f.tbl[2][paramId]);
+		console.error(msg);
+		alert(msg);
+	}
+	value=value-0||0;
 	return value;
 },t).
 getP;
