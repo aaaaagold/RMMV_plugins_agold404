@@ -64,7 +64,7 @@
  * 
  * @param BasicBattlerParametersReal
  * @type note
- * @text final basic battler parameters: mhp,mmp,atk,def,mat,mdf,agi,luk right before clampped by min and max.
+ * @text real basic battler parameters: mhp,mmp,atk,def,mat,mdf,agi,luk right before clampped by min and max.
  * @desc texts here has no effects
  * 
  * @param BasicBattlerParametersRealMhp
