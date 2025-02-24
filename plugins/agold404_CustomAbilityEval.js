@@ -170,6 +170,72 @@
  * @desc text here will be put to eval with variable "value" representing original value.
  * 
  * 
+ * @param XparamBattlerParametersFinal
+ * @type note
+ * @text final basic battler parameters: hit,eva,cri,cev,mev,mrf,cnt,hrg,mrg,trg after final calculation calculation.
+ * @desc texts here has no effects
+ * 
+ * @param XparamBattlerParametersFinalHit
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final hit rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalEva
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final evasion rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalCri
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final critical rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalCev
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final (physical) critical evasion rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalMev
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final magical critical evasion rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalMrf
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final magic reflection rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalCnt
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final counter rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalHrg
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final hp regeneration rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalMrg
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final mp regeneration rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param XparamBattlerParametersFinalTrg
+ * @parent XparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final tp regeneration rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * 
  * This plugin can be renamed as you want.
  */
 
@@ -207,6 +273,18 @@ mdf:JSON.parse(params.BasicBattlerParametersFinalMdf||emptyJsonString),
 agi:JSON.parse(params.BasicBattlerParametersFinalAgi||emptyJsonString),
 luk:JSON.parse(params.BasicBattlerParametersFinalLuk||emptyJsonString),
 };
+params._xparamFinal={
+hit:JSON.parse(params.BasicBattlerParametersFinalHit||emptyJsonString),
+eva:JSON.parse(params.BasicBattlerParametersFinalEva||emptyJsonString),
+cri:JSON.parse(params.BasicBattlerParametersFinalCri||emptyJsonString),
+cev:JSON.parse(params.BasicBattlerParametersFinalCev||emptyJsonString),
+mev:JSON.parse(params.BasicBattlerParametersFinalMev||emptyJsonString),
+mrf:JSON.parse(params.BasicBattlerParametersFinalMrf||emptyJsonString),
+cnt:JSON.parse(params.BasicBattlerParametersFinalCnt||emptyJsonString),
+hrg:JSON.parse(params.BasicBattlerParametersFinalHrg||emptyJsonString),
+mrg:JSON.parse(params.BasicBattlerParametersFinalMrg||emptyJsonString),
+trg:JSON.parse(params.BasicBattlerParametersFinalTrg||emptyJsonString),
+};
 
 t=[
 undefined, // 0: dev-reserve
@@ -214,6 +292,7 @@ params, // 1: plugin params
 ['mhp','mmp','atk','def','mat','mdf','agi','luk',], // 2: params
 Utils.isOptionValid('test')||Utils.isOptionValid('btest')||Utils.isOptionValid('etest'), // 3: isTest
 "[ERROR] [CustomAbilityEval] param error: {} {}", // 4: err msg
+['hit','eva','cri','cev','mev','mrf','cnt','hrg','mrg','trg',], // 5: params
 ];
 
 
@@ -260,6 +339,22 @@ add('paramBase',function f(paramId){
 	}
 	if(f.tbl[3]&&s&&isNaN(value)){
 		const msg=f.tbl[4].replace("{}","base").replace("{}",f.tbl[2][paramId]);
+		console.error(msg);
+		alert(msg);
+	}
+	value=value-0||0;
+	return value;
+},t).
+add('xparam',function f(paramId){
+	let value=f.ori.apply(this,arguments);
+	const s=f.tbl[1]._xparamFinal[f.tbl[5][paramId]];
+	if(s){
+		const a=this,user=a;
+		let f;
+		eval(s);
+	}
+	if(f.tbl[3]&&s&&isNaN(value)){
+		const msg=f.tbl[4].replace("{}","xparam").replace("{}",f.tbl[5][paramId]);
 		console.error(msg);
 		alert(msg);
 	}
