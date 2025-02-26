@@ -274,16 +274,16 @@ agi:JSON.parse(params.BasicBattlerParametersFinalAgi||emptyJsonString),
 luk:JSON.parse(params.BasicBattlerParametersFinalLuk||emptyJsonString),
 };
 params._xparamFinal={
-hit:JSON.parse(params.BasicBattlerParametersFinalHit||emptyJsonString),
-eva:JSON.parse(params.BasicBattlerParametersFinalEva||emptyJsonString),
-cri:JSON.parse(params.BasicBattlerParametersFinalCri||emptyJsonString),
-cev:JSON.parse(params.BasicBattlerParametersFinalCev||emptyJsonString),
-mev:JSON.parse(params.BasicBattlerParametersFinalMev||emptyJsonString),
-mrf:JSON.parse(params.BasicBattlerParametersFinalMrf||emptyJsonString),
-cnt:JSON.parse(params.BasicBattlerParametersFinalCnt||emptyJsonString),
-hrg:JSON.parse(params.BasicBattlerParametersFinalHrg||emptyJsonString),
-mrg:JSON.parse(params.BasicBattlerParametersFinalMrg||emptyJsonString),
-trg:JSON.parse(params.BasicBattlerParametersFinalTrg||emptyJsonString),
+hit:JSON.parse(params.XparamBattlerParametersFinalHit||emptyJsonString),
+eva:JSON.parse(params.XparamBattlerParametersFinalEva||emptyJsonString),
+cri:JSON.parse(params.XparamBattlerParametersFinalCri||emptyJsonString),
+cev:JSON.parse(params.XparamBattlerParametersFinalCev||emptyJsonString),
+mev:JSON.parse(params.XparamBattlerParametersFinalMev||emptyJsonString),
+mrf:JSON.parse(params.XparamBattlerParametersFinalMrf||emptyJsonString),
+cnt:JSON.parse(params.XparamBattlerParametersFinalCnt||emptyJsonString),
+hrg:JSON.parse(params.XparamBattlerParametersFinalHrg||emptyJsonString),
+mrg:JSON.parse(params.XparamBattlerParametersFinalMrg||emptyJsonString),
+trg:JSON.parse(params.XparamBattlerParametersFinalTrg||emptyJsonString),
 };
 
 t=[
