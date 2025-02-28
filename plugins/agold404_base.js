@@ -1755,6 +1755,49 @@ addBase('param_clamp',function f(value,paramId){
 getP;
 
 
+new cfc(Game_Action.prototype).
+addBase('isSkill',function f(){
+	return DataManager.isSkill(this.item());
+}).
+addBase('isItem',function f(){
+	return DataManager.isItem(this.item());
+}).
+getP;
+
+
+{ const p=Game_Actor.prototype,f=p.consumeItem;
+new cfc(p).addBase('consumeItem',f);
+}
+new cfc(Game_Battler.prototype).addBase('consumeItem',none);
+
+
+new cfc(BattleManager).
+addBase('startAction',function f(){
+	const subject=this._subject;
+	const action=subject.currentAction();
+	const targets=action.makeTargets();
+	this.startAction_updateManagerState(f.tbl[0],action,targets);
+	this.startAction_useItem(subject,action);
+	this.refreshStatus();
+	this.startAction_updateLogWindow(subject,action,targets);
+},[
+'action', // 0: new phase
+]).
+addBase('startAction_updateManagerState',function f(phase,action,targets){
+	if(phase!==undefined) this._phase=phase;
+	if(action!==undefined) this._action=action;
+	if(targets!==undefined) this._targets=targets;
+}).
+addBase('startAction_useItem',function f(subject,action){
+	subject.useItem(action._item.object());
+	action.applyGlobal();
+}).
+addBase('startAction_updateLogWindow',function f(subject,action,targets){
+	this._logWindow.startAction(subject,action,targets);
+}).
+getP;
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
