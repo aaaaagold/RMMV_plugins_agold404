@@ -71,10 +71,13 @@ addBase('referenceAnotherItem1_arrange',function f(dataobj,i,arr){
 getP;
 
 new cfc(Game_Action.prototype).
-add('item',function f(){
+add('item',function f(isUsingOriginal){
 	const rtv=f.ori.apply(this,arguments);
-	return rtv&&rtv[f.tbl[2]]||rtv;
+	return !isUsingOriginal&&rtv&&rtv[f.tbl[2]]||rtv;
 },t).
+addBase('checkItemScope',function f(list){
+	return list.contains(this.item(true).scope);
+}).
 getP;
 
 
