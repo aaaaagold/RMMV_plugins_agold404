@@ -8,6 +8,9 @@
  * <refer:1>
  * <refer:1,s>
  * 
+ * scope is not referred.
+ * to refer scope, add <referScope>
+ * 
  * 
  * This plugin can be renamed as you want.
  */
@@ -21,7 +24,8 @@ undefined, // 0: dev-reserve
 params, // 1: plugin params
 '_reference', // 2: obj property
 'refer', // 3: note meta property
-"[ERROR][SkillReference] ",
+"[ERROR][SkillReference] ", // 4: err msg
+'referScope', // 5: note meta property
 ];
 
 
@@ -76,8 +80,10 @@ add('item',function f(isUsingOriginal){
 	return !isUsingOriginal&&rtv&&rtv[f.tbl[2]]||rtv;
 },t).
 addBase('checkItemScope',function f(list){
-	return list.contains(this.item(true).scope);
-}).
+	let item=this.item(true);
+	if(item.meta[f.tbl[5]]) item=item[f.tbl[2]]||item;
+	return list.contains(item.scope);
+},t).
 getP;
 
 
