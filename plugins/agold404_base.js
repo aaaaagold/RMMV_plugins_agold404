@@ -1798,6 +1798,70 @@ addBase('startAction_updateLogWindow',function f(subject,action,targets){
 getP;
 
 
+new cfc(Game_Action.prototype).
+addBase('itemEffectAddNormalState',function f(target,effect){
+	const chance=this.itemEffectAddNormalState_calChance.apply(this,arguments);
+	if(this.itemEffectAddNormalState_chanceCondOk(chance,arguments)){
+		this.itemEffectAddNormalState_onSuccess.apply(this,arguments);
+	}
+}).
+addBase('itemEffectAddNormalState_calChance',function f(target,effect){
+	let chance=effect.value1;
+	if(!this.isCertainHit()){
+		chance*=target.stateRate(effect.dataId);
+		chance*=this.lukEffectRate(target);
+	}
+	return chance;
+}).
+addBase('itemEffectAddNormalState_chanceCondOk',function f(chance,argv){
+	return Math.random()<chance;
+}).
+addBase('itemEffectAddNormalState_onSuccess',function f(target,effect){
+	target.addState(effect.dataId);
+	this.makeSuccess(target);
+}).
+addBase('itemEffectRemoveState',function f(target,effect){
+	const chance=this.itemEffectRemoveState_calChance.apply(this,arguments);
+	if(this.itemEffectRemoveState_chanceCondOk(chance,arguments)){
+		this.itemEffectRemoveState_onSuccess.apply(this,arguments);
+	}
+}).
+addBase('itemEffectRemoveState_calChance',function f(target,effect){
+	return effect.value1;
+}).
+addBase('itemEffectRemoveState_chanceCondOk',function f(chance,argv){
+	return Math.random()<chance;
+}).
+addBase('itemEffectRemoveState_onSuccess',function f(target,effect){
+	target.removeState(effect.dataId);
+	this.makeSuccess(target);
+}).
+addBase('itemEffectAddAttackState',function f(target,effect){
+	this.subject().attackStates().forEach(this.itemEffectAddAttackState1.bind(this,target,effect));
+}).
+addBase('itemEffectAddAttackState1',function f(target,effect,stateId){
+	const chance=this.itemEffectAddAttackState1_calChance.apply(this,arguments);
+	if(this.itemEffectAddAttackState1_chanceCondOk(chance,arguments)){
+		this.itemEffectAddAttackState1_onSuccess.apply(this,arguments);
+	}
+}).
+addBase('itemEffectAddAttackState1_chanceCondOk',function f(chance,argv){
+	return Math.random()<chance;
+}).
+addBase('itemEffectAddAttackState1_calChance',function f(target,effect,stateId){
+	let chance=effect.value1;
+	chance*=target.stateRate(stateId);
+	chance*=this.subject().attackStatesRate(stateId);
+	chance*=this.lukEffectRate(target);
+	return chance;
+}).
+addBase('itemEffectAddAttackState1_onSuccess',function f(target,effect,stateId){
+	target.addState(stateId);
+	this.makeSuccess(target);
+}).
+getP;
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
