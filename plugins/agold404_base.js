@@ -2331,7 +2331,7 @@ new Map([
 
 // ---- ---- ---- ---- performance
 
-(()=>{ let k,r,t; return;
+(()=>{ let k,r,t;
 
 if(0){
 // since 'this._loadListeners' will not be long enough to reduce performance consumption by this, not using this.
