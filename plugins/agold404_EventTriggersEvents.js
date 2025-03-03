@@ -27,24 +27,54 @@ function(evt){
 
 new cfc(Game_Event.prototype).
 addBase('startEventAt',function f(x,y,p){
-	$gameMap.eventsXy(x,y,p).forEach(f.tbl[2],this);
+	(p===undefined?$gameMap.eventsXy(x,y):$gameMap.eventsXy(x,y,p)).forEach(f.tbl[2],this);
 },t).
 add('updateMove_1stepDone',function f(){
-	this.startEventAt(this.x,this.y,0);
-	this.startEventAt(this.x,this.y,2);
+	this.updateMove_eventTriggersEvents();
 	return f.ori.apply(this,arguments);
 }).
+addBase('updateMove_eventTriggersEvents',function f(){
+	this.updateMove_triggerHere();
+	this.updateMove_initiativeTrigger();
+}).
+addBase('updateMove_triggerHere',function f(){
+	this.startEventAt(this.x,this.y,0);
+	this.startEventAt(this.x,this.y,2);
+}).
+addBase('updateMove_initiativeTrigger',function f(){
+	if(this._priorityType===DataManager._def_normalPriority) return;
+	this.eventTriggersEvents_initiativeTrigger(this.x,this.y);
+}).
 add('moveFailOn',function f(lastX,lastY,d){
+	this.moveFailOn_eventTriggersEvents.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('moveFailOn_eventTriggersEvents',function f(lastX,lastY,d){
 	const x=$gameMap.roundXWithDirection(lastX,d);
 	const y=$gameMap.roundYWithDirection(lastY,d);
-	this.startEventAt(x,y,1);
-	return f.ori.apply(this,arguments);
+	this.moveFailOn_triggerFront(x,y);
+	this.moveFailOn_initiativeTrigger(x,y);
+}).
+addBase('moveFailOn_triggerFront',function f(targetX,targetY){
+	this.startEventAt(targetX,targetY,1);
+}).
+addBase('moveFailOn_initiativeTrigger',function f(targetX,targetY){
+	this.eventTriggersEvents_initiativeTrigger(targetX,targetY);
 }).
 add('updateJump_1stepDone',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.startEventAt(this.x,this.y,0);
 	this.startEventAt(this.x,this.y,2);
 	return rtv;
+}).
+addBase('eventTriggersEvents_initiativeTrigger',function f(x,y){
+	if(this._trigger!==2||this.isStarting()) return;
+	if(this._priorityType!==DataManager._def_normalPriority){
+		x=this.x;
+		y=this.y;
+	}
+	const evt=$gameMap.eventsXy(x,y)[0];
+	if(evt) this.start(evt);
 }).
 getP;
 
