@@ -2357,6 +2357,73 @@ new cfc(Bitmap.prototype).add('initialize',function f(w,h){
 });
 }
 
+
+{ const p=Game_Action.prototype;
+new cfc(p).
+addBase('_itemEffectRecoverHp',function f(target,effect){
+	return this.itemEffectRecoverHp.apply(target,effect);
+}).
+addBase('_itemEffectRecoverMp',function f(target,effect){
+	return this.itemEffectRecoverMp.apply(target,effect);
+}).
+addBase('_itemEffectGainTp',function f(target,effect){
+	return this.itemEffectGainTp.apply(target,effect);
+}).
+addBase('_itemEffectAddState',function f(target,effect){
+	return this.itemEffectAddState.apply(target,effect);
+}).
+addBase('_itemEffectRemoveState',function f(target,effect){
+	return this.itemEffectRemoveState.apply(target,effect);
+}).
+addBase('_itemEffectAddBuff',function f(target,effect){
+	return this.itemEffectAddBuff.apply(target,effect);
+}).
+addBase('_itemEffectAddDebuff',function f(target,effect){
+	return this.itemEffectAddDebuff.apply(target,effect);
+}).
+addBase('_itemEffectRemoveBuff',function f(target,effect){
+	return this.itemEffectRemoveBuff.apply(target,effect);
+}).
+addBase('_itemEffectRemoveDebuff',function f(target,effect){
+	return this.itemEffectRemoveDebuff.apply(target,effect);
+}).
+addBase('_itemEffectSpecial',function f(target,effect){
+	return this.itemEffectSpecial.apply(target,effect);
+}).
+addBase('_itemEffectGrow',function f(target,effect){
+	return this.itemEffectGrow.apply(target,effect);
+}).
+addBase('_itemEffectLearnSkill',function f(target,effect){
+	return this.itemEffectLearnSkill.apply(target,effect);
+}).
+addBase('_itemEffectCommonEvent',function f(target,effect){
+	return this.itemEffectCommonEvent.apply(target,effect);
+}).
+addBase('applyItemEffect',function f(target,effect){
+	const func=f.tbl[0].get(effect.code);
+	if(func) func.apply(this,arguments);
+	else if(f.tbl[1]) console.warn("[WARNING] Game_Action.prototype.applyItemEffect: using un-handled effect code");
+},t=[
+new Map([
+	[Game_Action.EFFECT_RECOVER_HP,p._itemEffectRecoverHp],
+	[Game_Action.EFFECT_RECOVER_MP,p._itemEffectRecoverMp],
+	[Game_Action.EFFECT_GAIN_TP   ,p._itemEffectGainTp   ],
+	[Game_Action.EFFECT_ADD_STATE   ,p._itemEffectAddState   ],
+	[Game_Action.EFFECT_REMOVE_STATE,p._itemEffectRemoveState],
+	[Game_Action.EFFECT_ADD_BUFF     ,p._itemEffectAddBuff     ],
+	[Game_Action.EFFECT_ADD_DEBUFF   ,p._itemEffectAddDebuff   ],
+	[Game_Action.EFFECT_REMOVE_BUFF  ,p._itemEffectRemoveBuff  ],
+	[Game_Action.EFFECT_REMOVE_DEBUFF,p._itemEffectRemoveDebuff],
+	[Game_Action.EFFECT_SPECIAL,p._itemEffectSpecial],
+	[Game_Action.EFFECT_GROW       ,p._itemEffectGrow      ],
+	[Game_Action.EFFECT_LEARN_SKILL,p._itemEffectLearnSkill],
+	[Game_Action.EFFECT_COMMON_EVENT,p._itemEffectCommonEvent],
+]), // 0: tbl
+window.isTest(), // 1: isTest
+]).
+getP;
+}
+
 })(); // performance
 
 // ---- ---- ---- ---- shorthand
