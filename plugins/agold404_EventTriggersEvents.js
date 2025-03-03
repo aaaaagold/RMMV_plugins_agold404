@@ -73,7 +73,8 @@ addBase('eventTriggersEvents_initiativeTrigger',function f(x,y){
 		x=this.x;
 		y=this.y;
 	}
-	const evt=$gameMap.eventsXy(x,y)[0];
+	const arr=$gameMap.eventsXy(x,y);
+	const evt=arr[0]===this?arr[1]:arr[0];
 	if(evt) this.start(evt);
 }).
 getP;
