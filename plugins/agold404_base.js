@@ -2362,43 +2362,43 @@ new cfc(Bitmap.prototype).add('initialize',function f(w,h){
 { const p=Game_Action.prototype;
 new cfc(p).
 addBase('_itemEffectRecoverHp',function f(target,effect){
-	return this.itemEffectRecoverHp.apply(target,effect);
+	return this.itemEffectRecoverHp.apply(this,arguments);
 }).
 addBase('_itemEffectRecoverMp',function f(target,effect){
-	return this.itemEffectRecoverMp.apply(target,effect);
+	return this.itemEffectRecoverMp.apply(this,arguments);
 }).
 addBase('_itemEffectGainTp',function f(target,effect){
-	return this.itemEffectGainTp.apply(target,effect);
+	return this.itemEffectGainTp.apply(this,arguments);
 }).
 addBase('_itemEffectAddState',function f(target,effect){
-	return this.itemEffectAddState.apply(target,effect);
+	return this.itemEffectAddState.apply(this,arguments);
 }).
 addBase('_itemEffectRemoveState',function f(target,effect){
-	return this.itemEffectRemoveState.apply(target,effect);
+	return this.itemEffectRemoveState.apply(this,arguments);
 }).
 addBase('_itemEffectAddBuff',function f(target,effect){
-	return this.itemEffectAddBuff.apply(target,effect);
+	return this.itemEffectAddBuff.apply(this,arguments);
 }).
 addBase('_itemEffectAddDebuff',function f(target,effect){
-	return this.itemEffectAddDebuff.apply(target,effect);
+	return this.itemEffectAddDebuff.apply(this,arguments);
 }).
 addBase('_itemEffectRemoveBuff',function f(target,effect){
-	return this.itemEffectRemoveBuff.apply(target,effect);
+	return this.itemEffectRemoveBuff.apply(this,arguments);
 }).
 addBase('_itemEffectRemoveDebuff',function f(target,effect){
-	return this.itemEffectRemoveDebuff.apply(target,effect);
+	return this.itemEffectRemoveDebuff.apply(this,arguments);
 }).
 addBase('_itemEffectSpecial',function f(target,effect){
-	return this.itemEffectSpecial.apply(target,effect);
+	return this.itemEffectSpecial.apply(this,arguments);
 }).
 addBase('_itemEffectGrow',function f(target,effect){
-	return this.itemEffectGrow.apply(target,effect);
+	return this.itemEffectGrow.apply(this,arguments);
 }).
 addBase('_itemEffectLearnSkill',function f(target,effect){
-	return this.itemEffectLearnSkill.apply(target,effect);
+	return this.itemEffectLearnSkill.apply(this,arguments);
 }).
 addBase('_itemEffectCommonEvent',function f(target,effect){
-	return this.itemEffectCommonEvent.apply(target,effect);
+	return this.itemEffectCommonEvent.apply(this,arguments);
 }).
 addBase('applyItemEffect',function f(target,effect){
 	const func=f.tbl[0].get(effect.code);
