@@ -22,6 +22,9 @@ window[f.name]=f;
 console.log(getPluginNameViaSrc(document.currentScript.src));
 }
 
+window._isTest=Utils.isOptionValid('test')||Utils.isOptionValid('btest')||Utils.isOptionValid('etest');
+window.isTest=()=>window._isTest;
+
 new cfc(Decrypter).addBase('checkImgIgnore',function(url){
 	return this._ignoreList.uniqueHas(url) || ResourceHandler.isDirectPath(url);
 }).add('decryptArrayBuffer',function f(arrayBuffer,refHeader){
