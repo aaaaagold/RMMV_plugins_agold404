@@ -2351,6 +2351,7 @@ new cfc(Bitmap.prototype).add('initialize',function f(w,h){
 }).addBase('_callLoadListeners',function f(){
 	while(this._loadListeners_strt<this._loadListeners.length){
 		const listener=this._loadListeners[this._loadListeners_strt++];
+		// for handling while{try..catch}, strt must ++.
 		listener(this);
 	}
 	this._loadListeners.length=this._loadListeners_strt=0;
