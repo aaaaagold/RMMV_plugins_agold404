@@ -21,7 +21,7 @@ t=[
 undefined,
 params, // 1: plugin params
 function(evt){
-	if(!evt.isStarting()&&evt.getMeta().triggeredByEvents) evt.start(this);
+	if(this!==evt&&!evt.isStarting()&&evt.getMeta().triggeredByEvents) evt.start(this);
 }, // 2: forEach events start
 ];
 
