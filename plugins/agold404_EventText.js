@@ -41,7 +41,7 @@ new cfc(Game_Character.prototype).add('getTextv',function f(){
 	this._textv=arr;
 	if(isAutoUpdateSprite){
 		const sp=SceneManager.getSprite(this);
-		if(sp) sp.setChrTextv(arr);
+		if(sp) sp.setChrTextv(this.getTextv()); // event._erased
 	}
 	return this;
 });
@@ -88,10 +88,19 @@ new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 	return this;
 });
 
-new cfc(Game_Event.prototype).add('setupPageSettings',function f(){
-	const page=f.ori.apply(this,arguments);
-	this.setTextv(page.textv&&page.textv.length?page.textv:undefined,true);
-	return page;
-});
+new cfc(Game_Event.prototype).
+add('setupPage',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	const page=this.page();
+	this.setTextv(page&&page.textv&&page.textv.length?page.textv:undefined,true);
+	return rtv;
+}).
+add('getTextv',function f(){
+	if(this._erased) return f.tbl[0];
+	return f.ori.apply(this,arguments);
+},[
+[], // 0: empty
+]).
+getP;
 
 })();
