@@ -1772,6 +1772,49 @@ addBase('scrollDown_getNewDisplayY',function(distance){
 }).
 getP;
 
+new cfc(Game_Player.prototype).
+addBase('update',function(sceneActive) {
+	this.update_saveWasMoving();
+	this.update_saveLastScroll();
+	
+	this.updateDashing();
+	if(sceneActive) this.update_sceneActive();
+	Game_Character.prototype.update.call(this);
+	this.update_callUpdateScroll();
+	this.updateVehicle();
+	if(!this.isMoving()) this.update_callUpdateNonmoving();
+	this.update_updateFollowers();
+	
+	this.update_clearLastScroll();
+	this.update_clearWasMoving();
+}).
+addBase('update_saveLastScroll',function f(){
+	this._lastScrolledX=this.scrolledX();
+	this._lastScrolledY=this.scrolledY();
+}).
+addBase('update_saveWasMoving',function f(){
+	this._wasMoving=this.isMoving();
+}).
+addBase('update_sceneActive',function f(){
+	this.moveByInput();
+}).
+addBase('update_callUpdateScroll',function f(){
+	this.updateScroll(this._lastScrolledX,this._lastScrolledY);
+}).
+addBase('update_callUpdateNonmoving',function f(){
+	this.updateNonmoving(this._wasMoving);
+}).
+addBase('update_updateFollowers',function f(){
+	this._followers.update();
+}).
+addBase('update_clearLastScroll',function f(){
+	this._lastScrollY=this._lastScrollX=undefined;
+}).
+addBase('update_clearWasMoving',function f(){
+	this._wasMoving=undefined;
+}).
+getP;
+
 
 new cfc(Game_CharacterBase.prototype).
 addBase('updateMove',function f(){
