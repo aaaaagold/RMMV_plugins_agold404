@@ -21,8 +21,11 @@ t=[
 undefined,
 params, // 1: plugin params
 function(evt){
-	if(this!==evt&&!evt.isStarting()&&evt.getMeta().triggeredByEvents) evt.start(this);
+	if(this!==evt&&!this._erased&&!evt._erased&&!evt.isStarting()&&evt.getMeta().triggeredByEvents) evt.start(this);
 }, // 2: forEach events start
+function(evt){
+	return this!==evt&&!evt._erased;
+}, // 3: initiativeTrigger filter
 ];
 
 new cfc(Game_Event.prototype).
@@ -63,20 +66,30 @@ addBase('moveFailOn_initiativeTrigger',function f(targetX,targetY){
 }).
 add('updateJump_1stepDone',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	this.startEventAt(this.x,this.y,0);
-	this.startEventAt(this.x,this.y,2);
+	this.updateJump_eventTriggersEvents();
 	return rtv;
 }).
+addBase('updateJump_eventTriggersEvents',function f(){
+	this.updateJump_triggerHere();
+	this.updateJump_initiativeTrigger();
+}).
+addBase('updateJump_triggerHere',function f(){
+	this.startEventAt(this.x,this.y,0);
+	this.startEventAt(this.x,this.y,2);
+}).
+addBase('updateJump_initiativeTrigger',function f(){
+	if(this._priorityType===DataManager._def_normalPriority) return;
+	this.eventTriggersEvents_initiativeTrigger(this.x,this.y);
+}).
 addBase('eventTriggersEvents_initiativeTrigger',function f(x,y){
-	if(this._trigger!==2||this.isStarting()) return;
+	if(this._trigger!==2||this.isStarting()||!this.getMeta().triggeredByEvents) return;
 	if(this._priorityType!==DataManager._def_normalPriority){
 		x=this.x;
 		y=this.y;
 	}
-	const arr=$gameMap.eventsXy(x,y);
-	const evt=arr[0]===this?arr[1]:arr[0];
+	const evt=$gameMap.eventsXy(x,y).find(f.tbl[3],this);
 	if(evt) this.start(evt);
-}).
+},t).
 getP;
 
 
