@@ -1675,6 +1675,104 @@ new cfc(ConfigManager).addBase('readFlag',function f(config,name,defaultValue){
 });
 
 
+new cfc(Game_Map.prototype).
+addBase('setDisplayX',function f(newDisplayX){
+	this._displayX=newDisplayX;
+}).
+addBase('setDisplayY',function f(newDisplayY){
+	this._displayY=newDisplayY;
+}).
+addBase('setDisplayPos',function f(x,y){
+	this.setDisplayPos_x(x,y);
+	this.setDisplayPos_y(x,y);
+}).
+addBase('setDisplayPos_x',function f(x,y){
+	const newDisplayX=this.setDisplayPos_getNewDisplayX(x,y);
+	this._parallaxX=this.isLoopHorizontal()?x:newDisplayX;
+	this.setDisplayX(newDisplayX);
+}).
+addBase('setDisplayPos_getNewDisplayX',function f(x,y){
+	let rtv;
+	if(this.isLoopHorizontal()) rtv=(x-0).mod(this.width());
+	else{
+		const endX=this.width()-this.screenTileX();
+		rtv=endX<0?endX/2:(x-0).clamp(0,endX);
+	}
+	return rtv;
+}).
+addBase('setDisplayPos_y',function f(x,y){
+	const newDisplayY=this.setDisplayPos_getNewDisplayY(x,y);
+	this._parallaxY=this.isLoopVertical()?y:newDisplayY;
+	this.setDisplayY(newDisplayY);
+}).
+addBase('setDisplayPos_getNewDisplayY',function f(x,y){
+	let rtv;
+	if(this.isLoopVertical()) rtv=(y-0).mod(this.height());
+	else{
+		const endY=this.height()-this.screenTileY();
+		rtv=endY<0?endY/2:(y-0).clamp(0,endY);
+	}
+	return rtv;
+}).
+addBase('scrollLeft',function f(distance){
+	const newDisplayX=this.scrollLeft_getNewDisplayX(distance);
+	if(this._parallaxLoopX&&this.isLoopHorizontal()) this._parallaxX-=distance;
+	else if(this.width()>=this.screenTileX()) this._parallaxX+=newDisplayX-this._displayX;
+	this.setDisplayX(newDisplayX);
+}).
+addBase('scrollLeft_getNewDisplayX',function(distance){
+	let rtv=this._displayX;
+	if(this.isLoopHorizontal()){
+		rtv+=$dataMap.width-distance;
+		rtv%=$dataMap.width;
+	}else if(this.width()>=this.screenTileX()) rtv=Math.max(rtv-distance,0);
+	return rtv;
+}).
+addBase('scrollRight',function f(distance){
+	const newDisplayX=this.scrollRight_getNewDisplayX(distance);
+	if(this._parallaxLoopX&&this.isLoopHorizontal()) this._parallaxX+=distance;
+	else if(this.width()>=this.screenTileX()) this._parallaxX+=newDisplayX-this._displayX;
+	this.setDisplayX(newDisplayX);
+}).
+addBase('scrollRight_getNewDisplayX',function(distance){
+	let rtv=this._displayX;
+	if(this.isLoopHorizontal()){
+		rtv+=distance;
+		rtv%=$dataMap.width;
+	}else if(this.width()>=this.screenTileX()) rtv=Math.min(rtv+distance,this.width()-this.screenTileX());
+	return rtv;
+}).
+addBase('scrollUp',function f(distance){
+	const newDisplayY=this.scrollUp_getNewDisplayY(distance);
+	if(this._parallaxLoopY&&this.isLoopVertical()) this._parallaxY-=distance;
+	else if(this.height()>=this.screenTileY()) this._parallaxY+=newDisplayY-this._displayY;
+	this.setDisplayY(newDisplayY);
+}).
+addBase('scrollUp_getNewDisplayY',function(distance){
+	let rtv=this._displayY;
+	if(this.isLoopVertical()){
+		rtv+=$dataMap.height-distance;
+		rtv%=$dataMap.height;
+	}else if(this.height()>=this.screenTileY()) rtv=Math.max(rtv-distance,0);
+	return rtv;
+}).
+addBase('scrollDown',function f(distance){
+	const newDisplayY=this.scrollDown_getNewDisplayY(distance);
+	if(this._parallaxLoopY&&this.isLoopVertical()) this._parallaxY+=distance;
+	else if(this.height()>=this.screenTileY()) this._parallaxY+=newDisplayY-this._displayY;
+	this.setDisplayY(newDisplayY);
+}).
+addBase('scrollDown_getNewDisplayY',function(distance){
+	let rtv=this._displayY;
+	if(this.isLoopVertical()){
+		rtv+=distance;
+		rtv%=$dataMap.height;
+	}else if(this.height()>=this.screenTileY()) rtv=Math.min(rtv+distance,this.height()-this.screenTileY());
+	return rtv;
+}).
+getP;
+
+
 new cfc(Game_CharacterBase.prototype).
 addBase('updateMove',function f(){
 	// only called when 'this.isMoving()' is true
