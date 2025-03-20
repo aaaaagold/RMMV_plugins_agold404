@@ -22,7 +22,7 @@ window[f.name]=f;
 console.log(getPluginNameViaSrc(document.currentScript.src));
 }
 
-window._isTest=Utils.isOptionValid('test')||Utils.isOptionValid('btest')||Utils.isOptionValid('etest');
+window._isTest=getUrlParamVal('test')||Utils.isOptionValid('test')||Utils.isOptionValid('btest')||Utils.isOptionValid('etest');
 window.isTest=()=>window._isTest;
 
 new cfc(Decrypter).addBase('checkImgIgnore',function(url){
@@ -1023,7 +1023,8 @@ function(src,e) {
 }).addBase('onLoad_after',function f(obj,name,src,msg){
 	const func=f.tbl.get(name);
 	return func && func.apply(this,arguments);
-}).addBase('_onLoad_before_map',function f(obj,name,src,msg){
+}).
+addBase('_onLoad_before_map',function f(obj,name,src,msg){
 	const evtds=obj&&obj.events; if(evtds) evtds._template=evtds[0]=JSON.parse(JSON.stringify(f.tbl[0])); // 'evtds[0]' is restored to 'null' after onLoad
 	return this.onLoad_before_map.apply(this,arguments);
 },[
@@ -1036,7 +1037,8 @@ function(src,e) {
 	// dummy
 }).addBase('onLoad_after_map',function f(obj,name,src,msg){
 	// dummy
-}).addBase('_onLoad_before_skill',function f(obj,name,src,msg){
+}).
+addBase('_onLoad_before_skill',function f(obj,name,src,msg){
 	return this.onLoad_before_skill.apply(this,arguments);
 }).addBase('_onLoad_after_skill',function f(obj,name,src,msg){
 	return this.onLoad_after_skill.apply(this,arguments);
@@ -1044,7 +1046,17 @@ function(src,e) {
 	// dummy
 }).addBase('onLoad_after_skill',function f(obj,name,src,msg){
 	// dummy
-}).addBase('_onLoad_before_troop',function f(obj,name,src,msg){
+}).
+addBase('_onLoad_before_enemy',function f(obj,name,src,msg){
+	return this.onLoad_before_enemy.apply(this,arguments);
+}).addBase('_onLoad_after_enemy',function f(obj,name,src,msg){
+	return this.onLoad_after_enemy.apply(this,arguments);
+}).addBase('onLoad_before_enemy',function f(obj,name,src,msg){
+	// dummy
+}).addBase('onLoad_after_enemy',function f(obj,name,src,msg){
+	// dummy
+}).
+addBase('_onLoad_before_troop',function f(obj,name,src,msg){
 	return this.onLoad_before_troop.apply(this,arguments);
 }).addBase('_onLoad_after_troop',function f(obj,name,src,msg){
 	return this.onLoad_after_troop.apply(this,arguments);
@@ -1052,7 +1064,8 @@ function(src,e) {
 	// dummy
 }).addBase('onLoad_after_troop',function f(obj,name,src,msg){
 	// dummy
-}).addBase('_onLoad_before_tileset',function f(obj,name,src,msg){
+}).
+addBase('_onLoad_before_tileset',function f(obj,name,src,msg){
 	return this.onLoad_before_tileset.apply(this,arguments);
 }).addBase('_onLoad_after_tileset',function f(obj,name,src,msg){
 	return this.onLoad_after_tileset.apply(this,arguments);
@@ -1060,7 +1073,8 @@ function(src,e) {
 	// dummy
 }).addBase('onLoad_after_tileset',function f(obj,name,src,msg){
 	// dummy
-}).addBase('_onLoad_before_commonEvent',function f(obj,name,src,msg){
+}).
+addBase('_onLoad_before_commonEvent',function f(obj,name,src,msg){
 	return this.onLoad_before_commonEvent.apply(this,arguments);
 }).addBase('_onLoad_after_commonEvent',function f(obj,name,src,msg){
 	return this.onLoad_after_commonEvent.apply(this,arguments);
@@ -1068,7 +1082,8 @@ function(src,e) {
 	// dummy
 }).addBase('onLoad_after_commonEvent',function f(obj,name,src,msg){
 	// dummy
-}).addBase('_onLoad_before_system',function f(obj,name,src,msg){
+}).
+addBase('_onLoad_before_system',function f(obj,name,src,msg){
 	return this.onLoad_before_system.apply(this,arguments);
 }).addBase('_onLoad_after_system',function f(obj,name,src,msg){
 	return this.onLoad_after_system.apply(this,arguments);
@@ -1076,11 +1091,13 @@ function(src,e) {
 	// dummy
 }).addBase('onLoad_after_system',function f(obj,name,src,msg){
 	// dummy
-});
+}).
+getP;
 { const p=DataManager;
 p.onLoad_before.tbl=new Map([
 	['$dataMap',	p._onLoad_before_map],
 	['$dataSkills',	p._onLoad_before_skill],
+	['$dataEnemies',	p._onLoad_before_enemy],
 	['$dataTroops',	p._onLoad_before_troop],
 	['$dataTilesets',	p._onLoad_before_tileset],
 	['$dataCommonEvents',	p._onLoad_before_commonEvent],
@@ -1089,6 +1106,7 @@ p.onLoad_before.tbl=new Map([
 p.onLoad_after.tbl=new Map([
 	['$dataMap',	p._onLoad_after_map],
 	['$dataSkills',	p._onLoad_after_skill],
+	['$dataEnemies',	p._onLoad_after_enemy],
 	['$dataTroops',	p._onLoad_after_troop],
 	['$dataTilesets',	p._onLoad_after_tileset],
 	['$dataCommonEvents',	p._onLoad_after_commonEvent],
@@ -2245,6 +2263,7 @@ new cfc(DataManager).addBase('getDebugInfo',function f(){
 		mapId:$gameMap&&$gameMap._mapId,
 		xy:$gamePlayer&&({x:$gamePlayer.x,y:$gamePlayer.y}),
 		xyReal:$gamePlayer&&({x:$gamePlayer._realX,y:$gamePlayer._realY}),
+		troopId:$gameTroop&&$gameTroop._troopId,
 	});
 }).addBase('getDebugInfoStr',function f(){
 	const res=[];
@@ -2254,6 +2273,7 @@ new cfc(DataManager).addBase('getDebugInfo',function f(){
 	res.push("mapId: "+info.mapId);
 	res.push("xy: "+JSON.stringify(info.xy||null));
 	res.push("xyReal: "+JSON.stringify(info.xyReal||null));
+	res.push("troopId: "+info.troopId);
 	return res.join(' ; ');
 });
 
