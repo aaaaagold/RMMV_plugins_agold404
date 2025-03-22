@@ -3899,8 +3899,8 @@ new cfc(Bitmap.prototype).add('_onLoad',function f(){
 { const p=ImageManager;
 p.isDirectPath=ResourceHandler.isDirectPath;
 p.splitUrlQueryHash=window.splitUrlQueryHash;
-k='_loadBitmap';
-r=p[k]; (p[k]=function(isReserve, folder, filename, hue, smooth, reservationId){
+new cfc(p).
+addBase('_loadBitmap',function(isReserve, folder, filename, hue, smooth, reservationId){
 	if(filename){
 		let path;
 		if(this.isDirectPath(filename)) path=filename;
@@ -3915,27 +3915,31 @@ r=p[k]; (p[k]=function(isReserve, folder, filename, hue, smooth, reservationId){
 		bitmap.smooth = smooth;
 		return bitmap;
 	}else return this.loadEmptyBitmap();
-}).ori=r;
-k='loadBitmap';
-r=p[k]; (p[k]=function(folder, filename, hue, smooth){
+}).
+addBase('loadBitmap',function(folder, filename, hue, smooth){
 	return this._loadBitmap(false, folder, filename, hue, smooth);
-}).ori=r;
-k='reserveBitmap';
-r=p[k]; (p[k]=function(folder, filename, hue, smooth, reservationId){
+}).
+addBase('reserveBitmap',function(folder, filename, hue, smooth, reservationId){
 	return this._loadBitmap(true , folder, filename, hue, smooth, reservationId);
-}).ori=r;
-k='loadNormalBitmap';
-r=p[k]; (p[k]=function(path, hue){
+}).
+addBase('loadNormalBitmap',function f(path, hue){
 	if(!path) return ImageManager.loadEmptyBitmap();
 	const key=this._generateCacheKey(path, hue);
 	let bitmap=this._imageCache.get(key);
 	if(!bitmap){
 		this._imageCache.add(key,bitmap=Bitmap.load(path));
 		bitmap._cacheKey=key;
-		bitmap.addLoadListener(()=>bitmap.rotateHue(hue));
+		bitmap._hue=hue;
+		bitmap.addLoadListener(f.tbl[0]);
 	}else if(!bitmap.isReady()) bitmap.decode();
 	return bitmap;
-}).ori=r;
+},[
+bmp=>bmp.rotateHue(bmp._hue), // 0: bmp onload
+]).
+addBase('_generateCacheKey',function f(path,hue){
+	return hue?path+':'+hue:path;
+}).
+getP;
 }
 
 ImageCache.prototype.del=function f(key){
