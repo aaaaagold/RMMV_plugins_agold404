@@ -53,6 +53,10 @@ p.addBase=function(key,f,t){
 	return this;
 };
 p.getP=function(){ return this._p; };
+a.getRoot=func=>{
+	if(func) while(func._dbg) func=func._dbg;
+	return func;
+};
 window[a.name]=a;
 }
 
