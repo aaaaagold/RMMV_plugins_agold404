@@ -8,7 +8,7 @@
  *    |= 0 at the start
  *   if < 0 : clear cameraChasing setting
  *   if > 0 : takes `smoothFrames` frames
- *   if == 0 : takes 1 frame and clear cameraChasing setting at the end (used with sineFrames and delayFrames)
+ *   if == 0 : takes 1 frame and clear cameraChasing setting after sineFrames+delayFrames frames
  * sineFrames: the newest frame will reference init_display_xy (i.e. _displayX and _displayY from the function is called) with a smoothly-sine-wave ratio from 1 to 0
  *    |= 0 at the start
  *   if < 0 : = 0
