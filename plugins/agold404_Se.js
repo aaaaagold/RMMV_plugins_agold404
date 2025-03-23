@@ -4,7 +4,7 @@
  * @author agold404
  * @help se echo api: 
  * 
- * $gameSystem.seEcho_opt_set({delayFrame:21,nextVolRate:0.875});
+ * $gameSystem.seEcho_opt_set({delayFrame:21,nextVolRate:0.875,affectStaticSe:false,});
  * $gameSystem.seEcho_opt_clear();
  * $gameSystem.seEcho_echos_clear();
  * 
@@ -95,12 +95,14 @@ new cfc(Game_System.prototype).add('seEcho_opt_clear',function(){
 		delayFrame:Math.max(opt&&opt.delayFrame,1)||f.tbl[0].delayFrame,
 		minVol:opt&&opt.minVol||f.tbl[0].minVol,
 		nextVolRate:opt&&opt.nextVolRate||f.tbl[0].nextVolRate,
+		affectStaticSe:opt&&opt.affectStaticSe||f.tbl[0].affectStaticSe,
 	};
 },[
 {
 delayFrame:4,
 minVol:1.0/128,
 nextVolRate:0.75,
+affectStaticSe:false,
 },
 ]).add('seEcho_opt_get',function f(){
 	return this._seEcho_opt;
@@ -113,6 +115,10 @@ nextVolRate:0.75,
 }).add('seEcho_opt_getNextVolRate',function f(opt){
 	opt=opt||this._seEcho_opt;
 	return opt&&opt.nextVolRate;
+})
+.add('seEcho_opt_getAffectStaticSe',function f(opt){
+	opt=opt||this._seEcho_opt;
+	return opt&&opt.affectStaticSe;
 }).add('seEcho_echos_getCont',function f(){
 	let c=this._seEcho_echos; if(!c) c=this._seEcho_echos=new Heap(f.tbl[0]);
 	if(c.constructor!==Heap){
@@ -142,6 +148,9 @@ nextVolRate:0.75,
 const p=AudioManager;
 new cfc(p).add('playSe',function f(se){
 	$gameSystem&&$gameSystem.seEcho_echos_add(se);
+	return f.ori.apply(this,arguments);
+}).add('playStaticSe',function f(se){
+	if($gameSystem&&$gameSystem.seEcho_opt_getAffectStaticSe()) return this.playSe(se);
 	return f.ori.apply(this,arguments);
 });
 p.playSe_ori=p.playSe.ori;
