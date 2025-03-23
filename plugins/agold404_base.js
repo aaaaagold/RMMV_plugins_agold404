@@ -481,7 +481,14 @@ new cfc(TouchInput).addBase('_onTouchStart',function f(event){
 }).addBase('bypassPreventDefault_touch_stackPop',function f(){
 	this._bypassPreventDefault_touch|=0;
 	return --this._bypassPreventDefault_touch_stackSize;
-});
+}).
+addBase('_onMouseMove',function(event) {
+	this._onMove(
+		Graphics.pageToCanvasX(event.pageX),
+		Graphics.pageToCanvasY(event.pageY),
+	);
+}).
+getP;
 //
 new cfc(AudioManager).addBase('audioFileExt',function f(){
 	return f.tbl[0];
