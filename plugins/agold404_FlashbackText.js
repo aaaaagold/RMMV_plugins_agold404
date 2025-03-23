@@ -227,14 +227,38 @@ undefined,
 	const rtv=this._redrawtxt(arr);
 	if(this._scrollTxtY_max===undefined) this._scrollTxtY_max=Math.max(rtv-this.contentsHeight(),0);
 	return rtv;
+}).
+addBase('setScrollSound',function f(newY,lastY){
+	const delta=newY-lastY;
+	if($gameSystem&&$gameSystem.seEcho_opt_set&&$gameSystem.seEcho_echos_clear){
+		if(delta){
+			if(!this._isSePlayedLastFrame){
+				this._isSePlayedLastFrame=true;
+				$gameSystem.seEcho_opt_set({delayFrame:f.tbl[0][0],nextVolRate:f.tbl[0][1],affectStaticSe:f.tbl[0][2],});
+				SoundManager.playCursor();
+			}
+		}else{
+			$gameSystem.seEcho_echos_clear();
+			this._isSePlayedLastFrame=false;
+		}
+	}else{
+		if(delta) SoundManager.playCursor();
+	}
+},[
+[4,0.875,true,], // 0: $gameSystem.seEcho_opt_set
+]).
+addBase('setScrollBar',function f(y){
+	
 }).add('setScrollTxtY',function f(val){
-	if(val<0) val=0;
+	if(val<0) val=0; // not using !(val>=0) for debug
 	if(this._scrollTxtY_max<val) val=this._scrollTxtY_max;
+	this.setScrollSound(val,this._scrollTxtY);
 	if(this._scrollTxtY!==val){
 		this._scrollTxtY=val;
 		this._shouldRedraw=true;
-		if(!val) this.upArrowVisible=false;
-		if(val===this._scrollTxtY_max) this.downArrowVisible=false;
+		this.upArrowVisible=!!val;
+		this.downArrowVisible=val!==this._scrollTxtY_max;
+		this.setScrollBar(this._scrollTxtY);
 	}
 }).add('scrollBottom',function f(){
 	if(!$gameTemp) return;
@@ -267,7 +291,6 @@ undefined,
 		if(Input.isTriggered('home')) delta=-this._scrollTxtY;
 		else delta=this._scrollTxtY_max-this._scrollTxtY||0;
 	}
-	if(delta) SoundManager.playCursor();
 	this.setScrollTxtY(this._scrollTxtY+delta);
 },[16,]).add('processEscapeCharacter',function f(){
 	let tmp;
