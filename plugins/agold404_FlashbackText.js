@@ -58,9 +58,19 @@ new cfc(p).add('updateActor',function f(){
 	wt.y=this._commandWindow.height;
 	this.addWindow(wt);
 }).add('start',function f(){
+	this._seEchoBack=$gameSystem&&$gameSystem.seEcho_opt_get&&$gameSystem.seEcho_opt_get();
 	const rtv=f.ori.apply(this,arguments);
 	this._flashbackTextWindow.scrollBottom().open();
 	return rtv;
+}).
+add('terminate',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.terminate_restoreSeEcho();
+	return rtv;
+}).addBase('terminate_restoreSeEcho',function f(){
+	if(!$gameSystem||!$gameSystem.seEcho_opt_set) return;
+	if(this._seEchoBack) $gameSystem.seEcho_opt_set(this._seEchoBack);
+	else $gameSystem.seEcho_opt_clear();
 }).add('loadImgs',function f(){
 	$gameTemp.flashbackText_getCont().forEach(f.tbl[0]);
 },[
