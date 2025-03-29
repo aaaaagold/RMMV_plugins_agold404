@@ -83,18 +83,28 @@ p.concat_inplace=function(...items){
 	return this;
 };
 p.pop_back=p.pop;
-p.lower_bound=function(val){
+{ const cmpFunc_lt=(a,b)=>a<b;
+(p.lower_bound=function f(val,cmpFunc_lt){
+	cmpFunc_lt=cmpFunc_lt||f._cmpFunc_lt;
 	let l=0,h=this.length;
 	while(l+1<h){
 		const m=(l+h)>>>1;
-		if(this[m]<val) h=m;
+		if(cmpFunc_lt(this[m],val)) l=m;
+		else h=m;
+	}
+	return cmpFunc_lt(this[l],val)?h:l;
+})._cmpFunc_lt=cmpFunc_lt;
+(p.upper_bound=function f(val,cmpFunc_lt){
+	cmpFunc_lt=cmpFunc_lt||f._cmpFunc_lt;
+	let l=0,h=this.length;
+	while(l+1<h){
+		const m=(l+h)>>>1;
+		if(cmpFunc_lt(val,this[m])) h=m;
 		else l=m;
 	}
-	return l;
-};
-p.upper_bound=function(val){
-	return this.length?this.lower_bound(val)+1:0;
-};
+	return cmpFunc_lt(val,this[l])?l:h;
+})._cmpFunc_lt=cmpFunc_lt;
+}
 p.uniqueHas=function(obj){
 	if(!this._map){
 		this._map=new Map();
@@ -128,6 +138,27 @@ p.uniqueClear=function(){
 	this._map.clear();
 	this.length=0;
 };
+p.uniqueGetIdx=function(obj){
+	if(!this._map) return;
+	const idx=this._map.get(obj)-0;
+	return idx>=0?idx:-1;
+};
+p.uniqueSwapObj=function(idx1,idx2){
+	if(!(idx1<this.length&&idx2<this.length)) return -1;
+	const obj1=this[idx1];
+	const obj2=this[idx2];
+	if(this._map){
+		this._map.set(obj2,idx1);
+		this._map.set(obj1,idx2);
+	}
+	this[idx1]=obj2;
+	this[idx2]=obj1;
+};
+p.uniqueSwapIdx=function(obj1,obj2){
+	const idx1=this.uniqueGetIdx(obj1);
+	const idx2=this.uniqueGetIdx(obj2);
+	return this.uniqueSwapObj(idx1,idx2);
+};
 new cfc(p).addBase('uniqueSort',function f(cmpFn=undefined){
 	const arr=this.slice();
 	this.uniqueClear();
@@ -138,6 +169,7 @@ function(x){ this.uniquePush(x); },
 ]).add('sort',function f(cmpFn=undefined){
 	return this._map?this.uniqueSort.apply(this,arguments):f.ori.apply(this,arguments);
 }).add('concat_inplace',function f(...items){
+	// in `this`'s place
 	if(!this._map) return f.ori.apply(this,arguments);
 	for(let i=0,sz=arguments.length;i!==sz;++i){
 		const item=arguments[i];
