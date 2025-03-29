@@ -1427,6 +1427,88 @@ new cfc(p).add('_createAllParts',function f(){
 (()=>{ let k,r,t;
 
 
+new cfc(Game_Party.prototype).
+add('initAllItems',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._items._keys=[];
+	this._weapons._keys=[];
+	this._armors._keys=[];
+	return rtv;
+}).
+addBase('_canBeAddedToList',function f(cont,key,dataobjarr){
+	//return dataobjarr[key]&&0<cont[dataobjarr[key].id];
+	return 0<cont[key]; // for switching between databases
+}).
+addBase('_genItemsList',function f(cont,dataobjarr){
+	if(!cont._keys){
+		// old save file capability
+		const keys=[];
+		for(let k in cont){
+			const item=dataobjarr[k];
+			if(item) keys.push(item.id);
+			else keys.push(k); // for switching between databases
+		}
+		keys._isSorted=true;
+		cont._keys=keys;
+	}
+	const rtv=[],updatedKeys=cont._keys,oldKeys=cont._keys.slice(),s=new Set();
+	if(!updatedKeys._isSorted) oldKeys.sort(cmpFunc_num);
+	updatedKeys._isSorted=true;
+	updatedKeys.uniqueClear();
+	for(let x=0,keys=oldKeys,xs=keys.length;x!==xs;++x){
+		if(!this._canBeAddedToList(cont,keys[x],dataobjarr)) continue;
+		const key=keys[x];
+		const item=dataobjarr[key];
+		if(item){
+			if(!s.has(item.id)){
+				s.add(item.id);
+				updatedKeys.uniquePush(item.id);
+				rtv.push(item);
+			}
+		}else updatedKeys.uniquePush(key); // for switching between databases
+	}
+	return rtv;
+}).
+addBase('items',function f(){
+	return this._genItemsList(this._items,$dataItems);
+}).
+addBase('weapons',function f(){
+	return this._genItemsList(this._weapons,$dataWeapons);
+}).
+addBase('armors',function f(){
+	return this._genItemsList(this._armors,$dataArmors);
+}).
+addBase('minItems',function f(container,item){
+	return 0;
+}).
+addBase('gainItem_onNotGreaterThanZero',function f(container,item){
+	if(container._keys) container._keys.uniquePop(item.id); // old save file capability
+	delete container[item.id];
+}).
+addBase('gainItem',function(item,amount,includeEquip){
+	amount-=0;
+	const container=this.itemContainer(item);
+	if(container&&amount){
+		const lastNumber=this.numItems(item);
+		const newNumber=lastNumber+amount;
+		const minNum=this.minItems(container,item);
+		container[item.id]=newNumber.clamp(minNum,this.maxItems(item));
+		if(container._keys){
+			container._keys._isSorted=false;
+			container._keys.uniquePush(item.id);
+		}
+		if(!(0<container[item.id])) this.gainItem_onNotGreaterThanZero(container,item);
+		if(includeEquip && newNumber<minNum) this.discardMembersEquip(item, minNum-newNumber);
+		$gameMap.requestRefresh();
+	}
+	return container;
+}).
+addBase('allItems',function f(){
+	return [].concat_inplace(this.items(),this.weapons(),this.armors());
+}).
+getP;
+
+
 new cfc(Input).addBase('_getKeyName',function f(event){
 	return this._remapKeyName(event.keyCode);
 }).addBase('_remapKeyName',function f(keyName){
