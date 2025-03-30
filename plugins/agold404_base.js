@@ -1681,6 +1681,29 @@ new cfc(Game_Interpreter.prototype).add('setupChoices',function f(params){
 	this._branch[this._indent]=n;
 });
 
+
+new cfc(Window_Selectable.prototype).
+addBase('processHandling',function f(){
+	if(this.processHandling_condOk()) this.processHandling_do();
+}).
+addBase('processHandling_condOk',function f(){
+	return this.isOpenAndActive();
+}).
+addBase('processHandling_do',function f(){
+	// return true if doing nothing
+	if (this.isOkEnabled() && this.isOkTriggered()) {
+		this.processOk();
+	} else if (this.isCancelEnabled() && this.isCancelTriggered()) {
+		this.processCancel();
+	} else if (this.isHandled('pagedown') && Input.isTriggered('pagedown')) {
+		this.processPagedown();
+	} else if (this.isHandled('pageup') && Input.isTriggered('pageup')) {
+		this.processPageup();
+	} else return true;
+}).
+getP;
+
+
 new cfc(Window.prototype).addBase('_updateCursor',function f(){
 	const bp=this._updateCursor_getBlinkPeriod();
 	const blinkCount=this._animationCount%bp;
