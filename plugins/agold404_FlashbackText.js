@@ -383,21 +383,28 @@ new cfc(Window_Message.prototype).add('startMessage',function f(){
 },t);
 
 if(!enableShortcutScenes.size) return;
-const key='r';
+const key='r',keyName='openFlashback';
 const f=function(){
 	const sc=SceneManager._scene;
 	if(sc && sc.isActive() && $gameTemp && Input.isPressed(f.tbl[0]) && f.tbl[1].has(sc.constructor)) $gameTemp.flashbackText_show();
 };
 f.ori=undefined;
 f.tbl=[
-key,
+keyName,
 enableShortcutScenes,
 ];
-Input.keyMapper[key.toUpperCase().charCodeAt()]=key;
-new cfc(Scene_Boot.prototype).add('start',function f(){
+Input.addKeyName(key.toUpperCase().charCodeAt(),keyName);
+new cfc(Scene_Boot.prototype).
+add('terminate_after',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	if(SceneManager.additionalUpdate_renderScene_add) SceneManager.additionalUpdate_renderScene_add(f.tbl[0],true);
+	this.flashbackText_addKeySensor();
 	return rtv;
-},[f]);
+}).
+addBase('flashbackText_addKeySensor',function f(){
+	if(f._called) return;
+	if(SceneManager.additionalUpdate_renderScene_add) SceneManager.additionalUpdate_renderScene_add(f.tbl[0],true);
+	f._called=true;
+},[f]).
+getP;
 
 })();
