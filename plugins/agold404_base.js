@@ -1511,8 +1511,12 @@ getP;
 
 new cfc(Input).addBase('_getKeyName',function f(event){
 	return this._remapKeyName(event.keyCode);
-}).addBase('_remapKeyName',function f(keyName){
-	return this.keyMapper[keyName]||keyName;
+}).addBase('_remapKeyName',function f(keyCode){
+	return this.keyMapper[keyCode]||keyCode;
+}).
+addBase('addKeyName',function f(keyCode,keyName){
+	this.keyMapper[keyCode]=keyName;
+	return this;
 }).addBase('_onKeyUp',function f(event){
 	return this._onKeyUp_do.apply(this,arguments);
 }).addBase('_onKeyUp_do',function f(event){
@@ -2585,6 +2589,174 @@ new Map([
 // ---- ---- ---- ---- performance
 
 (()=>{ let k,r,t;
+
+
+new cfc(Window.prototype).
+addBase('_refreshCursor',function f(useThisSprite){
+	useThisSprite=useThisSprite||this._windowCursorSprite;
+	const pad = this._padding;
+	const x = this._cursorRect.x + pad - this.origin.x;
+	const y = this._cursorRect.y + pad - this.origin.y;
+	const w = this._cursorRect.width;
+	const h = this._cursorRect.height;
+	const m = 4;
+	const x2 = Math.max(x, pad);
+	const y2 = Math.max(y, pad);
+	const ox = x - x2;
+	const oy = y - y2;
+	const w2 = Math.min(w, this._width - pad - x2);
+	const h2 = Math.min(h, this._height - pad - y2);
+	if(0<w&&0<h) useThisSprite.scale.set(1);
+	else{
+		useThisSprite.scale.set(0);
+		return;
+	}
+	//const bitmap = new Bitmap(w2, h2);
+	this._refreshCursor_createBmpIfNotExists(useThisSprite);
+	
+	const edgeW=useThisSprite._cursorEdgeSizes.left + useThisSprite._cursorEdgeSizes.right;
+	const edgeH=useThisSprite._cursorEdgeSizes.top  + useThisSprite._cursorEdgeSizes.bottom;
+	const midSprite=useThisSprite._cursorSprites[0];
+	if(true||w>=edgeW){
+		const _w=Math.max(w-edgeW,0)||0;
+		const r=_w/midSprite.bitmap.width;
+		midSprite.scale.x=r;
+		useThisSprite._cursorSprites[4].scale.x=r;
+		useThisSprite._cursorSprites[8].scale.x=r;
+		
+		//for(let i=4;--i;) useThisSprite._cursorSprites[i].x=0;
+		for(let i=8;i>=0;i-=4) useThisSprite._cursorSprites[i].x=useThisSprite._cursorEdgeSizes.left;
+		for(let i=8;--i>=5;) useThisSprite._cursorSprites[i].x=useThisSprite._cursorEdgeSizes.left+_w;
+	}else{
+	}
+	if(true||h>=edgeH){
+		const _h=Math.max(h-edgeH,0)||0;
+		const r=_h/midSprite.bitmap.height;
+		midSprite.scale.y=r;
+		useThisSprite._cursorSprites[2].scale.y=r;
+		useThisSprite._cursorSprites[6].scale.y=r;
+		
+		//for(let i=4,arr=[1,7,8];--i;) useThisSprite._cursorSprites[arr[i]].y=0;
+		for(let arr=[2,0,6],i=arr.length;i--;) useThisSprite._cursorSprites[arr[i]].y=useThisSprite._cursorEdgeSizes.top;
+		for(let i=6;--i>=3;) useThisSprite._cursorSprites[i].y=useThisSprite._cursorEdgeSizes.top+_h;
+	}else{
+	}
+	useThisSprite.setFrame(0, 0, w2, h2);
+	useThisSprite.move(x2,y2);
+	
+	return;
+
+	useThisSprite.bitmap = bitmap;
+	//useThisSprite.setFrame(0, 0, w2, h2);
+	useThisSprite.setFrame(0, 0, 1, 1); useThisSprite.scale.set(w2,h2);
+	useThisSprite.move(x2, y2);
+
+	if (w > 0 && h > 0 && this._windowskin) {
+		const skin=this._windowskin;
+		const p=96;
+		const q=48;
+		bitmap.blt(skin, p+m, p+m, q-m*2, q-m*2, ox+m, oy+m, w-m*2, h-m*2);
+		bitmap.blt(skin, p+m, p+0, q-m*2, m, ox+m, oy+0, w-m*2, m);
+		bitmap.blt(skin, p+m, p+q-m, q-m*2, m, ox+m, oy+h-m, w-m*2, m);
+		bitmap.blt(skin, p+0, p+m, m, q-m*2, ox+0, oy+m, m, h-m*2);
+		bitmap.blt(skin, p+q-m, p+m, m, q-m*2, ox+w-m, oy+m, m, h-m*2);
+		bitmap.blt(skin, p+0, p+0, m, m, ox+0, oy+0, m, m);
+		bitmap.blt(skin, p+q-m, p+0, m, m, ox+w-m, oy+0, m, m);
+		bitmap.blt(skin, p+0, p+q-m, m, m, ox+0, oy+h-m, m, m);
+		bitmap.blt(skin, p+q-m, p+q-m, m, m, ox+w-m, oy+h-m, m, m);
+	}
+}).
+addBase('_refreshCursor_createBmpIfNotExists',function f(cursorSprite){
+	const skin=this._windowskin;
+	if(cursorSprite._cursorSprites||!skin) return;
+	const arr=cursorSprite._cursorSprites=[];
+	const edgeSizes=cursorSprite._cursorEdgeSizes={
+		top:4,
+		left:4,
+		right:4,
+		bottom:4,
+		all:[48,48], // referenced image region size
+		offset:[96,96], // referenced image region x,y
+	};
+	
+/*
+	1	8	7
+	2	0	6
+	3	4	5
+*/
+	const ws=[edgeSizes.left,edgeSizes.all[0],edgeSizes.right]; ws[1]-=ws[0]+ws[2]; // widths of left to right
+	const hs=[edgeSizes.top,edgeSizes.all[1],edgeSizes.bottom]; hs[1]-=hs[0]+hs[2]; // heights of top to bottom
+	// transform to prefix sum
+	for(let i=1,sz=ws.length;i<sz;++i) ws[i]+=ws[i-1];
+	for(let i=1,sz=hs.length;i<sz;++i) hs[i]+=hs[i-1];
+	const confs=[
+		// x,y,w,h
+		[ws[0],hs[0],ws[1]-ws[0],hs[1]-hs[0]],  	 // 0
+		[0,0,ws[0]-0,hs[0]-0],                  	 // 1
+		[0,hs[0],ws[0],hs[1]-hs[0]],            	 // 2
+		[0,hs[1],ws[0],hs[2]-hs[1]],            	 // 3
+		[ws[0],hs[1],ws[1]-ws[0],hs[2]-hs[1]],  	 // 4
+		[ws[1],hs[1],ws[2]-ws[1],hs[2]-hs[1]],  	 // 5
+		[ws[1],hs[0],ws[2]-ws[1],hs[1]-hs[0]],  	 // 6
+		[ws[1],0,ws[2]-ws[1],hs[0]-0],          	 // 7
+		[ws[0],0,ws[1]-ws[0],hs[0]-0],          	 // 8
+	];
+	
+	let sp,bmp,x,y,w,h;
+	for(let i=confs.length;i--;){
+		x=confs[i][0];
+		y=confs[i][1];
+		w=confs[i][2];
+		h=confs[i][3];
+		arr[i]=sp=new Sprite(bmp=new Bitmap(w,h));
+		bmp.blt(skin,
+			x+edgeSizes.offset[0],y+edgeSizes.offset[1],w,h,
+			0,0,w,h,
+		);
+		cursorSprite.addChild(sp);
+		sp.move(x,y);
+	}
+}).
+getP;
+
+
+new cfc(Window_Base.prototype).
+addBase('loadWindowskin',function f(){
+	// textColor reads pixel frequently
+	const bmp=ImageManager.loadSystem('Window');
+	bmp._willReadFrequently=true;
+	this.windowskin=bmp;
+	return bmp;
+}).
+getP;
+
+new cfc(Bitmap.prototype).
+addBase('getCtxSettings',function f(){
+	const rtv={};
+	if(this._willReadFrequently) rtv.willReadFrequently=true;
+	return rtv;
+}).
+addBase('_createCanvas',function(width, height){
+	this.__canvas  =this.__canvas||document.createElement('canvas');
+	this.__context =this.__canvas.getContext('2d',this.getCtxSettings());
+	
+	this.__canvas.width  = Math.max(width  ||0,1);
+	this.__canvas.height = Math.max(height ||0,1);
+	
+	if(this._image){
+		const w=Math.max(this._image.width  ||0,1);
+		const h=Math.max(this._image.height ||0,1);
+		this.__canvas.width  =w;
+		this.__canvas.height =h;
+		this._createBaseTexture(this._canvas);
+
+		this.__context.drawImage(this._image,0,0);
+	}
+	
+	this._setDirty();
+}).
+getP;
+
 
 if(0){
 // since 'this._loadListeners' will not be long enough to reduce performance consumption by this, not using this.
