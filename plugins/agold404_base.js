@@ -643,7 +643,7 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 });
 //
 new cfc(Window_Base.prototype).addBase('lineHeight',function f(){
-	return 1+~~(this.standardFontSize()*1.25);
+	return 3+~~(this.standardFontSize()*1.25); // 3 is a experienced value
 }).addBase('positioning',function f(setting,ref){
 	setting=setting||f.tbl;
 	let x,y,w,h;
@@ -1758,6 +1758,33 @@ child=>child.update&&child.update(), // 0: forEach
 ]).addBase('update_before',none,
 ).addBase('update_after',none,
 );
+
+
+new cfc(Window_Help.prototype).
+addBase('initialize',function f(numLines){
+	const x=this.initialX.apply(this,arguments);
+	const y=this.initialY.apply(this,arguments);
+	const width=this.initialWidth.apply(this,arguments);
+	const height=this.initialHeight.apply(this,arguments);
+	Window_Base.prototype.initialize.call(this, x, y, width, height);
+	this._text = '';
+}).
+addBase('initialX',function f(){
+	return 0;
+}).
+addBase('initialY',function f(){
+	return 0;
+}).
+addBase('initialWidth',function f(){
+	return Graphics.boxWidth;
+}).
+addBase('initialHeight',function f(numLines){
+	return this.fittingHeight(useDefaultIfIsNaN(numLines,this.initialNumLines.apply(this,arguments)));
+}).
+addBase('initialNumLines',function f(){
+	return 2;
+}).
+getP;
 
 
 new cfc(Scene_Title.prototype).addBase('drawGameTitle',function f(){
@@ -3381,6 +3408,9 @@ new cfc(Scene_Boot.prototype).addBase('start_after',function f(){
 	this.modItems();
 	this.modTraits();
 	this.modEffects(); // consider passive skill traits referrer to a state 
+	this.modEquipments();
+	this.modDescriptions();
+	this.modAll();
 }).addBase('modTraits',function f(){
 	// order: editor menu
 	$dataActors  .forEach(this.modTrait1.bind(this));
@@ -3392,16 +3422,48 @@ new cfc(Scene_Boot.prototype).addBase('start_after',function f(){
 	$dataEnemies .forEach(this.modTrait1.bind(this));
 	$dataTroops  .forEach(this.modTrait1.bind(this));
 	$dataStates  .forEach(this.modTrait1.bind(this));
-}).addBase('modTrait1',none).add('modEffects',function f(){
+}).
+addBase('modTrait1',none).
+addBase('modEffects',function f(){
 	// order: editor menu
 	$dataSkills  .forEach(this.modEffect1.bind(this));
 	$dataItems   .forEach(this.modEffect1.bind(this));
-}).addBase('modEffect1',none).add('modItems',function f(){
+}).addBase('modEffect1',none).
+addBase('modItems',function f(){
 	// order: editor menu
 	$dataItems   .forEach(this.modItem1.bind(this));
 	$dataWeapons .forEach(this.modItem1.bind(this));
 	$dataArmors  .forEach(this.modItem1.bind(this));
-}).addBase('modItem1',none);
+}).
+addBase('modItem1',none).
+addBase('modEquipments',function f(){
+	// order: editor menu
+	$dataWeapons .forEach(this.modEquipment1.bind(this));
+	$dataArmors  .forEach(this.modEquipment1.bind(this));
+}).
+addBase('modEquipment1',none).
+addBase('modDescriptions',function f(){
+	// order: editor menu
+	$dataSkills  .forEach(this.modDescription1.bind(this));
+	$dataItems   .forEach(this.modDescription1.bind(this));
+	$dataWeapons .forEach(this.modDescription1.bind(this));
+	$dataArmors  .forEach(this.modDescription1.bind(this));
+}).
+addBase('modDescription1',none).
+addBase('modAll',function f(){
+	// order: editor menu
+	$dataActors  .forEach(this.modAll1.bind(this));
+	$dataClasses .forEach(this.modAll1.bind(this));
+	$dataSkills  .forEach(this.modAll1.bind(this));
+	$dataItems   .forEach(this.modAll1.bind(this));
+	$dataWeapons .forEach(this.modAll1.bind(this));
+	$dataArmors  .forEach(this.modAll1.bind(this));
+	$dataEnemies .forEach(this.modAll1.bind(this));
+	$dataTroops  .forEach(this.modAll1.bind(this));
+	$dataStates  .forEach(this.modAll1.bind(this));
+}).
+addBase('modAll1',none).
+getP;
 
 // ---- ---- ---- ---- scene.terminate before/after + clean scene child
 
