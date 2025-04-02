@@ -1,6 +1,6 @@
 ﻿"use strict";
 /*:
- * @plugindesc Customize item sorting order
+ * @plugindesc Customize default line number for Window_Help
  * @author agold404
  * 
  * 
