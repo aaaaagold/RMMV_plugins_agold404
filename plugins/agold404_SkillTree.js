@@ -202,11 +202,12 @@ new cfc(p).add('isTree',function f(){
 		arrv.concat_inplace(classObj.skillTree);
 	}
 	this._skillTree_learnMeta=[];
-	this._maxCols=arrv.length;
 	if(!arrv||!arrv.length) return rtv;
-	const ys=Math.max.apply(null,arrv.map(f.tbl[0]));
+	const ys=arrv.length;
+	const xs=Math.max.apply(null,arrv.map(f.tbl[0]));
+	this._maxCols=xs;
 	for(let y=0;y!==ys;++y){
-		for(let x=0,xs=arrv.length;x!==xs;++x){
+		for(let x=0;x!==xs;++x){
 			const info=this.makeItemList_tree_getSkillInfo(arrv,x,y);
 			rtv.push($dataSkills[info.id]||undefined);
 			this._skillTree_learnMeta.push(info);
@@ -222,7 +223,7 @@ arr=>arr&&arr.length||0,
 ]).add('makeItemList_tree_getSkillInfo',function f(arrv,x,y){
 	arrv=arrv||this._skillTree;
 	if(!arrv) return;
-	const info=arrv[x]&&arrv[x][y];
+	const info=arrv[y]&&arrv[y][x];
 	let id=info,cond,consume,connect,condFailMsg;
 	if(info instanceof Array){
 		id=info[0];
@@ -267,19 +268,75 @@ arr=>arr&&arr.length||0,
 	ctx.save();
 		ctx.lineWidth=linkWidth;
 		ctx.strokeStyle=linkColor;
-	for(let idx=this._data.length;idx-->maxCols;){
+	for(let idx=this._data.length;idx-->0;){
 		const item=this.item(idx);
-		const info=this._skillTree_learnMeta[idx]; if(!info) continue;
+		const info=this._skillTree_learnMeta[idx]; if(!info||!info.connect) continue;
+		const infoU=this._skillTree_learnMeta[idx-maxCols];
 		const infoD=this._skillTree_learnMeta[idx+maxCols];
 		const infoL=this._skillTree_learnMeta[idx-1];
 		const infoR=this._skillTree_learnMeta[idx+1];
 		const rect=this.itemRect(idx);
 		const rectU=this.itemRect(idx-maxCols);
+		const rectD=this.itemRect(idx+maxCols);
 		const rectL=this.itemRect(idx-1);
 		const rectR=this.itemRect(idx+1);
+		
+		let mid,mid2,mid4,mid6,mid8;
+{
+		mid={
+			x:((rect.x)+(rectR.x+rectR.width))>>1,
+			y:((rect.y+(rect.height/2))+(rectR.y+(rectR.height/2)))>>1,
+		};
+		mid2={
+			x:mid.x,
+			y:((rect.y+rect.height)+(rectD.y))>>1,
+		};
+		mid4={
+			x:rect.x+rect.width,
+			y:mid.y,
+		};
+		mid6={
+			x:rectR.x,
+			y:mid.y,
+		};
+		mid8={
+			x:mid.x,
+			y:((rect.y)+(rectU.y+rectU.height))>>1,
+		};
+}
+		if(info.connect&2){
+			ctx.beginPath();
+			ctx.moveTo(mid.x,mid.y);
+			ctx.lineTo(mid2.x,mid2.y);
+			ctx.stroke();
+		}
+		if(info.connect&4){
+			ctx.beginPath();
+			ctx.moveTo(mid.x,mid.y);
+			if(!item && infoL.connect&16) ctx.lineTo(rect.x,rect.y+(rect.height>>1));
+			ctx.lineTo(mid4.x,mid4.y);
+			ctx.stroke();
+		}
+		if(info.connect&8){
+			ctx.beginPath();
+			ctx.moveTo(mid.x,mid.y);
+			ctx.lineTo(mid8.x,mid8.y);
+			ctx.stroke();
+		}
+		if(info.connect&16){
+			ctx.beginPath();
+			ctx.moveTo(mid.x,mid.y);
+			ctx.lineTo(mid6.x,mid6.y);
+			ctx.stroke();
+		}
+		
+		
+		continue;
+if(0){
 		const midU={x:(rectU.x+(rectU.width>>1)+rect.x+(rect.width>>1))>>1,y:(rectU.y+rectU.height+rect.y)>>1,};
 		const midUL={x:(rectL.x+rectL.width+rect.x)>>1,y:midU.y};
 		const midUR={x:(rect.x+rect.width+rectR.x)>>1,y:midU.y};
+}
 		if(info.connect&2){
 			ctx.beginPath();
 			ctx.moveTo(midU.x,midU.y);
