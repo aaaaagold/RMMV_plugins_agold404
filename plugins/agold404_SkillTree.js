@@ -293,8 +293,8 @@ arr=>arr&&arr.length||0,
 		const rect=this.itemRect(idx);
 		const rectU=this.itemRect(idx-maxCols);
 		const rectD=this.itemRect(idx+maxCols);
-		const rectL=this.itemRect(idx-1);
-		const rectR=this.itemRect(idx+1);
+		const rectL=idx%maxCols?this.itemRect(idx-1):new Rectangle(rect.x-rect.width-this.spacing(),rect.y,rect.width,rect.height);
+		const rectR=(idx+1)%maxCols?this.itemRect(idx+1):new Rectangle(rect.x+rect.width+this.spacing(),rect.y,rect.width,rect.height);
 		
 		let mid,mid2,mid4,mid6,mid8;
 {
@@ -328,7 +328,7 @@ arr=>arr&&arr.length||0,
 		if(info.connect&4){
 			ctx.beginPath();
 			ctx.moveTo(mid.x,mid.y);
-			if(!item && infoL.connect&16) ctx.lineTo(rect.x,rect.y+(rect.height>>1));
+			if(!item && (!infoL || infoL.connect&16)) ctx.lineTo(rect.x,rect.y+(rect.height>>1));
 			ctx.lineTo(mid4.x,mid4.y);
 			ctx.stroke();
 		}
