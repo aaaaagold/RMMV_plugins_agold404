@@ -59,6 +59,19 @@
  * @default 128
  * 
  * 
+ * @param SkillTreeIconSpacingX
+ * @type number
+ * @text horizontal space between two icons
+ * @desc horizontal space between two icons
+ * @default 36
+ * 
+ * @param SkillTreeIconSpacingY
+ * @type number
+ * @text vertical space between two icons
+ * @desc vertical space between two icons
+ * @default 36
+ * 
+ * 
  * This plugin can be renamed as you want.
  */
 
@@ -70,6 +83,8 @@ params._skillPointEvalText=params.SkillPointEvalText||"''";
 params._skillPointTextX=params.SkillPointTextX-0||0;
 params._skillPointTextY=params.SkillPointTextY-0||0;
 params._skillPointTotalWidth=params.SkillPointTotalWidth-0||0;
+params._skillTreeIconSpacingX=params.SkillTreeIconSpacingX-0;
+params._skillTreeIconSpacingY=params.SkillTreeIconSpacingY-0;
 
 
 const itemAct_use="使用";
@@ -229,7 +244,7 @@ arr=>arr&&arr.length||0,
 		id=info[0];
 		cond=(info[1] instanceof Array)?info[1][0]:info[1];
 		consume=info[2];
-		connect=(info[3] instanceof String)?eval(info[3]):info[3];
+		connect=(typeof info[3]==='string')?EVAL.call(this,info[3]):info[3];
 		condFailMsg=(info[1] instanceof Array)?info[1][1]:info[4];
 	}
 	return {id:id,cond:cond,consume:consume,connect:connect,condFailMsg:condFailMsg,};
@@ -594,6 +609,29 @@ params, // 1: plugin params
 	if(!this._itemWindow||!this._itemWindow.isTree()) return false;
 	return true;
 });
+
+new cfc(Window_SkillList.prototype).
+add('spacing',function f(){
+	if(this.isTree()){
+		const rtv=this.skillTree_itemSpacingX();
+		if(!isNaN(rtv)) return rtv;
+	}
+	return f.ori.apply(this,arguments);
+}).
+add('itemSpacingY',function f(){
+	if(this.isTree()){
+		const rtv=this.skillTree_itemSpacingY();
+		if(!isNaN(rtv)) return rtv;
+	}
+	return f.ori.apply(this,arguments);
+}).
+addBase('skillTree_itemSpacingX',function f(){
+	return f.tbl[1]._skillTreeIconSpacingX;
+},t).
+addBase('skillTree_itemSpacingY',function f(){
+	return f.tbl[1]._skillTreeIconSpacingY;
+},t).
+getP;
 
 
 new cfc(Game_Actor.prototype).addBase('skillTreePoint_get',function f(){
