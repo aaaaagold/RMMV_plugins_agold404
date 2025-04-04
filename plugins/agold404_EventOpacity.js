@@ -34,7 +34,7 @@ addBase('setOpacityFromEventPageData',function f(page){
 	const meta=this.getMeta();
 	const o=meta&&meta.opacity; if(!o||o===true) return;
 	const arr=o.split(f.tbl[3]).map(Number); if(isNaN(arr[0])) return;
-	this.setOpacity(arr[0],arr[1],arr[2]);
+	this.setOpacity.apply(this,arr);
 },t).
 getP;
 
