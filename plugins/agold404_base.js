@@ -1489,7 +1489,7 @@ addBase('gainItem',function(item,amount,includeEquip){
 	amount-=0;
 	const container=this.itemContainer(item);
 	if(container&&amount){
-		if(0<amount) this.setLastGainedItem(item);
+		if(0<amount) this.setLastGainedItem(item,amount);
 		const lastNumber=this.numItems(item);
 		const newNumber=lastNumber+amount;
 		const minNum=this.minItems(container,item);
@@ -1504,8 +1504,9 @@ addBase('gainItem',function(item,amount,includeEquip){
 	}
 	return container;
 }).
-addBase('setLastGainedItem',function(item){
+addBase('setLastGainedItem',function(item,amount){
 	$gameTemp._partyLastGainedItem=new Game_Item(item);
+	$gameTemp._partyLastGainedItem._amount=amount;
 }).
 addBase('allItems',function f(){
 	return [].concat_inplace(this.items(),this.weapons(),this.armors());
