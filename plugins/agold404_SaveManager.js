@@ -44,7 +44,7 @@
  */
 
 (()=>{ let k,r,t;
-const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_SaveManager";
+const pluginName=(typeof getPluginNameViaSrc==='function')&&getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_SaveManager";
 const d=document,ge=i=>d.getElementById(i),ce=t=>d.createElement(t),ga=(e,a)=>e.getAttribute(a);
 const ac=(a,c)=>a.appendChild(c)&&a||a,sa=(e,a,v)=>e.setAttribute(a,v)&&e||e,rc=a=>{
 	const c=a.childNodes;
@@ -87,7 +87,7 @@ new cfc(DataManager).add('agold404_SaveManager_pluginParams_get',function f(){
 		}
 	}
 	const params=tmp;
-	const locale=DataManager.getLocale()||undefined;
+	const locale=DataManager.getLocale&&DataManager.getLocale()||undefined;
 	if(!params._lastRes) params._lastRes={};
 	rtv=params._lastRes[locale];
 	if(!rtv){
@@ -229,7 +229,7 @@ p[k]=function(){
 	if(obj){
 		const gc=ge('GameCanvas');
 		if(gc){
-			TouchInput.bypassPreventDefault_touch_stackPushTrue();
+			TouchInput.bypassPreventDefault_touch_stackPushTrue && TouchInput.bypassPreventDefault_touch_stackPushTrue();
 			const self=this;
 			const stl=ga(gc,'style');
 			let div,css;
@@ -251,7 +251,7 @@ p[k]=function(){
 				++editing;
 				btn_cancel.onclick=btn.onclick=null;
 				css.display="none";
-				TouchInput.bypassPreventDefault_touch_stackPop();
+				TouchInput.bypassPreventDefault_touch_stackPop && TouchInput.bypassPreventDefault_touch_stackPop();
 				self.activateListWindow();
 			};
 			btn_cancel.onclick=backToLastWindow;
