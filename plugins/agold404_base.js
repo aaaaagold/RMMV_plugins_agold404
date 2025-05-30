@@ -29,7 +29,13 @@ new cfc(Decrypter).addBase('checkImgIgnore',function(url){
 	return this._ignoreList.uniqueHas(url) || ResourceHandler.isDirectPath(url);
 }).add('decryptArrayBuffer',function f(arrayBuffer,refHeader){
 	// refHeader = 16B or function(resultArrayBuffer) which generates an expected header16B
-	let rtv=f.ori.apply(this,arguments);
+	let rtv;
+	try{
+		rtv=f.ori.apply(this,arguments);
+	}catch(e){
+		// seems not a encrypted content
+		return arrayBuffer;
+	}
 	if(refHeader instanceof Function) refHeader=refHeader(rtv);
 	if(refHeader && (refHeader.byteLength>=16||refHeader.length>=16)){ const Bv=new Uint8Array(rtv); if(refHeader.toString()!==new Uint8Array(rtv).slice(0,16).toString()){
 		const bak=$dataSystem.encryptionKey;
@@ -1221,6 +1227,16 @@ arrayBuffer=>{
 	return WebAudio._cache;
 },[404,1<<26]);
 //
+new cfc(Bitmap.prototype).add('_onError',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	if(ResourceHandler.isDirectPath(this._url)&&!this._tryDecrypt){
+		// this._tryDecrypt=true; // set in Decrypter.decryptImg
+		this._loadingState = 'decrypting';
+		Decrypter.decryptImg(this._url, this);
+		return true; // has special handling
+	}
+	return rtv;
+});
 Decrypter._notFoundCache=new Set();
 new cfc(Decrypter).add('readEncryptionkey',function f(){
 	if(!$dataSystem.encryptionKey) $dataSystem.encryptionKey=f.tbl[0];
@@ -1228,6 +1244,7 @@ new cfc(Decrypter).add('readEncryptionkey',function f(){
 },[
 '0'.repeat(32), // 0: empty encryptionKey
 ]).addBase('decryptImg',function f(url,bitmap){
+	bitmap._tryDecrypt=true;
 	url=this.extToEncryptExt(url);
 	const cache=this._getCache(url); if(cache) return this._onXhrLoad(bitmap,cache.slice());
 	
@@ -4189,7 +4206,7 @@ p.createLoader=function(url, retryMethod, resignMethod, retryInterval){
 			setTimeout(retryMethod, retryInterval[retryCount]);
 			retryCount++;
 		}else{
-			if(resignMethod) resignMethod();
+			if(resignMethod) if(resignMethod()) return; // special handling
 			if(url){
 				ResourceHandler.reloader_del(opt.reloader);
 				const f=opt.reloader=isGivingUp=>{
