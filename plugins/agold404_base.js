@@ -2126,6 +2126,80 @@ getP;
 
 
 new cfc(Game_Action.prototype).
+addBase('itemEffectAddBuff',function(target,effect){
+	const chance=this.itemEffectAddBuff_calChance.apply(this,arguments);
+	if(this.itemEffectAddBuff_chanceCondOk(chance,arguments)){
+		this.itemEffectAddBuff_onSuccess.apply(this,arguments);
+	}
+}).
+addBase('itemEffectAddBuff_calChance',function(target,effect){
+	return 1;
+}).
+addBase('itemEffectAddBuff_chanceCondOk',function(chance,argv){
+	return Math.random()<chance;
+}).
+addBase('itemEffectAddBuff_onSuccess',function(target,effect){
+	target.addBuff(effect.dataId, effect.value1);
+	this.makeSuccess(target);
+}).
+addBase('itemEffectRemoveBuff',function(target,effect){
+	if(target.isBuffAffected(effect.dataId)){
+		const chance=this.itemEffectRemoveBuff_calChance.apply(this,arguments);
+		if(this.itemEffectRemoveBuff_chanceCondOk(chance,arguments)){
+			this.itemEffectRemoveBuff_onSuccess.apply(this,arguments);
+		}
+	}
+}).
+addBase('itemEffectRemoveBuff_calChance',function(target,effect){
+	return 1;
+}).
+addBase('itemEffectRemoveBuff_chanceCondOk',function(chance,argv){
+	return Math.random()<chance;
+}).
+addBase('itemEffectRemoveBuff_onSuccess',function(target,effect){
+	target.removeBuff(effect.dataId);
+	this.makeSuccess(target);
+}).
+getP;
+
+new cfc(Game_Action.prototype).
+addBase('itemEffectAddDebuff',function(target,effect){
+	const chance=this.itemEffectAddDebuff_calChance.apply(this,arguments);
+	if(this.itemEffectAddDebuff_chanceCondOk(chance,arguments)){
+		this.itemEffectAddDebuff_onSuccess.apply(this,arguments);
+	}
+}).
+addBase('itemEffectAddDebuff_calChance',function(target, effect){
+	return target.debuffRate(effect.dataId)*this.lukEffectRate(target);
+}).
+addBase('itemEffectAddDebuff_chanceCondOk',function(chance,argv){
+	return Math.random()<chance;
+}).
+addBase('itemEffectAddDebuff_onSuccess',function(target,effect){
+	target.addDebuff(effect.dataId, effect.value1);
+	this.makeSuccess(target);
+}).
+addBase('itemEffectRemoveDebuff',function(target,effect){
+	if(target.isDebuffAffected(effect.dataId)){
+		const chance=this.itemEffectRemoveDebuff_calChance.apply(this,arguments);
+		if(this.itemEffectRemoveDebuff_chanceCondOk(chance,arguments)){
+			this.itemEffectRemoveDebuff_onSuccess.apply(this,arguments);
+		}
+	}
+}).
+addBase('itemEffectRemoveDebuff_calChance',function(target,effect){
+	return 1;
+}).
+addBase('itemEffectRemoveDebuff_chanceCondOk',function(chance,argv){
+	return Math.random()<chance;
+}).
+addBase('itemEffectRemoveDebuff_onSuccess',function(target,effect){
+	target.removeBuff(effect.dataId);
+	this.makeSuccess(target);
+}).
+getP;
+
+new cfc(Game_Action.prototype).
 addBase('itemEffectAddNormalState',function f(target,effect){
 	const chance=this.itemEffectAddNormalState_calChance.apply(this,arguments);
 	if(this.itemEffectAddNormalState_chanceCondOk(chance,arguments)){
