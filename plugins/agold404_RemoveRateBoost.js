@@ -85,12 +85,12 @@ addBase('removeRateBoost_evalSetting',function f(dataobj,i,arr){
 		if(meta[noteKey]){
 			const data=JSON.parse(meta[noteKey]);
 			for(let k in data){
-				traits.push({code:traitCode,dataId:k-0,value:data[k],});
+				traits.push({code:traitCode,dataId:k-0,value:data[k]-0||0,});
 			}
 		}
 		if(meta[noteKey+'All']){
 			const data=JSON.parse(meta[noteKey+'All']);
-			traits.push({code:traitCode,dataId:f.tbl[4],value:data,});
+			traits.push({code:traitCode,dataId:f.tbl[4],value:data-0||0,});
 		}
 	}
 },t).
