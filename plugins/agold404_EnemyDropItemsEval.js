@@ -67,7 +67,7 @@ function f(info){
 	}; }
 	const cont=f._containers[info[0]];
 	const item=cont&&cont[info[1]];
-	const rate=this._hasDropItemDouble?info[2]*2:info[2];
+	const rate=this._ItemDropRate*info[2];
 	if(!item||!(info[3]>=1)||Math.random()>=rate) return;
 	for(let _=info[3];_-->=1;) this.push(item);
 }, // 4: forEach push to drop list. this=dropsArr
@@ -94,7 +94,7 @@ getP;
 new cfc(Game_Enemy.prototype).
 add('makeDropItems',function f(troopId){
 	const res=f.ori.apply(this,arguments);
-	res._hasDropItemDouble=$gameParty&&$gameParty.hasDropItemDouble();
+	res._ItemDropRate=this.dropItemRate();
 	return this.makeDropItems_dropsEval(res);
 }).
 addBase('makeDropItems_dropsEval',window.isTest()?(function f(dropsArr){
