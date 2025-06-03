@@ -695,6 +695,41 @@ new cfc(Window_Base.prototype).addBase('lineHeight',function f(){
 	}else return f.tbl[0];
 },['']);
 //
+new cfc(Window_Base.prototype).
+addBase('drawActorP_defaultWidth',function(valColor,gaugeColor1,gaugeColor2,valRate,txt,valCurr,valMax,actor,x,y,width,sysColor,normalColor){
+	return 186;
+}).
+addBase('drawActorP_defaultTxtWidth',function(valColor,gaugeColor1,gaugeColor2,valRate,txt,valCurr,valMax,actor,x,y,width,sysColor,normalColor){
+	return 44;
+}).
+addBase('drawActorP_common',function(valColor,gaugeColor1,gaugeColor2,valRate,txt,valCurr,valMax,actor,x,y,width,sysColor,normalColor){
+	if(width===undefined) width=this.drawActorP_defaultWidth.apply(this,arguments);
+	if(sysColor===undefined) sysColor=this.systemColor();
+	if(normalColor===undefined) normalColor=this.normalColor();
+	if(1<valRate) valRate=1;
+	this.drawGauge(x,y,width,valRate,gaugeColor1,gaugeColor2);
+	this.changeTextColor(sysColor);
+	this.drawText(txt,x,y,this.drawActorP_defaultTxtWidth.apply(this,arguments));
+	this.drawCurrentAndMax(valCurr,valMax,x,y,width,valColor,normalColor);
+}).
+addBase('drawActorHp',function(actor,x,y,width){
+	return this.drawActorP_common(
+		this.hpColor(actor),
+		this.hpGaugeColor1(),this.hpGaugeColor2(),
+		actor.hpRate(),TextManager.hpA,actor.hp,actor.mhp,
+		actor,x,y,width
+	);
+}).
+addBase('drawActorMp',function(actor,x,y,width){
+	return this.drawActorP_common(
+		this.mpColor(actor),
+		this.mpGaugeColor1(),this.mpGaugeColor2(),
+		actor.mpRate(),TextManager.mpA,actor.mp,actor.mmp,
+		actor,x,y,width,
+	);
+}).
+getP;
+//
 new cfc(Window_Help.prototype).addBase('setText',function f(text,forceUpdate,out_textState){
 	if(this.setText_condOk(text,forceUpdate)) return this.setText_doUpdate(text,out_textState);
 }).addBase('setText_condOk',function f(text,forceUpdate){
@@ -2074,10 +2109,24 @@ addBase('param_real',function f(paramId){
 	return this.param_base(paramId)*this.param_rate(paramId);
 }).
 addBase('param_clamp',function f(value,paramId){
+	if(value-0===Infinity) return Infinity;
 	return Math.round(value.clamp(
 		this.paramMin(paramId),
 		this.paramMax(paramId),
 	));
+}).
+getP;
+
+new cfc(Game_BattlerBase.prototype).
+addBase('hpRate',function(){
+	const maxVal=this.mhp-0;
+	if(maxVal===Infinity) return this.hp===Infinity?1:0;
+	return this.hp/maxVal;
+}).
+addBase('mpRate',function(){
+	const maxVal=this.mmp-0;
+	if(maxVal===Infinity) return this.mp===Infinity?1:0;
+	return this.mp/maxVal;
 }).
 getP;
 
@@ -2260,6 +2309,30 @@ addBase('itemEffectAddAttackState1_onSuccess',function f(target,effect,stateId){
 	target.addState(stateId);
 	this.makeSuccess(target);
 }).
+getP;
+
+
+new cfc(Game_BattlerBase.prototype).
+addBase('getKeepWhenDeadStates',function f(){
+	const rtv=[],src=this._stateTurns&&this._states;
+	if(src){ for(let x=0,xs=src.length;x<xs;++x){
+		const dataobj=$dataStates[src[x]]; if(!dataobj||!dataobj.meta||!dataobj.meta.keepWhenDead) continue;
+		rtv.push([src[x],this._stateTurns[src[x]],]);
+	} }
+	return rtv;
+}).
+addBase('die',function f(){
+	this._hp=0;
+	const arr=this.getKeepWhenDeadStates();
+	this.clearStates();
+	arr.forEach(f.tbl[0],this);
+	this.clearBuffs();
+},[
+function(stateInfo){
+	this._states.push(stateInfo[0]);
+	this._stateTurns[stateInfo[0]]=stateInfo[1];
+}, // 0: put back
+]).
 getP;
 
 
@@ -2992,6 +3065,17 @@ window.isTest(), // 1: isTest
 ]).
 getP;
 }
+
+
+new cfc(Game_Enemy.prototype).
+addBase('makeDropItems',function f(){
+	return this.enemy().dropItems.reduce(f.tbl[0].bind(this),[]);
+},[
+function(r,di){
+	if(di.kind>0&&Math.random()*di.denominator<this.dropItemRate()) r.push(this.itemObject(di.kind, di.dataId));
+	return r;
+}, // 0: reduce
+]);
 
 })(); // performance
 
