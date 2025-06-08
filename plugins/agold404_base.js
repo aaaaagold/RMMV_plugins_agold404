@@ -3042,6 +3042,7 @@ addBase('_itemEffectCommonEvent',function f(target,effect){
 	return this.itemEffectCommonEvent.apply(this,arguments);
 }).
 addBase('applyItemEffect',function f(target,effect){
+	if(!effect) return;
 	const func=f.tbl[0].get(effect.code);
 	if(func) func.apply(this,arguments);
 	else if(f.tbl[1]) console.warn("[WARNING] Game_Action.prototype.applyItemEffect: using un-handled effect code");
