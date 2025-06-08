@@ -857,7 +857,8 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 ]).addBase('scrollDown',function f(){
 	if(!(this.index()>=0)) return;
 	let scy=this._scrollY;
-	const rectEnd=this.itemRect(this.maxItems());
+	const maxCols=this.maxCols();
+	const rectEnd=this.itemRect((1+~~(this.maxItems()/maxCols))*maxCols); // align to next row
 	rectEnd.y+=scy;
 	scy+=this.scrollDist();
 	const overflowY=this.contentsHeight()-(rectEnd.y-scy);
