@@ -858,7 +858,7 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	if(!(this.index()>=0)) return;
 	let scy=this._scrollY;
 	const maxCols=this.maxCols();
-	const rectEnd=this.itemRect((1+~~(this.maxItems()/maxCols))*maxCols); // align to next row
+	const rectEnd=this.itemRect(maxCols*~~((this.maxItems()+maxCols-1)/maxCols)); // align to next row
 	rectEnd.y+=scy;
 	scy+=this.scrollDist();
 	const overflowY=this.contentsHeight()-(rectEnd.y-scy);
@@ -893,7 +893,8 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 }).addBase('updateArrows',function f(){
 	let scy=this._scrollY;
 	const rectBeg=this.itemRect(0);
-	const rectBtm=this.itemRect(this.maxItems()-this.maxCols());
+	const maxCols=this.maxCols();
+	const rectBtm=this.itemRect(maxCols*~~((this.maxItems()+maxCols-1)/maxCols)-maxCols);
 	this.downArrowVisible=this.contentsHeight()<rectBtm.y+rectBtm.height;
 	this.upArrowVisible=rectBeg.y<0;
 }).add('select',function f(idx){
