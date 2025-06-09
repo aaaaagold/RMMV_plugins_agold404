@@ -869,6 +869,73 @@ const getCStyleStringStartAndEndFromString=window.getCStyleStringStartAndEndFrom
 	if(s[strt]!=='"'||s[ende-1]!=='"'||strt>=ende) ende=strt=-1;
 	return {start:strt,end:ende};
 };
+const getXmlLikeStyleContent=window.getXmlLikeStyleContent=(text,startTagAndEndTag,isSortingByOrderMark,isByRelativeOrderInsteadOfInsertingToPosition)=>{
+	// return an array of lines
+	
+	// text: a string to be parsed
+	// startTagAndEndTag: [str_startTag,str_endTag]
+	// isSortingByOrderMark: `//#order int_order_here`. if orderMark is not given, put to "current" last
+	// isByRelativeOrderInsteadOfInsertingToPosition: [order]->[lines1,lines2, ... ]
+	
+	isSortingByOrderMark=!!isSortingByOrderMark;
+	isByRelativeOrderInsteadOfInsertingToPosition=isSortingByOrderMark&&!!isByRelativeOrderInsteadOfInsertingToPosition;
+	
+	const lines=text&&text.split('\n');
+	if(!lines) return []; // error handle
+	
+	const rtv=[];
+	
+	const codeBlocks=[],tmpLines=[];
+	for(let li=0,ls=lines.length,opened=false;li<ls;++li){
+		if(opened){
+			if(lines[li].slice(0,startTagAndEndTag[1].length)===startTagAndEndTag[1]){
+				opened=false;
+				codeBlocks.push(tmpLines.slice());
+				tmpLines.length=0;
+			}else tmpLines.push(lines[li]);
+		}else{
+			if(lines[li].slice(0,startTagAndEndTag[0].length)===startTagAndEndTag[0]){
+				opened=true;
+				if(startTagAndEndTag[0].length<lines[li].length) tmpLines.push(lines[li].slice(startTagAndEndTag[0].length));
+			}
+		}
+	}
+	
+	const orderMark='//#order ';
+	tmpLines.length=0;
+	rtv.length=0;
+	for(let ci=0,cs=codeBlocks.length;ci<cs;++ci){
+		const lines=codeBlocks[ci];
+		let order;
+		for(let li=0,ls=lines.length;li<ls;++li){
+			if(lines[li].slice(0,orderMark.length)!==orderMark) continue;
+			const val=lines[li].slice(orderMark.length)-0;
+			if(isNaN(val)||!(val>=0)) continue;
+			order=~~val;
+			break;
+		}
+		lines._orderMarkOrder=order;
+		if(isSortingByOrderMark){
+			if(isByRelativeOrderInsteadOfInsertingToPosition){
+				if(order>=0){
+					if(!tmpLines[order]) tmpLines[order]=[];
+					tmpLines[order].push(lines);
+				}else rtv.push(lines);
+			}else{
+				if(order>=0) rtv.splice(order,0,lines);
+				else rtv.push(lines);
+			}
+		}else rtv.push(lines);
+	}
+	
+	if(isByRelativeOrderInsteadOfInsertingToPosition){
+		tmpLines.push(rtv.slice());
+		rtv.length=0;
+		rtv.concat_inplace(tmpLines.flat());
+	}
+	
+	return rtv;
+};
 const getPrefixPropertyNames=window.getPrefixPropertyNames=(obj,prefix)=>{
 	const rtv=[];
 	for(let i in obj) if(i.slice(0,prefix.length)===prefix) rtv.push(i);
