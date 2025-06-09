@@ -90,7 +90,7 @@ undefined,
 params, // 1: plugin params
 window.isTest(), // 2: isTest
 kwpes, // 3: keyNames: [ [note,EFFECT_*] , ... ]
-'//#order ', // 4: order pragma
+'//#order ', // 4: order pragma // not used. refer to getXmlLikeStyleContent
 ['target','effect',], // 5: func args names
 {'empty':'empty js code','effectNotSet':'an effect is not set'}, // 6: warn or err msg
 ];
@@ -107,38 +107,14 @@ addBase('itemEffectJavascript_evalSetting',function f(dataobj,i,arr){
 	const effects=dataobj.effects||(dataobj.effects=[]);
 	
 	for(let arr=f.tbl[3],x=arr.length;x--;){
-		const code=arr[x][2];
+		const dataCode=arr[x][2];
 		const xmlMark=arr[x]._xmlMark;
 		if(xmlMark){
-			const lines=dataobj.note&&dataobj.note.split('\n');
-			if(!lines) continue;
-			const tmp=[],effectBlocks=[];
-			for(let li=0,ls=lines.length,opened=false;li<ls;++li){
-				if(opened){
-					if(lines[li].slice(0,xmlMark[1].length)===xmlMark[1]){
-						opened=false;
-						effectBlocks.push(tmp.slice());
-						tmp.length=0;
-					}else tmp.push(lines[li]);
-				}else{
-					if(lines[li].slice(0,xmlMark[0].length)===xmlMark[0]){
-						opened=true;
-						if(xmlMark[0].length<lines[li].length) tmp.push(lines[li].slice(xmlMark[0].length));
-					}
-				}
-			}
-			const orderMark=f.tbl[4];
-			for(let ei=0,es=effectBlocks.length;ei<es;++ei){
-				const lines=effectBlocks[ei];
-				let order;
-				for(let li=0,ls=lines.length;li<ls;++li){
-					if(lines[li].slice(0,orderMark.length)!==orderMark) continue;
-					const val=lines[li].slice(orderMark.length)-0;
-					if(isNaN(val)||!(val>=0)) continue;
-					order=~~val;
-					break;
-				}
-				const effect={code:code,dataId:0,value1:0,value2:0,txt:lines.join('\n'),};
+			const codes=window.getXmlLikeStyleContent(dataobj.note,xmlMark);
+			for(let ci=0,cs=codes.length;ci<cs;++ci){
+				const lines=codes[ci];
+				const order=lines._orderMarkOrder;
+				const effect={code:dataCode,dataId:0,value1:0,value2:0,txt:lines.join('\n'),};
 				// lazy implement, TODO: performance
 				if(order>=0) effects.splice(order,0,effect);
 				else effects.push(effect);
