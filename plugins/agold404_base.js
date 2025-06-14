@@ -2314,6 +2314,58 @@ addBase('itemEffectAddAttackState1_onSuccess',function f(target,effect,stateId){
 getP;
 
 
+new cfc(Game_Action.prototype).
+addBase('apply',function f(target){
+	const result=target.result();
+	this.subject().clearResult();
+	result.clear();
+	
+	result.used=this.testApply(target);
+	if(!result.used) this.apply_onNotApplied.apply(this,arguments);
+	result.missed=(result.used&&this.apply_calRnd_missed.apply(this,arguments));
+	if(result.missed) this.apply_onMiss.apply(this,arguments);
+	result.evaded=(result.used&&!result.missed&&this.apply_calRnd_evaded.apply(this,arguments));
+	if(result.evaded) this.apply_onEvaded.apply(this,arguments);
+	
+	result.physical = this.isPhysical();
+	result.drain = this.isDrain();
+	
+	if(result.isHit()) this.apply_onHit.apply(this,arguments);
+	else this.apply_onNoHit.apply(this,arguments);
+}).
+addBase('apply_calRnd_missed',function f(target){
+	return Math.random()>=this.itemHit(target);
+}).
+addBase('apply_calRnd_evaded',function f(target){
+	return Math.random()<this.itemEva(target);
+}).
+addBase('apply_onNotApplied',none).
+addBase('apply_onMiss',none).
+addBase('apply_onEvaded',none).
+addBase('apply_onNoHit',none).
+addBase('apply_onHit',function f(target){
+	if(0<this.item().damage.type){
+		const result=target.result();
+		result.critical=(Math.random()<this.itemCri(target));
+		if(result.critical) this.apply_onCritical.apply(this,arguments);
+		const value=this.makeDamageValue(target,result.critical);
+		this.executeDamage(target,value);
+	}
+	this._effectsOnTarget=target;
+	this.item().effects.forEach(f.tbl[0],this);
+	this._effectsOnTarget=undefined;
+	this.apply_onEffects.apply(this,arguments);
+	this.applyItemUserEffect(target);
+},[
+function f(effect){
+	this.applyItemEffect(this._effectsOnTarget,effect);
+}, // 0: forEach Effects
+]).
+addBase('apply_onCritical',none).
+addBase('apply_onEffects',none).
+getP;
+
+
 new cfc(Game_BattlerBase.prototype).
 addBase('getKeepWhenDeadStates',function f(){
 	const rtv=[],src=this._stateTurns&&this._states;
