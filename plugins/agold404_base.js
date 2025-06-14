@@ -2406,6 +2406,88 @@ addBase('paramPlus_equips',function f(paramId){
 }).
 getP;
 
+new cfc(Game_Actor.prototype).
+addBase('_setEquip_getDataarr',function f(slotId,slots){
+	return slots[slotId]===1?$dataWeapons:$dataArmors;
+}).
+addBase('_setEquip',function f(slotId,item){
+	const arr=this._equips;
+	const gameItem=arr&&arr[slotId];
+	if(gameItem) gameItem.setObject(item);
+	else if(arr) (arr[slotId]=new Game_Item()).setObject(item);
+}).
+addBase('_getEquip',function f(slotId){
+	const arr=this._equips;
+	const gameItem=arr&&arr[slotId];
+	return gameItem&&gameItem.object();
+}).
+addBase('_delEquipOnSlot',function f(slotId){
+	const arr=this._equips; if(!arr) return;
+	if(arr.constructor===Array) arr[slotId]=0;
+	else arr[slotId]=undefined;
+}).
+addBase('_getEquipSlot',function f(slotId){
+	let rtv=(slotId===1&&this.isDualWield())?1:slotId+1;
+	return rtv;
+}).
+addBase('initEquips',function f(equips){
+	const slots=this.equipSlots();
+	const maxSlots=slots.length;
+	this._equips=[];
+	for(let x=0;x<maxSlots;++x){
+		this._equips[x]=new Game_Item();
+	}
+	for(let x=0,xs=equips.length;x<xs;++x){
+		if(!(x<maxSlots)) continue;
+		const dataarr=this._setEquip_getDataarr(x,slots);
+		this._setEquip(x,dataarr[equips[x]]);
+	}
+	this.releaseUnequippableItems(true);
+	this.refresh();
+}).
+addBase('changeEquip',function f(slotId,item){
+    if(this.changeEquip_condOk.apply(this,arguments)) this.changeEquip_do.apply(this,arguments);
+}).
+addBase('changeEquip_condOk',function f(slotId,item){
+	return this.tradeItemWithParty(item,this._getEquip(slotId)) && (!item||this._getEquipSlot(slotId)===item.etypeId);
+}).
+addBase('changeEquip_do',function f(slotId,item){
+	this._setEquip(slotId,item);
+	this.refresh();
+}).
+addBase('forceChangeEquip',function f(slotId,item){
+	this._setEquip(slotId,item);
+	this.releaseUnequippableItems(true);
+	this.refresh();
+}).
+addBase('discardEquip',function f(item){
+	const slotId=this.equips().indexOf(item);
+	if(slotId>=0){
+		this._setEquip(slotId,null);
+	}
+}).
+addBase('releaseUnequippableItems',function(forcing){
+	for(;;){
+		const slots=this.equipSlots();
+		const equips=this.equips();
+		let changed=false;
+		for(let i=0,sz=equips.length;i<sz;++i){
+			const item=equips[i];
+			if(item && (!this.canEquip(item)||item.etypeId!==slots[i])){
+				if(!forcing){
+					this.tradeItemWithParty(null, item);
+				}
+				this._setEquip(i,null);
+				changed=true;
+			}
+		}
+		if(!changed){
+			break;
+		}
+	}
+}).
+getP;
+
 
 })(); // refine for future extensions
 
