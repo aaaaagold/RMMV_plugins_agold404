@@ -2390,6 +2390,23 @@ function(stateInfo){
 getP;
 
 
+new cfc(Game_Actor.prototype).
+addBase('paramPlus',function f(paramId){
+	let rtv=Game_Battler.prototype.paramPlus.call(this, paramId);
+	rtv+=this.paramPlus_equips(paramId);
+	return rtv;
+}).
+addBase('paramPlus_equips',function f(paramId){
+	let rtv=0;
+	const arr=this.equips();
+	for(let x=0,xs=arr.length;x<xs;++x){ const item=arr[x]; if(item){
+		rtv+=item.params[paramId];
+	} }
+	return rtv;
+}).
+getP;
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
