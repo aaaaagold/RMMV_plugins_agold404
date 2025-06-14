@@ -2390,6 +2390,13 @@ function(stateInfo){
 getP;
 
 
+new cfc(DataManager).
+addBase('getItem_paramPlus',function f(item,paramId){
+	const params=item&&item.params;
+	return params&&params[paramId];
+}).
+getP;
+
 new cfc(Game_Actor.prototype).
 addBase('paramPlus',function f(paramId){
 	let rtv=Game_Battler.prototype.paramPlus.call(this, paramId);
@@ -2400,7 +2407,7 @@ addBase('paramPlus_equips',function f(paramId){
 	let rtv=0;
 	const arr=this.equips();
 	for(let x=0,xs=arr.length;x<xs;++x){ const item=arr[x]; if(item){
-		rtv+=item.params[paramId];
+		rtv+=DataManager.getItem_paramPlus(item,paramId)-0||0;
 	} }
 	return rtv;
 }).
