@@ -2437,6 +2437,14 @@ addBase('_getEquipSlot',function f(slotId){
 	let rtv=(slotId===1&&this.isDualWield())?1:slotId+1;
 	return rtv;
 }).
+addBase('equips',function f(){
+	const rtv=[];
+	for(let x=0,arr=this._equips,xs=arr.length;x<xs;++x){
+		if(arr[x]) rtv.push(arr[x].object());
+		else rtv.push(null);
+	}
+	return rtv;
+}).
 addBase('initEquips',function f(equips){
 	const slots=this.equipSlots();
 	const maxSlots=slots.length;
