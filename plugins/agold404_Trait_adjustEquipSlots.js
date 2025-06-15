@@ -70,7 +70,7 @@ window.isTest(), // 2: isTest
 kwpts, // 3: keyNames: [ [note,TRAIT_*,dataCode,[immDataCode,immTRAIT_*]] , ... ]
 null,
 'string',
-equipTypeId=>(equipTypeId!==~~equipTypeId||!(equipTypeId>=0&&equipTypeId<$dataSystem.equipTypes.length)), // 6: is invalid equipTypeId
+equipTypeId=>(equipTypeId!==~~equipTypeId||!(equipTypeId>=1&&equipTypeId<$dataSystem.equipTypes.length)), // 6: is invalid equipTypeId
 ];
 
 
@@ -124,7 +124,7 @@ addBase('traitAdjustEquipSlots_getDelta',function f(equipTypeId){
 	let rtv=this.traitsSum(f.tbl[3]._key2content.adjustEquipSlots[3][0],equipTypeId);
 	const arr=this.traitsWithId(f.tbl[3]._key2content.adjustEquipSlots[2],equipTypeId);
 	for(let x=0,xs=arr.length;x<xs;++x) rtv+=EVAL.call(this,arr[x].value)-0||0;
-	return rtv;
+	return ~~rtv;
 },t).
 getP;
 
@@ -136,21 +136,24 @@ add('equipSlots',function f(){
 }).
 addBase('traitAdjustEquipSlots_extendEquipSlots',function f(slots){
 	if(slots._oriLen>=0) return; // already checked
+	const oriCnt=new Map(); for(let x=0,xs=slots.length;x<xs;++x) oriCnt.set(slots[x],(oriCnt.get(slots[x])|0)+1);
 	slots._oriLen=slots.length;
+	slots.length=0;
 	const deltas=slots._traitAdjustEquipSlots_deltas={};
-	const deltav=[];
-	for(let i=1,sz=$dataSystem.equipTypes.length;i<sz;++i) deltav.push(deltas[i]=this.traitAdjustEquipSlots_getDelta(i));
-	for(let x=0,xs=deltav.length;x<xs;++x){
-		for(let c=deltav[x];c-->0;) slots.push(x+1);
+	for(let i=1,sz=$dataSystem.equipTypes.length;i<sz;++i){
+		let c=deltas[i]=this.traitAdjustEquipSlots_getDelta(i);
+		for(c+=oriCnt.get(i)|0;--c>=0;) slots.push(i);
 	}
+	this._releaseUnequippableItems_rematchSlots(slots);
 }).
-add('releaseUnequippableItems_roundStart',function f(forcing){
-	this.releaseUnequippableItems_rematchSlots();
+add('releaseUnequippableItems_roundStart',function f(){
+	this.releaseUnequippableItems_rematchSlots.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
 addBase('releaseUnequippableItems_rematchSlots',function f(){
-	if(f.tbl[2]) console.log('releaseUnequippableItems_matchSlots');
-	const slots=this.equipSlots();
+	this._releaseUnequippableItems_rematchSlots(this.equipSlots());
+}).
+addBase('_releaseUnequippableItems_rematchSlots',function f(slots){
 	const equips=this.equips(),equipsByType=[];
 	// arrange by etype
 	for(let x=equips.length;x--;){
@@ -177,7 +180,7 @@ addBase('releaseUnequippableItems_rematchSlots',function f(){
 	for(const sz=equips.length;slotIdx<sz;){
 		this._setEquip(slotIdx++,null);
 	}
-},t).
+}).
 addBase('_getEquipSlot',function f(slotId){
 	return this.equipSlots()[slotId];
 }).
