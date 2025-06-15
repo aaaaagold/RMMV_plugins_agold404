@@ -144,6 +144,40 @@ addBase('traitAdjustEquipSlots_extendEquipSlots',function f(slots){
 		for(let c=deltav[x];c-->0;) slots.push(x+1);
 	}
 }).
+add('releaseUnequippableItems_roundStart',function f(forcing){
+	this.releaseUnequippableItems_rematchSlots();
+	return f.ori.apply(this,arguments);
+}).
+addBase('releaseUnequippableItems_rematchSlots',function f(){
+	if(f.tbl[2]) console.log('releaseUnequippableItems_matchSlots');
+	const slots=this.equipSlots();
+	const equips=this.equips(),equipsByType=[];
+	// arrange by etype
+	for(let x=equips.length;x--;){
+		if(!equips[x]) continue; // null will not be added
+		const etypeId=equips[x].etypeId;
+		let arr=equipsByType[etypeId]; if(!arr) arr=equipsByType[etypeId]=[];
+		arr.push(equips[x]); // rev order
+	}
+	// set to proper place
+	for(let slotIdx=0,sz=slots.length;slotIdx<sz;++slotIdx){
+		const etypeId=slots[slotIdx];
+		const arr=equipsByType[etypeId];
+		if(arr&&arr.length) this._setEquip(slotIdx,arr.pop());
+		else this._setEquip(slotIdx,null);
+	}
+	// put rest
+	let slotIdx=slots.length;
+	for(let etypeId=0,etypeEnd=equipsByType.length;;){
+		while(etypeId<etypeEnd&&(!equipsByType[etypeId]||!equipsByType[etypeId].length)) ++etypeId;
+		if(!(etypeId<etypeEnd)) break;
+		this._setEquip(slotIdx++,equipsByType[etypeId].pop());
+	}
+	// clear remained gameData in `this._equips`, since null will not be added in the arrangement
+	for(const sz=equips.length;slotIdx<sz;){
+		this._setEquip(slotIdx++,null);
+	}
+},t).
 addBase('_getEquipSlot',function f(slotId){
 	return this.equipSlots()[slotId];
 }).
