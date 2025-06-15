@@ -2488,6 +2488,7 @@ addBase('discardEquip',function f(item){
 }).
 addBase('releaseUnequippableItems',function(forcing){
 	for(;;){
+		this.releaseUnequippableItems_roundStart.apply(this,arguments);
 		const slots=this.equipSlots();
 		const equips=this.equips();
 		let changed=false;
@@ -2506,6 +2507,7 @@ addBase('releaseUnequippableItems',function(forcing){
 		}
 	}
 }).
+addBase('releaseUnequippableItems_roundStart',none).
 addBase('isEquipChangeOk',function(slotId){
 	return !this.isEquipTypeLocked(this._getEquipSlot(slotId)) && !this.isEquipTypeSealed(this._getEquipSlot(slotId)) ;
 }).
