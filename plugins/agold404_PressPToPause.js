@@ -8,6 +8,8 @@
  */
 
 (()=>{ let k,r,t;
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_PressPToPause";
+const params=PluginManager.parameters(pluginName)||{};
 
 const keyCode=80; // P
 
@@ -18,11 +20,11 @@ new cfc(SceneManager).add('requestUpdate',function f(){
 
 const f=window._pressPToPause=e=>{ if(e.keyCode!==keyCode) return;
 	if((SceneManager._isPressPPaused=!SceneManager._isPressPPaused)){
-		$gameSystem.saveBg();
+		if($gameSystem) $gameSystem.saveBg();
 		AudioManager.stopAll();
 		return;
 	}
-	$gameSystem.replayBg(true);
+	if($gameSystem) $gameSystem.replayBg(true);
 	SceneManager.resume();
 };
 document.addEventListener('keydown',f);
