@@ -135,6 +135,10 @@ add('equipSlots',function f(){
 	return rtv;
 }).
 addBase('traitAdjustEquipSlots_extendEquipSlots',function f(slots){
+	this._traitAdjustEquipSlots_extendEquipSlots(slots);
+	this._traitAdjustEquipSlots_rematchSlots(slots);
+}).
+addBase('_traitAdjustEquipSlots_extendEquipSlots',function f(slots){
 	if(slots._oriLen>=0) return; // already checked
 	const oriCnt=new Map(); for(let x=0,xs=slots.length;x<xs;++x) oriCnt.set(slots[x],(oriCnt.get(slots[x])|0)+1);
 	slots._oriLen=slots.length;
@@ -144,16 +148,15 @@ addBase('traitAdjustEquipSlots_extendEquipSlots',function f(slots){
 		let c=deltas[i]=this.traitAdjustEquipSlots_getDelta(i);
 		for(c+=oriCnt.get(i)|0;--c>=0;) slots.push(i);
 	}
-	this._releaseUnequippableItems_rematchSlots(slots);
 }).
 add('releaseUnequippableItems_roundStart',function f(){
-	this.releaseUnequippableItems_rematchSlots.apply(this,arguments);
+	this.traitAdjustEquipSlots_rematchSlots.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
-addBase('releaseUnequippableItems_rematchSlots',function f(){
-	this._releaseUnequippableItems_rematchSlots(this.equipSlots());
+addBase('traitAdjustEquipSlots_rematchSlots',function f(){
+	this._traitAdjustEquipSlots_rematchSlots(this.equipSlots());
 }).
-addBase('_releaseUnequippableItems_rematchSlots',function f(slots){
+addBase('_traitAdjustEquipSlots_rematchSlots',function f(slots){
 	const equips=this.equips(),equipsByType=[];
 	// arrange by etype
 	for(let x=equips.length;x--;){
@@ -182,7 +185,19 @@ addBase('_releaseUnequippableItems_rematchSlots',function f(slots){
 	}
 }).
 addBase('_getEquipSlot',function f(slotId){
-	return this.equipSlots()[slotId];
+	const etypeIdEnd=$dataSystem.equipTypes.length;
+	let rtv=etypeIdEnd;
+	for(let idx=0,etypeId=1;etypeId<etypeIdEnd;++etypeId){
+		const delta=~~this.traitAdjustEquipSlots_getDelta(etypeId);
+		if(-1>=delta) continue;
+		const nextStart=idx+1+delta;
+		if(slotId<nextStart){
+			rtv=etypeId;
+			break;
+		}
+		idx=nextStart;
+	}
+	return rtv;
 }).
 getP;
 
