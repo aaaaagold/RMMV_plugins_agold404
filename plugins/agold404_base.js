@@ -5682,6 +5682,47 @@ new cfc(a.prototype).addBase('initialize',function f(){
 
 })(); // Scene_Waiting
 
+// ---- ---- ---- ---- extend JsonEx
+
+(()=>{ let k,r,t;
+
+new cfc(JsonEx).
+addBase('stringify',function f(obj){
+	const circular=[];
+	JsonEx._id=1;
+	const json=JSON.stringify(this._encode(obj,circular,0));
+	this._cleanMetadata(obj);
+	this._restoreCircularReference(circular);
+	
+	return json;
+}).
+add('_encode',function f(val,circular,depth){
+	if(this.isSpecialNumVal(val)) return this._encodeSpeicalNumVal.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('isSpecialNumVal',function f(val){
+	return f.tbl[0].has(val);
+},[
+new Set([Infinity,-Infinity,NaN]), // special num vals
+]).
+addBase('_encodeSpeicalNumVal',function f(val,circular,depth){
+	const rtv={};
+	rtv[f.tbl[0]]=val.toString();
+	return rtv;
+},t=[
+"@n",
+'[object Object]',
+]).
+add('_decode',function f(val,circular,depth){
+	if(Object.prototype.toString.call(val)===f.tbl[1] && (f.tbl[0] in val)){
+		return Number(val[f.tbl[0]]);
+	}
+	return f.ori.apply(this,arguments);
+},t).
+getP;
+
+})(); // extend JsonEx
+
 // ---- ---- ---- ---- fix bug
 
 (()=>{ let k,r,t;
