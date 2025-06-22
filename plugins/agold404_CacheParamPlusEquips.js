@@ -73,8 +73,8 @@ add('paramPlus_equips',function f(paramId){
 	}
 	return rtv;
 }).
-add('_setEquip',function f(slotId,item){
-	const itemPre=this._getEquip(slotId);
+add('setEquip',function f(slotId,item){
+	const itemPre=this.getEquip(slotId);
 	this.cacheParamPlusEquips_updateFromItemChange(itemPre,item);
 	return f.ori.apply(this,arguments);
 }).
