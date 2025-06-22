@@ -211,6 +211,57 @@ p.kvPop=function(k){
 	}
 	return rtv;
 };
+p.multisetGetIdxv=function(obj){
+	if(!this._msMap){
+		this._msMap=new Map();
+		for(let x=0,xs=this.length;x!==xs;++x){
+			let arr=this._msMap.get(this[x]);
+			if(!arr) this._msMap.set(this[x],arr=[]);
+			arr.uniquePush(x);
+		}
+	}
+	return this._msMap.get(obj);
+};
+p.multisetHas=function(obj){
+	const arr=this.multisetGetIdxv(obj);
+	return !!(arr&&arr.length);
+};
+p.multisetPush=function( /* obj , ... */ ){
+	this.multisetHas(); // create map
+	for(let x=0;x!==arguments.length;++x){
+		const obj=arguments[x];
+		let arr=this._msMap.get(obj);
+		if(!arr) this._msMap.set(obj,arr=[]);
+		arr.uniquePush(this.length);
+		Array.prototype.push.call(this,obj);
+	}
+	return this.length;
+};
+p.multisetPushContainer=function(cont){
+	// push all cont's elements
+	for(let x=0,xs=cont.length;x!==xs;++x) this.multisetPush(cont.getObjAt(x));
+	return this;
+};
+p.multisetPop=function(obj){
+	const arr=this.multisetGetIdxv(obj);
+	if(!arr||!arr.length) return;
+	const res=arr.back;
+	if(res+1!==this.length){
+		const obj2=this.back;
+		const arr2=this.multisetGetIdxv(obj2);
+		arr2.uniquePop(this.length-1);
+		arr2.uniquePush(res);
+		this[res]=obj2;
+	}
+	arr.uniquePop(res);
+	if(!arr.length) this._msMap.delete(obj);
+	return Array.prototype.pop.call(this)?obj:undefined;
+};
+p.multisetClear=function(){
+	if(!this._msMap) this._msMap=new Map();
+	this._msMap.clear();
+	this.length=0;
+};
 })();
 
 
