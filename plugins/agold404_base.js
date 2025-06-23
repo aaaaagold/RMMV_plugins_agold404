@@ -2544,6 +2544,13 @@ getP;
 
 
 new cfc(Game_BattlerBase.prototype).
+addBase('allTraits',function f(){
+	const rtv=[];
+	return this.traitObjects().reduce(f.tbl[0],rtv);
+	return rtv;
+},[
+(r,n)=>{ for(let arr=n.traits,xs=arr.length,x=0;x<xs;++x) r.push(arr[x]); return r; }, // 0: 
+]).
 addBase('traitsSumAll',function f(code){
 	return this.traits(code).reduce(f.tbl[0],0);
 },[
@@ -5799,8 +5806,8 @@ new Set([
 'sum', // sum             // traitsSum
 'mul', // multiply        // traitsPi
 'has', // has value       // 
-'set', // dataId          // 
-'mst', // multiset traits // traitsWithId
+'set', // multiset dataId // 
+'wId', // multiset traits // traitsWithId
 'MId', // max id          // traitsMaxId ( slotType collapseType )
 ]), // 5: planned cacheVal ops
 ];
@@ -5811,22 +5818,26 @@ new cfc(Game_BattlerBase.prototype).
 addBase('traitsOpCache_genCacheKey',function f(dataCode,dataId,op){
 	return dataCode+','+dataId+','+op;
 }).
-addBase('traitsOpCache_getContRoot',function f(){
-	let rtv=this._traitsOpCache; if(!rtv) rtv=this._traitsOpCache=[]; // not put into save file
+addBase('_traitsOpCache_getContRoot',function f(){
+	let rtv=this._traitsOpCache; if(!rtv||rtv._self!==this) (rtv=this._traitsOpCache=[])._self=this; // not put into save file
+	// chk _self: for handling JsonEx.makeDeepCopy
 	return rtv;
 }).
 addBase('traitsOpCache_getContUsedOp',function f(key){
-	const root=this.traitsOpCache_getContRoot();
+	const root=this._traitsOpCache_getContRoot();
 	let rtv=root._usedOp; if(!rtv) rtv=root._usedOp=new Map();
+	//let rtv=f.tbl[0];
 	if(key!==undefined){
 		let tmp=rtv.get(key);
 		if(!tmp) rtv.set(key,tmp=[]);
 		rtv=tmp;
 	}
 	return rtv;
-}).
+},[
+new Map(), // 0: usedOp key->ops=[] // NOT USING THIS since using global record cause existing traits will NOT be counted
+]).
 addBase('traitsOpCache_getContVals',function f(){
-	const root=this.traitsOpCache_getContRoot();
+	const root=this._traitsOpCache_getContRoot();
 	let rtv=root._vals; if(!rtv) rtv=root._vals=new Map();
 	return rtv;
 }).
@@ -5932,44 +5943,40 @@ addBase('traitsOpCache_getCacheVal_has',function f(dataCode,dataId){
 addBase('traitsOpCache_updateVal_set_getValObj',function f(dataCode,dataId){
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(dataCode,'','set');
-	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=new Map());
+	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=[]);
 	return rtv;
 }).
 addBase('traitsOpCache_updateVal_set_add',function f(trait){
 	const valObj=this.traitsOpCache_updateVal_set_getValObj(trait.code,trait.dataId);
-	const newVal=(valObj.get(trait.dataId)|0)+1;
-	if(!newVal) valObj.delete(trait.dataId);
-	else valObj.set(trait.dataId,newVal);
+	valObj.multisetPush(trait.dataId);
 }).
 addBase('traitsOpCache_updateVal_set_del',function f(trait){
 	const valObj=this.traitsOpCache_updateVal_set_getValObj(trait.code,trait.dataId);
-	const newVal=(valObj.get(trait.dataId)|0)-1;
-	if(!newVal) valObj.delete(trait.dataId);
-	else valObj.set(trait.dataId,newVal);
+	valObj.multisetPop(trait.dataId);
 }).
 addBase('traitsOpCache_getCacheVal_set',function f(dataCode,dataId){
-	// default value = empty Map
-	const valObj=this.traitsOpCache_updateVal_set_getValObj(trait.code,trait.dataId);
-	return 0<valObj.get(trait.dataId);
+	// default value = []
+	const valObj=this.traitsOpCache_updateVal_set_getValObj(dataCode,dataId);
+	return valObj;
 }).
-// mst
-addBase('traitsOpCache_updateVal_mst_getValObj',function f(dataCode,dataId){
+// wId
+addBase('traitsOpCache_updateVal_wId_getValObj',function f(dataCode,dataId){
 	const vals=this.traitsOpCache_getContVals();
-	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'mst');
+	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'wId');
 	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=[]);
 	return rtv;
 }).
-addBase('traitsOpCache_updateVal_mst_add',function f(trait){
-	const valObj=this.traitsOpCache_updateVal_mst_getValObj(trait.code,trait.dataId);
+addBase('traitsOpCache_updateVal_wId_add',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_wId_getValObj(trait.code,trait.dataId);
 	valObj.multisetPush(trait);
 }).
-addBase('traitsOpCache_updateVal_mst_del',function f(trait){
-	const valObj=this.traitsOpCache_updateVal_mst_getValObj(trait.code,trait.dataId);
+addBase('traitsOpCache_updateVal_wId_del',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_wId_getValObj(trait.code,trait.dataId);
 	valObj.multisetPop(trait);
 }).
-addBase('traitsOpCache_getCacheVal_mst',function f(dataCode,dataId){
+addBase('traitsOpCache_getCacheVal_wId',function f(dataCode,dataId){
 	// default value = []
-	return this.traitsOpCache_updateVal_mst_getValObj(dataCode,dataId);
+	return this.traitsOpCache_updateVal_wId_getValObj(dataCode,dataId);
 }).
 // MId
 addBase('traitsOpCache_updateVal_MId_getValObj',function f(dataCode,dataId){
@@ -6011,7 +6018,7 @@ addBase('traitsOpCache_addTrait',function f(trait){
 		['mul', this.traitsOpCache_updateVal_mul_add ],
 		['has', this.traitsOpCache_updateVal_has_add ],
 		['set', this.traitsOpCache_updateVal_set_add ],
-		['mst', this.traitsOpCache_updateVal_mst_add ],
+		['wId', this.traitsOpCache_updateVal_wId_add ],
 	]); }
 	this._traitsOpCache_changeTrait_common(trait,
 		this.traitsOpCache_getUsedOps(trait),
@@ -6027,7 +6034,7 @@ addBase('traitsOpCache_delTrait',function f(trait){
 		['mul', this.traitsOpCache_updateVal_mul_del ],
 		['has', this.traitsOpCache_updateVal_has_del ],
 		['set', this.traitsOpCache_updateVal_set_del ],
-		['mst', this.traitsOpCache_updateVal_mst_del ],
+		['wId', this.traitsOpCache_updateVal_wId_del ],
 	]); }
 	this._traitsOpCache_changeTrait_common(trait,
 		this.traitsOpCache_getUsedOps(trait),
@@ -6040,7 +6047,7 @@ getP;
 
 
 // add / del traitObj
-if(1){ // testing
+if(!getUrlParamVal('traitsOpCache-disabled')){ // testing
 new cfc(Game_BattlerBase.prototype).
 addBase('traitsOpCache_addTraitObj',function f(traitObj){
 	const traits=traitObj&&traitObj.traits;
@@ -6050,21 +6057,40 @@ addBase('traitsOpCache_delTraitObj',function f(traitObj){
 	const traits=traitObj&&traitObj.traits;
 	if(traits) for(let x=traits.length;x--;) this.traitsOpCache_delTrait(traits[x]);
 }).
+addBase('_traitsSet',function f(code){
+	if(!this.traitsOpCache_hasUsedOp(code,'','set')){
+		this.traitsOpCache_addUsedOp(code,'','set');
+		const traitObjs=this.traitObjects();
+		for(let i=traitObjs.length;i--;){
+			const traits=traitObjs[i].traits;
+			for(let x=traits.length;x--;){
+				const trait=traits[x];
+				if(trait.code===code){
+					this.traitsOpCache_updateVal_set_add(trait);
+				}
+			}
+		}
+	}
+	return this.traitsOpCache_getCacheVal_set(code);
+}).
+addBase('traitsSet',function f(code){
+	return this._traitsSet(code).slice();
+}).
 addBase('_traitsWithId',function f(code,id){
-	if(!this.traitsOpCache_hasUsedOp(code,id,'mst')){
-		this.traitsOpCache_addUsedOp(code,id,'mst');
+	if(!this.traitsOpCache_hasUsedOp(code,id,'wId')){
+		this.traitsOpCache_addUsedOp(code,id,'wId');
 		const traitObjs=this.traitObjects();
 		for(let i=traitObjs.length;i--;){
 			const traits=traitObjs[i].traits;
 			for(let x=traits.length;x--;){
 				const trait=traits[x];
 				if(trait.code===code&&trait.dataId===id){
-					this.traitsOpCache_updateVal_mst_add(trait);
+					this.traitsOpCache_updateVal_wId_add(trait);
 				}
 			}
 		}
 	}
-	return this.traitsOpCache_getCacheVal_mst(code,id);
+	return this.traitsOpCache_getCacheVal_wId(code,id);
 }).
 addBase('traitsWithId',function f(code,id){
 	return this._traitsWithId(code,id).slice();
