@@ -5803,12 +5803,13 @@ new Map([
 ]), // 3: pi special value to cache val cnt property name
 function(v,k){ this[v]=0; }, // 4: init pi special val cnt
 new Set([
-'sum', // sum             // traitsSum
-'mul', // multiply        // traitsPi
-'has', // has value       // 
-'set', // multiset dataId // 
-'wId', // multiset traits // traitsWithId
-'MId', // max id          // traitsMaxId ( slotType collapseType )
+'ccc', // same code traits // traits
+'wId', // multiset traits  // traitsWithId
+'sum', // sum              // traitsSum
+'mul', // multiply         // traitsPi
+'has', // has value        // 
+'set', // multiset dataId  // traitsSet
+'MId', // max id           // traitsMaxId ( slotType collapseType )
 ]), // 5: planned cacheVal ops
 ];
 
@@ -5852,6 +5853,28 @@ addBase('traitsOpCache_addUsedOp',function f(dataCode,dataId,op){
 addBase('traitsOpCache_hasUsedOp',function f(dataCode,dataId,op){
 	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'');
 	return this.traitsOpCache_getContUsedOp(key).uniqueHas(op);
+}).
+// ccc
+addBase('traitsOpCache_updateVal_ccc_getValObj',function f(dataCode,dataId){
+	// `dataId` is not used
+	const vals=this.traitsOpCache_getContVals();
+	const key=this.traitsOpCache_genCacheKey(dataCode,'','ccc');
+	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=[]);
+	return rtv;
+}).
+addBase('traitsOpCache_updateVal_ccc_add',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_ccc_getValObj(trait.code);
+	valObj.multisetPush(trait);
+}).
+addBase('traitsOpCache_updateVal_ccc_del',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_ccc_getValObj(trait.code);
+	valObj.multisetPop(trait);
+}).
+addBase('traitsOpCache_getCacheVal_ccc',function f(dataCode,dataId){
+	// `dataId` is not used
+	// default value = []
+	const valObj=this.traitsOpCache_updateVal_ccc_getValObj(dataCode);
+	return valObj;
 }).
 // sum
 addBase('traitsOpCache_updateVal_sum_add',function f(trait){
@@ -5941,22 +5964,24 @@ addBase('traitsOpCache_getCacheVal_has',function f(dataCode,dataId){
 }).
 // set
 addBase('traitsOpCache_updateVal_set_getValObj',function f(dataCode,dataId){
+	// `dataId` is not used
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(dataCode,'','set');
 	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=[]);
 	return rtv;
 }).
 addBase('traitsOpCache_updateVal_set_add',function f(trait){
-	const valObj=this.traitsOpCache_updateVal_set_getValObj(trait.code,trait.dataId);
+	const valObj=this.traitsOpCache_updateVal_set_getValObj(trait.code);
 	valObj.multisetPush(trait.dataId);
 }).
 addBase('traitsOpCache_updateVal_set_del',function f(trait){
-	const valObj=this.traitsOpCache_updateVal_set_getValObj(trait.code,trait.dataId);
+	const valObj=this.traitsOpCache_updateVal_set_getValObj(trait.code);
 	valObj.multisetPop(trait.dataId);
 }).
 addBase('traitsOpCache_getCacheVal_set',function f(dataCode,dataId){
+	// `dataId` is not used
 	// default value = []
-	const valObj=this.traitsOpCache_updateVal_set_getValObj(dataCode,dataId);
+	const valObj=this.traitsOpCache_updateVal_set_getValObj(dataCode);
 	return valObj;
 }).
 // wId
@@ -5980,28 +6005,30 @@ addBase('traitsOpCache_getCacheVal_wId',function f(dataCode,dataId){
 }).
 // MId
 addBase('traitsOpCache_updateVal_MId_getValObj',function f(dataCode,dataId){
+	// `dataId` is not used
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(dataCode,'','MId');
 	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=({h:new Heap(),c:new Map(),}));
 	return rtv;
 }).
 addBase('traitsOpCache_updateVal_MId_add',function f(trait){
-	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code,trait.dataId);
+	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code);
 	const newVal=(valObj.c.get(trait.dataId)|0)+1;
 	if(!newVal) valObj.c.delete(trait.dataId);
 	else valObj.c.set(trait.dataId,newVal);
 	valObj.h.push(trait.dataId);
 }).
 addBase('traitsOpCache_updateVal_MId_del',function f(trait){
-	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code,trait.dataId);
+	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code);
 	const newVal=(valObj.c.get(trait.dataId)|0)-1;
 	if(!newVal) valObj.c.delete(trait.dataId);
 	else valObj.c.set(trait.dataId,newVal);
 	while(valObj.h.length&&!valObj.c.has(valObj.h.top)) valObj.h.pop();
 }).
 addBase('traitsOpCache_getCacheVal_MId',function f(dataCode,dataId){
+	// `dataId` is not used
 	// default value = undefined (empty Heap .top)
-	return this.traitsOpCache_updateVal_MId_getValObj(dataCode,dataId).h.top;
+	return this.traitsOpCache_updateVal_MId_getValObj(dataCode).h.top;
 }).
 // change trait
 addBase('_traitsOpCache_changeTrait_common',function f(trait,ops,tbl0){
@@ -6057,19 +6084,33 @@ addBase('traitsOpCache_delTraitObj',function f(traitObj){
 	const traits=traitObj&&traitObj.traits;
 	if(traits) for(let x=traits.length;x--;) this.traitsOpCache_delTrait(traits[x]);
 }).
-addBase('_traitsSet',function f(code){
-	if(!this.traitsOpCache_hasUsedOp(code,'','set')){
-		this.traitsOpCache_addUsedOp(code,'','set');
+addBase('_traits',function f(code){
+	if(!this.traitsOpCache_hasUsedOp(code,'','ccc')){
+		this.traitsOpCache_addUsedOp(code,'','ccc');
 		const traitObjs=this.traitObjects();
 		for(let i=traitObjs.length;i--;){
 			const traits=traitObjs[i].traits;
 			for(let x=traits.length;x--;){
 				const trait=traits[x];
 				if(trait.code===code){
-					this.traitsOpCache_updateVal_set_add(trait);
+					this.traitsOpCache_updateVal_ccc_add(trait);
 				}
 			}
 		}
+	}
+	return this.traitsOpCache_getCacheVal_ccc(code);
+}).
+addBase('traits',function f(code){
+	return this._traits(code).slice();
+}).
+addBase('_traitsSet',function f(code){
+	if(!this.traitsOpCache_hasUsedOp(code,'','set')){
+		this.traitsOpCache_addUsedOp(code,'','set');
+			const traits=this._traits(code);
+			for(let x=traits.length;x--;){
+				const trait=traits[x];
+					this.traitsOpCache_updateVal_set_add(trait);
+			}
 	}
 	return this.traitsOpCache_getCacheVal_set(code);
 }).
@@ -6079,16 +6120,13 @@ addBase('traitsSet',function f(code){
 addBase('_traitsWithId',function f(code,id){
 	if(!this.traitsOpCache_hasUsedOp(code,id,'wId')){
 		this.traitsOpCache_addUsedOp(code,id,'wId');
-		const traitObjs=this.traitObjects();
-		for(let i=traitObjs.length;i--;){
-			const traits=traitObjs[i].traits;
+			const traits=this._traits(code);
 			for(let x=traits.length;x--;){
 				const trait=traits[x];
-				if(trait.code===code&&trait.dataId===id){
+				if(trait.dataId===id){
 					this.traitsOpCache_updateVal_wId_add(trait);
 				}
 			}
-		}
 	}
 	return this.traitsOpCache_getCacheVal_wId(code,id);
 }).
@@ -6118,16 +6156,11 @@ addBase('traitsPi',function f(code,id){
 addBase('traitsMaxId',function f(code){
 	if(!this.traitsOpCache_hasUsedOp(code,'','MId')){
 		this.traitsOpCache_addUsedOp(code,'','Mid');
-		const traitObjs=this.traitObjects();
-		for(let i=traitObjs.length;i--;){
-			const traits=traitObjs[i].traits;
+			const traits=this._traits(code);
 			for(let x=traits.length;x--;){
 				const trait=traits[x];
-				if(trait.code===code){
 					this.traitsOpCache_updateVal_MId_add(trait);
-				}
 			}
-		}
 	}
 	return this.traitsOpCache_getCacheVal_MId(code)-0||0;
 }).
@@ -6248,8 +6281,8 @@ new cfc(Window_Selectable.prototype).addBase('maxPageRows',function(isReturnReal
 	return rtv;
 }).addBase('drawAllItems',function f(){
 	let rtv=0;
-	const idxB=this.topIndex(),sz=this.maxPageItems()+1,cnt=this.maxItems();
-	for(let i=0;i!==sz;++i) if(idxB+i<cnt) ++rtv,this.drawItem(idxB+i);
+	const idxB=this.topIndex(),sz=this.maxPageItems()+1,cnt=this.maxItems(); // +1 for non-align scrolling
+	for(let i=0;i<sz;++i) if(idxB+i<cnt) ++rtv,this.drawItem(idxB+i);
 	return rtv;
 });
 
