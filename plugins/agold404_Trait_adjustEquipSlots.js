@@ -154,7 +154,8 @@ add('releaseUnequippableItems_roundStart',function f(){
 	return f.ori.apply(this,arguments);
 }).
 addBase('traitAdjustEquipSlots_rematchSlots',function f(){
-	this._traitAdjustEquipSlots_rematchSlots(this.equipSlots());
+	//this._traitAdjustEquipSlots_rematchSlots(this.equipSlots());
+	this.equipSlots();
 }).
 addBase('_traitAdjustEquipSlots_rematchSlots',function f(slots){
 	const equips=this.equips(),equipsByType=[];
