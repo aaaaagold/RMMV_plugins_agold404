@@ -2575,6 +2575,30 @@ addBase('slotType',function f(){
 addBase('collapseType',function f(){
 	return this.traitsMaxId(Game_BattlerBase.TRAIT_COLLAPSE_TYPE);
 }).
+addBase('traitsHasId',function f(code,id){
+	return this.traitsSet(code).contains(id);
+}).
+addBase('isStateResist',function f(stateId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_STATE_RESIST,stateId);
+}).
+addBase('isSkillTypeSealed',function f(stypeId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_STYPE_SEAL,stypeId);
+}).
+addBase('isSkillSealed',function f(skillId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_SKILL_SEAL,skillId);
+}).
+addBase('isEquipWtypeOk',function f(wtypeId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_EQUIP_WTYPE,wtypeId);
+}).
+addBase('isEquipAtypeOk',function f(atypeId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_EQUIP_ATYPE,atypeId);
+}).
+addBase('isEquipTypeLocked',function f(etypeId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_EQUIP_LOCK,etypeId);
+}).
+addBase('isEquipTypeSealed',function f(etypeId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_EQUIP_SEAL,etypeId);
+}).
 getP;
 
 
@@ -5807,7 +5831,7 @@ new Set([
 'wId', // multiset traits  // traitsWithId
 'sum', // sum              // traitsSum
 'mul', // multiply         // traitsPi
-'has', // has value        // 
+'has', // has value        // traitsHasId // NOT USED
 'set', // multiset dataId  // traitsSet
 'MId', // max id           // traitsMaxId ( slotType collapseType )
 ]), // 5: planned cacheVal ops
@@ -5824,7 +5848,10 @@ addBase('_traitsOpCache_getContRoot',function f(){
 	// chk _self: for handling JsonEx.makeDeepCopy
 	return rtv;
 }).
-addBase('traitsOpCache_getContUsedOp',function f(key){
+addBase('_traitsOpCache_clearContRoot',function f(){
+	delete this._traitsOpCache;
+}).
+addBase('_traitsOpCache_getContUsedOp',function f(key){
 	const root=this._traitsOpCache_getContRoot();
 	let rtv=root._usedOp; if(!rtv) rtv=root._usedOp=new Map();
 	//let rtv=f.tbl[0];
@@ -5844,15 +5871,15 @@ addBase('traitsOpCache_getContVals',function f(){
 }).
 addBase('traitsOpCache_getUsedOps',function f(trait){
 	const key=this.traitsOpCache_genCacheKey(trait.code,trait.dataId,'');
-	return this.traitsOpCache_getContUsedOp(key);
+	return this._traitsOpCache_getContUsedOp(key).slice();
 }).
 addBase('traitsOpCache_addUsedOp',function f(dataCode,dataId,op){
 	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'');
-	this.traitsOpCache_getContUsedOp(key).uniquePush(op);
+	this._traitsOpCache_getContUsedOp(key).uniquePush(op);
 }).
 addBase('traitsOpCache_hasUsedOp',function f(dataCode,dataId,op){
 	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'');
-	return this.traitsOpCache_getContUsedOp(key).uniqueHas(op);
+	return this._traitsOpCache_getContUsedOp(key).uniqueHas(op);
 }).
 // ccc
 addBase('traitsOpCache_updateVal_ccc_getValObj',function f(dataCode,dataId){
@@ -5877,30 +5904,33 @@ addBase('traitsOpCache_getCacheVal_ccc',function f(dataCode,dataId){
 	return valObj;
 }).
 // sum
-addBase('traitsOpCache_updateVal_sum_add',function f(trait){
-	const vals=this.traitsOpCache_getContVals();
-	const key=this.traitsOpCache_genCacheKey(trait.code,trait.dataId,'sum');
-	const newVal=(vals.get(key)-0||0)+trait.value;
-	vals.set(key,newVal);
-}).
-addBase('traitsOpCache_updateVal_sum_del',function f(trait){
-	const vals=this.traitsOpCache_getContVals();
-	const key=this.traitsOpCache_genCacheKey(trait.code,trait.dataId,'sum');
-	const newVal=(vals.get(key)-0||0)-trait.value;
-	vals.set(key,newVal);
-}).
-addBase('traitsOpCache_getCacheVal_sum',function f(dataCode,dataId){
-	// default value = 0
+addBase('traitsOpCache_updateVal_sum_getValObj',function f(dataCode,dataId){
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'sum');
-	return vals.get(key)-0||0;
+	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv={cnt:0,val:0,});
+	return rtv;
+}).
+addBase('traitsOpCache_updateVal_sum_add',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_sum_getValObj(trait.code,trait.dataId);
+	if(0===valObj.cnt++) valObj.val=trait.value;
+	else valObj.val+=trait.value;
+}).
+addBase('traitsOpCache_updateVal_sum_del',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_sum_getValObj(trait.code,trait.dataId);
+	if(0===--valObj.cnt) valObj.val=0;
+	else valObj.val-=trait.value;
+}).
+addBase('traitsOpCache_getCacheVal_sum',function f(dataCode,dataId){
+	// default value = {cnt:0,val:0,}
+	const valObj=this.traitsOpCache_updateVal_sum_getValObj(dataCode,dataId);
+	return valObj.val;
 }).
 // mul
 addBase('traitsOpCache_updateVal_mul_getValObj',function f(dataCode,dataId){
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'mul');
 	let rtv=vals.get(key); if(!rtv){
-		vals.set(key,rtv=({preCal:1,}));
+		vals.set(key,rtv=({traitCnt:0,preCal:1,}));
 		f.tbl[3].forEach(f.tbl[4].bind(rtv));
 	}
 	return rtv;
@@ -5909,6 +5939,7 @@ addBase('traitsOpCache_updateVal_mul_add',function f(trait){
 	const valObj=this.traitsOpCache_updateVal_mul_getValObj(trait.code,trait.dataId);
 	const traitVal=isNaN(trait.value)?0:trait.value-0;
 	const cntName=f.tbl[3].get(traitVal);
+	if(0===valObj.traitCnt++) valObj.preCal=1;
 	if(cntName===undefined){
 		// general values
 		valObj.preCal*=traitVal;
@@ -5928,6 +5959,7 @@ addBase('traitsOpCache_updateVal_mul_del',function f(trait){
 		// special values
 		--valObj[cntName];
 	}
+	if(0===--valObj.traitCnt) valObj.preCal=1;
 }).
 addBase('traitsOpCache_getCacheVal_mul',function f(dataCode,dataId){
 	// default value = 1
@@ -5942,7 +5974,7 @@ addBase('traitsOpCache_getCacheVal_mul',function f(dataCode,dataId){
 	}
 	return valObj.preCal;
 }).
-// has
+// has // NOT USED
 addBase('traitsOpCache_updateVal_has_add',function f(trait){
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(trait.code,trait.dataId,'has');
@@ -6041,11 +6073,13 @@ addBase('_traitsOpCache_changeTrait_common',function f(trait,ops,tbl0){
 addBase('traitsOpCache_addTrait',function f(trait){
 	// not changing usedOps here
 	if(!f.tbl[0]){ f.tbl[0]=new Map([
+		['ccc', this.traitsOpCache_updateVal_ccc_add ],
+		['wId', this.traitsOpCache_updateVal_wId_add ],
 		['sum', this.traitsOpCache_updateVal_sum_add ],
 		['mul', this.traitsOpCache_updateVal_mul_add ],
-		['has', this.traitsOpCache_updateVal_has_add ],
+		//['has', this.traitsOpCache_updateVal_has_add ], // NOT USED
 		['set', this.traitsOpCache_updateVal_set_add ],
-		['wId', this.traitsOpCache_updateVal_wId_add ],
+		['MId', this.traitsOpCache_updateVal_MId_add ],
 	]); }
 	this._traitsOpCache_changeTrait_common(trait,
 		this.traitsOpCache_getUsedOps(trait),
@@ -6057,11 +6091,13 @@ t,
 addBase('traitsOpCache_delTrait',function f(trait){
 	// not changing usedOps here
 	if(!f.tbl[0]){ f.tbl[0]=new Map([
+		['ccc', this.traitsOpCache_updateVal_ccc_del ],
+		['wId', this.traitsOpCache_updateVal_wId_del ],
 		['sum', this.traitsOpCache_updateVal_sum_del ],
 		['mul', this.traitsOpCache_updateVal_mul_del ],
-		['has', this.traitsOpCache_updateVal_has_del ],
+		//['has', this.traitsOpCache_updateVal_has_del ], // NOT USED
 		['set', this.traitsOpCache_updateVal_set_del ],
-		['wId', this.traitsOpCache_updateVal_wId_del ],
+		['MId', this.traitsOpCache_updateVal_MId_del ],
 	]); }
 	this._traitsOpCache_changeTrait_common(trait,
 		this.traitsOpCache_getUsedOps(trait),
@@ -6116,6 +6152,9 @@ addBase('_traitsSet',function f(code){
 }).
 addBase('traitsSet',function f(code){
 	return this._traitsSet(code).slice();
+}).
+addBase('traitsHasId',function f(code,dataId){
+	return this._traitsSet(code).multisetHas(dataId);
 }).
 addBase('_traitsWithId',function f(code,id){
 	if(!this.traitsOpCache_hasUsedOp(code,id,'wId')){
@@ -6189,6 +6228,7 @@ addBase('traitsOpCache_changeDataobj',function f(oldData,newData){
 		this.traitsOpCache_addTraitObj(newData);
 	}
 }).
+// TODO: stateResistSet|attackElements|attackStates|addedSkillTypes|addedSkills
 getP;
 
 new cfc(Game_Enemy.prototype).
