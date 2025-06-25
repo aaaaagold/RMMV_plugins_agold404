@@ -29,12 +29,20 @@
  * this increase weapon slots by 1, and decrease equipType:2 by 3
  * 
  * 
+ * @param GlobalChanges
+ * @type note
+ * @text Globally change amount of each equip type
+ * @desc input a valid json
+ * @default "{\n\"1\":0,\n\"_dummy\":\"\"\n}"
+ * 
+ * 
  * This plugin can be renamed as you want.
  */
 
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Trait_adjustEquipSlots";
 const params=PluginManager.parameters(pluginName)||{};
+params._globalChanges=JSON.parse(JSON.parse(params.GlobalChanges||"0"))||{};
 
 
 // traitsWithId(code,equipTypeId)->delta_amount
@@ -124,6 +132,7 @@ addBase('traitAdjustEquipSlots_getDelta',function f(equipTypeId){
 	let rtv=this.traitsSum(f.tbl[3]._key2content.adjustEquipSlots[3][0],equipTypeId);
 	const arr=this.traitsWithId(f.tbl[3]._key2content.adjustEquipSlots[2],equipTypeId);
 	for(let x=0,xs=arr.length;x<xs;++x) rtv+=EVAL.call(this,arr[x].value)-0||0;
+	rtv+=(equipTypeId in f.tbl[1]._globalChanges)?EVAL.call(this,f.tbl[1]._globalChanges[equipTypeId])-0||0:0;
 	return ~~rtv;
 },t).
 getP;
