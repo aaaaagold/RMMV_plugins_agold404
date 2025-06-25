@@ -246,14 +246,15 @@ p.multisetPop=function(obj){
 	const arr=this.multisetGetIdxv(obj);
 	if(!arr||!arr.length) return;
 	const res=arr.back;
-	if(res+1!==this.length){
+	arr.uniquePop(res);
+	const contLen=this.length;
+	if(res+1!==contLen){
 		const obj2=this.back;
 		const arr2=this.multisetGetIdxv(obj2);
-		arr2.uniquePop(this.length-1);
+		arr2.uniquePop(contLen-1);
 		arr2.uniquePush(res);
 		this[res]=obj2;
 	}
-	arr.uniquePop(res);
 	if(!arr.length) this._msMap.delete(obj);
 	return Array.prototype.pop.call(this)?obj:undefined;
 };
