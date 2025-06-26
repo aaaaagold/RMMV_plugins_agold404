@@ -2563,6 +2563,16 @@ addBase('traitsSet',function f(code){
 },[
 (r,n)=>{ r.push(n.dataId); return r; }, // 0: reduce
 ]).
+addBase('traitsUniqueIds',function f(code){
+	const rtv=[];
+	this.traits(code).reduce(f.tbl[0],rtv);
+	return rtv;
+},[
+(r,n)=>{ r.uniquePush(n.dataId); return r; }, // 0: reduce
+]).
+addBase('stateResistSet',function f(){
+	return this.traitsUniqueIds(Game_BattlerBase.TRAIT_STATE_RESIST);
+}).
 addBase('traitsMaxId',function f(code){
 	return this.traits(code).reduce(f.tbl[0],0);
 	return rtv;
@@ -2599,6 +2609,35 @@ addBase('isEquipTypeLocked',function f(etypeId){
 addBase('isEquipTypeSealed',function f(etypeId){
 	return this.traitsHasId(Game_BattlerBase.TRAIT_EQUIP_SEAL,etypeId);
 }).
+getP;
+
+
+new cfc(Game_BattlerBase.prototype).
+addBase('refresh_resistStates',function f(){
+	this.stateResistSet().forEach(f.tbl[0],this);
+},[
+function(stateId){ this.eraseState(stateId); }, // 0: forEach
+]).
+addBase('refresh_ps',function f(){
+	this._hp=this._hp.clamp(0,this.mhp);
+	this._mp=this._mp.clamp(0,this.mmp);
+	this._tp=this._tp.clamp(0,this.maxTp());
+}).
+addBase('refresh',function f(){
+	this.refresh_resistStates();
+	this.refresh_ps();
+}).
+getP;
+
+new cfc(Game_Actor.prototype).
+addBase('skills',function f(){
+	const skillIds=[];
+	skillIds.multisetPushContainer(this._skills);
+	skillIds.multisetPushContainer(this.addedSkills());
+	return skillIds.map(f.tbl[0]);
+},[
+id=>$dataSkills[id], // 0: skillId to skillDataobj
+]).
 getP;
 
 
@@ -6155,6 +6194,9 @@ addBase('traitsSet',function f(code){
 }).
 addBase('traitsHasId',function f(code,dataId){
 	return this._traitsSet(code).multisetHas(dataId);
+}).
+addBase('traitsUniqueIds',function f(code){
+	return this._traitsSet(code).multisetUniques();
 }).
 addBase('_traitsWithId',function f(code,id){
 	if(!this.traitsOpCache_hasUsedOp(code,id,'wId')){
