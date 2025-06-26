@@ -263,6 +263,14 @@ p.multisetClear=function(){
 	this._msMap.clear();
 	this.length=0;
 };
+(p.multisetUniques=function f(){
+	const rtv=[];
+	this.multisetHas(); // create map
+	this._msMap.forEach(f._forEach.bind(rtv));
+	return rtv;
+})._forEach=function(v,k){
+	this.uniquePush(k);
+};
 })();
 
 
