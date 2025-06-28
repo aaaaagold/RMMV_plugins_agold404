@@ -2632,8 +2632,8 @@ getP;
 new cfc(Game_Actor.prototype).
 addBase('skills',function f(){
 	const skillIds=[];
-	skillIds.multisetPushContainer(this._skills);
-	skillIds.multisetPushContainer(this.addedSkills());
+	skillIds.uniquePushContainer(this._skills);
+	skillIds.uniquePushContainer(this.addedSkills());
 	return skillIds.map(f.tbl[0]);
 },[
 id=>$dataSkills[id], // 0: skillId to skillDataobj
@@ -6176,7 +6176,7 @@ addBase('_traits',function f(code){
 	return this.traitsOpCache_getCacheVal_ccc(code);
 }).
 addBase('traits',function f(code){
-	return this._traits(code).slice();
+	return this._traits.apply(this,arguments).slice();
 }).
 addBase('_traitsSet',function f(code){
 	if(!this.traitsOpCache_hasUsedOp(code,'','set')){
@@ -6190,7 +6190,7 @@ addBase('_traitsSet',function f(code){
 	return this.traitsOpCache_getCacheVal_set(code);
 }).
 addBase('traitsSet',function f(code){
-	return this._traitsSet(code).slice();
+	return this._traitsSet.apply(this,arguments).slice();
 }).
 addBase('traitsHasId',function f(code,dataId){
 	return this._traitsSet(code).multisetHas(dataId);
@@ -6212,7 +6212,7 @@ addBase('_traitsWithId',function f(code,id){
 	return this.traitsOpCache_getCacheVal_wId(code,id);
 }).
 addBase('traitsWithId',function f(code,id){
-	return this._traitsWithId(code,id).slice();
+	return this._traitsWithId.apply(this,arguments).slice();
 }).
 addBase('traitsSum',function f(code,id){
 	if(!this.traitsOpCache_hasUsedOp(code,id,'sum')){
@@ -6271,6 +6271,12 @@ addBase('traitsOpCache_changeDataobj',function f(oldData,newData){
 	}
 }).
 // TODO: stateResistSet|attackElements|attackStates|addedSkillTypes|addedSkills
+addBase('_attackElements',function(){
+	return this._traitsSet(Game_BattlerBase.TRAIT_ATTACK_ELEMENT);
+}).
+addBase('attackElements',function(){
+	return this._attackElements.apply(this,arguments).slice();
+}).
 getP;
 
 new cfc(Game_Enemy.prototype).
@@ -6298,8 +6304,19 @@ add('setEquip',function f(slotId,item){
 	);
 	return f.ori.apply(this,arguments);
 }).
+addBase('attackElements',function() {
+	let set=Game_Battler.prototype._attackElements.call(this);
+	if(this.hasNoWeapons()){
+		const bareHandsElementId=this.bareHandsElementId();
+		if(!set.multisetHas(bareHandsElementId)){
+			set=set.slice();
+			set.push(bareHandsElementId);
+		}
+	}else set=set.slice();
+	return set;
+}).
 getP;
-}
+} // if(not disabled by urlParam)
 
 
 })(); // trait calc cache
