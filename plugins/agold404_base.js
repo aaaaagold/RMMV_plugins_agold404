@@ -2133,6 +2133,16 @@ addBase('mpRate',function(){
 getP;
 
 
+new cfc(Game_BattlerBase.prototype).
+addBase('setHpMpTp',function(hp,mp,tp){
+	if(hp!==undefined) this._hp=hp;
+	if(mp!==undefined) this._mp=mp;
+	if(tp!==undefined) this._tp=tp;
+	this.refresh();
+}).
+getP;
+
+
 new cfc(Game_Action.prototype).
 addBase('isSkill',function f(){
 	return DataManager.isSkill(this.item());
@@ -2447,6 +2457,9 @@ addBase('getEquip',function f(slotId){
 	// external api
 	return this._getEquip.apply(this,arguments);
 }).
+addBase('getEquipSlot',function f(slotId){
+	return this._getEquipSlot.apply(this,arguments);
+}).
 addBase('equips',function f(){
 	const rtv=[];
 	for(let x=0,arr=this._equips,xs=arr.length;x<xs;++x){
@@ -2520,6 +2533,35 @@ addBase('releaseUnequippableItems',function(forcing){
 addBase('releaseUnequippableItems_roundStart',none).
 addBase('isEquipChangeOk',function(slotId){
 	return !this.isEquipTypeLocked(this._getEquipSlot(slotId)) && !this.isEquipTypeSealed(this._getEquipSlot(slotId)) ;
+}).
+getP;
+
+new cfc(Window_EquipSlot.prototype).
+addBase('item',function f(){
+	return this._actor ? this._actor.getEquip(this.index()) : null;
+}).
+addBase('drawItem',function f(index){
+	if(!this._actor) return;
+	const rect = this.itemRectForText(index);
+	this.changeTextColor(this.systemColor());
+	this.changePaintOpacity(this.isEnabled(index));
+	this.drawText(this.slotName(index), rect.x, rect.y, 138, this.lineHeight());
+	this.drawItemName(this._actor.getEquip(index), rect.x + 138, rect.y);
+	this.changePaintOpacity(true);
+}).
+addBase('slotName',function f(index){
+	if(!this._actor) return '';
+	return $dataSystem.equipTypes[this._actor.getEquipSlot(index)];
+}).
+getP;
+
+new cfc(Window_EquipItem.prototype).
+addBase('includes',function f(item){
+	if(item === null) return true;
+	if(this._slotId < 0 || item.etypeId !== this._actor.getEquipSlot(this._slotId)){
+		return false;
+	}
+	return this._actor.canEquip(item);
 }).
 getP;
 
