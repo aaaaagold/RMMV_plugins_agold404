@@ -2579,6 +2579,9 @@ addBase('stateResistSet',function f(){
 addBase('addedSkillTypes',function f(){
 	return this.traitsUniqueIds(Game_BattlerBase.TRAIT_STYPE_ADD);
 }).
+addBase('addedSkills',function f(){
+	return this.traitsUniqueIds(Game_BattlerBase.TRAIT_SKILL_ADD);
+}).
 addBase('traitsMaxId',function f(code){
 	return this.traits(code).reduce(f.tbl[0],0);
 	return rtv;
@@ -2614,6 +2617,20 @@ addBase('isEquipTypeLocked',function f(etypeId){
 }).
 addBase('isEquipTypeSealed',function f(etypeId){
 	return this.traitsHasId(Game_BattlerBase.TRAIT_EQUIP_SEAL,etypeId);
+}).
+addBase('specialFlag',function(flagId) {
+	return this.traitsHasId(Game_BattlerBase.TRAIT_SPECIAL_FLAG,flagId);
+}).
+addBase('actionPlusSet',function f(){
+	// originally used by ONLY `makeActionTimes`
+	throw new Error('don\'t use it');
+}).
+getP;
+
+new cfc(Game_Battler.prototype).
+addBase('makeActionTimes',function f(){
+	const val=1+this.traitsSumAll(Game_BattlerBase.TRAIT_ACTION_PLUS);
+	return val+(Math.random()<val%1);
 }).
 getP;
 
@@ -5875,11 +5892,12 @@ new Set([
 'ccc', // same code traits // traits
 'wId', // multiset traits  // traitsWithId
 'sum', // sum              // traitsSum
+'sac', // sum all by code  // traitsSumAll
 'mul', // multiply         // traitsPi
 'has', // has value        // traitsHasId // NOT USED
 'set', // multiset dataId  // traitsSet
 'MId', // max id           // traitsMaxId ( slotType collapseType )
-]), // 5: planned cacheVal ops
+]), // 5: planned cacheVal ops. also see `traitsOpCache_addTrait` `traitsOpCache_delTrait`
 ];
 
 
@@ -5949,7 +5967,7 @@ addBase('traitsOpCache_getCacheVal_ccc',function f(dataCode,dataId){
 	const valObj=this.traitsOpCache_updateVal_ccc_getValObj(dataCode);
 	return valObj;
 }).
-// sum
+// sum // taken used by sac
 addBase('traitsOpCache_updateVal_sum_getValObj',function f(dataCode,dataId){
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'sum');
@@ -5969,6 +5987,23 @@ addBase('traitsOpCache_updateVal_sum_del',function f(trait){
 addBase('traitsOpCache_getCacheVal_sum',function f(dataCode,dataId){
 	// default value = {cnt:0,val:0,}
 	const valObj=this.traitsOpCache_updateVal_sum_getValObj(dataCode,dataId);
+	return valObj.val;
+}).
+// sac // take use of sum
+addBase('traitsOpCache_updateVal_sac_add',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_sum_getValObj(trait.code,'');
+	if(0===valObj.cnt++) valObj.val=trait.value;
+	else valObj.val+=trait.value;
+}).
+addBase('traitsOpCache_updateVal_sac_del',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_sum_getValObj(trait.code,'');
+	if(0===--valObj.cnt) valObj.val=0;
+	else valObj.val-=trait.value;
+}).
+addBase('traitsOpCache_getCacheVal_sac',function f(dataCode,dataId){
+	// `dataId` is not used
+	// default value = {cnt:0,val:0,}
+	const valObj=this.traitsOpCache_updateVal_sum_getValObj(dataCode,'');
 	return valObj.val;
 }).
 // mul
@@ -6091,16 +6126,18 @@ addBase('traitsOpCache_updateVal_MId_getValObj',function f(dataCode,dataId){
 }).
 addBase('traitsOpCache_updateVal_MId_add',function f(trait){
 	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code);
-	const newVal=(valObj.c.get(trait.dataId)|0)+1;
-	if(!newVal) valObj.c.delete(trait.dataId);
-	else valObj.c.set(trait.dataId,newVal);
-	valObj.h.push(trait.dataId);
+	const eleVal=trait.dataId-0||0;
+	const newVal=(valObj.c.get(eleVal)|0)+1;
+	if(!newVal) valObj.c.delete(eleVal);
+	else valObj.c.set(eleVal,newVal);
+	valObj.h.push(eleVal);
 }).
 addBase('traitsOpCache_updateVal_MId_del',function f(trait){
 	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code);
-	const newVal=(valObj.c.get(trait.dataId)|0)-1;
-	if(!newVal) valObj.c.delete(trait.dataId);
-	else valObj.c.set(trait.dataId,newVal);
+	const eleVal=trait.dataId-0||0;
+	const newVal=(valObj.c.get(eleVal)|0)-1;
+	if(!newVal) valObj.c.delete(eleVal);
+	else valObj.c.set(eleVal,newVal);
 	while(valObj.h.length&&!valObj.c.has(valObj.h.top)) valObj.h.pop();
 }).
 addBase('traitsOpCache_getCacheVal_MId',function f(dataCode,dataId){
@@ -6122,6 +6159,7 @@ addBase('traitsOpCache_addTrait',function f(trait){
 		['ccc', this.traitsOpCache_updateVal_ccc_add ],
 		['wId', this.traitsOpCache_updateVal_wId_add ],
 		['sum', this.traitsOpCache_updateVal_sum_add ],
+		['sac', this.traitsOpCache_updateVal_sac_add ],
 		['mul', this.traitsOpCache_updateVal_mul_add ],
 		//['has', this.traitsOpCache_updateVal_has_add ], // NOT USED
 		['set', this.traitsOpCache_updateVal_set_add ],
@@ -6140,6 +6178,7 @@ addBase('traitsOpCache_delTrait',function f(trait){
 		['ccc', this.traitsOpCache_updateVal_ccc_del ],
 		['wId', this.traitsOpCache_updateVal_wId_del ],
 		['sum', this.traitsOpCache_updateVal_sum_del ],
+		['sac', this.traitsOpCache_updateVal_sac_del ],
 		['mul', this.traitsOpCache_updateVal_mul_del ],
 		//['has', this.traitsOpCache_updateVal_has_del ], // NOT USED
 		['set', this.traitsOpCache_updateVal_set_del ],
@@ -6232,6 +6271,17 @@ addBase('traitsSum',function f(code,id){
 	}
 	return this.traitsOpCache_getCacheVal_sum(code,id);
 }).
+addBase('traitsSumAll',function f(code){
+	if(!this.traitsOpCache_hasUsedOp(code,'','sac')){
+		this.traitsOpCache_addUsedOp(code,'','sac');
+			const traits=this._traits(code);
+			for(let x=traits.length;x--;){
+				const trait=traits[x];
+					this.traitsOpCache_updateVal_sac_add(trait);
+			}
+	}
+	return this.traitsOpCache_getCacheVal_sac(code);
+}).
 addBase('traitsPi',function f(code,id){
 	if(!this.traitsOpCache_hasUsedOp(code,id,'mul')){
 		this.traitsOpCache_addUsedOp(code,id,'mul');
@@ -6244,7 +6294,7 @@ addBase('traitsPi',function f(code,id){
 }).
 addBase('traitsMaxId',function f(code){
 	if(!this.traitsOpCache_hasUsedOp(code,'','MId')){
-		this.traitsOpCache_addUsedOp(code,'','Mid');
+		this.traitsOpCache_addUsedOp(code,'','MId');
 			const traits=this._traits(code);
 			for(let x=traits.length;x--;){
 				const trait=traits[x];
@@ -6253,22 +6303,55 @@ addBase('traitsMaxId',function f(code){
 	}
 	return this.traitsOpCache_getCacheVal_MId(code)-0||0;
 }).
+addBase('_restriction_init',function f(){
+	// initializing here
+	const code=f.tbl[0].code;
+	if(!this.traitsOpCache_hasUsedOp(code,'','MId')){
+		this.traitsOpCache_addUsedOp(code,'','MId');
+		if(this._states) for(let i=this._states.length;i--;) this.traitsOpCache_addTraitObj_state(this._states[i]);
+	}
+},t=[
+{code:"stateRestrictionValue",dataId:0,}, // dummy obj for restriction info
+]).
+addBase('restriction',function f(){
+	this._restriction_init();
+	return this.traitsOpCache_getCacheVal_MId(f.tbl[0].code)-0||0;
+},t).
+addBase('traitsOpCache_addTraitObj_state',function f(stateId){
+	const dataobj=$dataStates[stateId]; if(!dataobj) return;
+	this.traitsOpCache_addTraitObj(dataobj);
+	
+	this._restriction_init();
+	const trait=f.tbl[0];
+	trait.dataId=dataobj.restriction;
+	this.traitsOpCache_updateVal_MId_add(f.tbl[0]);
+},t).
+addBase('traitsOpCache_delTraitObj_state',function f(stateId){
+	const dataobj=$dataStates[stateId]; if(!dataobj) return;
+	if(!this.isStateAffected(stateId)) return;
+	this.traitsOpCache_delTraitObj(dataobj);
+	
+	this._restriction_init();
+	const trait=f.tbl[0];
+	trait.dataId=dataobj.restriction;
+	this.traitsOpCache_updateVal_MId_del(f.tbl[0]);
+},t).
 add('addNewState',function f(stateId){
-	this.traitsOpCache_addTraitObj($dataStates[stateId]);
+	this.traitsOpCache_addTraitObj_state(stateId); // before actually change `this._states`
 	return f.ori.apply(this,arguments);
 }).
 add('eraseState',function f(stateId){
-	if(this.isStateAffected(stateId)) this.traitsOpCache_delTraitObj($dataStates[stateId]);
+	this.traitsOpCache_delTraitObj_state(stateId); // before actually change `this._states`
 	return f.ori.apply(this,arguments);
 }).
 add('clearStates',function f(){
-	if(this._states) for(let i=this._states.length;i--;) this.traitsOpCache_delTraitObj($dataStates[this._states[i]]);
+	if(this._states) for(let i=this._states.length;i--;) this.traitsOpCache_delTraitObj_state(this._states[i]);
 	return f.ori.apply(this,arguments);
 }).
 add('die',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	// due to getKeepWhenDeadStates
-	if(this._states) for(let i=this._states.length;i--;) this.traitsOpCache_addTraitObj($dataStates[this._states[i]]);
+	if(this._states) for(let i=this._states.length;i--;) this.traitsOpCache_addTraitObj_state(this._states[i]);
 	return rtv;
 }).
 addBase('traitsOpCache_changeDataobj',function f(oldData,newData){
