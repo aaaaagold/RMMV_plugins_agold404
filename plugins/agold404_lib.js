@@ -222,9 +222,12 @@ p.multisetGetIdxv=function(obj){
 	}
 	return this._msMap.get(obj);
 };
-p.multisetHas=function(obj){
+p.multisetGetCnt=function(obj){
 	const arr=this.multisetGetIdxv(obj);
-	return !!(arr&&arr.length);
+	return arr?arr.length:0;
+};
+p.multisetHas=function(obj){
+	return this.multisetGetCnt(obj)!==0; // always >=0
 };
 p.multisetPush=function( /* obj , ... */ ){
 	this.multisetHas(); // create map
