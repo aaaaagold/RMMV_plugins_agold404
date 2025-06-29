@@ -6499,6 +6499,14 @@ new cfc(Bitmap.prototype).add('_callLoadListeners',function f(){
 });
 }
 
+
+new cfc(Game_BattlerBase.prototype).
+addBase('attackStatesRate',function f(){
+	return this.traitsUniqueIds(Game_BattlerBase.TRAIT_ATTACK_STATE);
+}).
+getP;
+
+
 })(); // fix bug
 
 // ---- ---- ---- ---- 
