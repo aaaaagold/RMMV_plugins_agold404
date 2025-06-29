@@ -2663,9 +2663,12 @@ addBase('isEquipTypeSealed',function f(etypeId){
 addBase('specialFlag',function(flagId) {
 	return this.traitsHasId(Game_BattlerBase.TRAIT_SPECIAL_FLAG,flagId);
 }).
+addBase('partyAbility',function(abilityId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_PARTY_ABILITY,abilityId);
+}).
 addBase('actionPlusSet',function f(){
 	// originally used by ONLY `makeActionTimes`
-	throw new Error('don\'t use it');
+	throw new Error('don\'t use `'+f._funcName+'`');
 }).
 getP;
 
@@ -6403,7 +6406,7 @@ addBase('traitsOpCache_changeDataobj',function f(oldData,newData){
 		this.traitsOpCache_addTraitObj(newData);
 	}
 }).
-// TODO: stateResistSet|attackElements|attackStates|addedSkillTypes|addedSkills
+// TODO: (traits|stateResistSet|attackElements|attackStates|addedSkillTypes|addedSkills|actionPlusSet|specialFlag|partyAbility)(?=\()
 addBase('_attackElements',function(){
 	return this._traitsSet(Game_BattlerBase.TRAIT_ATTACK_ELEMENT);
 }).
