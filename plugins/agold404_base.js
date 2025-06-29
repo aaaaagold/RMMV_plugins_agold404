@@ -2557,6 +2557,9 @@ addBase('traitsSumAll',function f(code){
 (r,n)=>r+n.value, // 0: reduce
 ]).
 addBase('traitsSet',function f(code){
+	return this.traitsAllIds(code);
+}).
+addBase('traitsAllIds',function f(code){
 	const rtv=[];
 	this.traits(code).reduce(f.tbl[0],rtv);
 	return rtv;
@@ -2572,6 +2575,9 @@ addBase('traitsUniqueIds',function f(code){
 ]).
 addBase('stateResistSet',function f(){
 	return this.traitsUniqueIds(Game_BattlerBase.TRAIT_STATE_RESIST);
+}).
+addBase('addedSkillTypes',function f(){
+	return this.traitsUniqueIds(Game_BattlerBase.TRAIT_STYPE_ADD);
 }).
 addBase('traitsMaxId',function f(code){
 	return this.traits(code).reduce(f.tbl[0],0);
@@ -5910,7 +5916,8 @@ addBase('traitsOpCache_getContVals',function f(){
 }).
 addBase('traitsOpCache_getUsedOps',function f(trait){
 	const key=this.traitsOpCache_genCacheKey(trait.code,trait.dataId,'');
-	return this._traitsOpCache_getContUsedOp(key).slice();
+	const key0=this.traitsOpCache_genCacheKey(trait.code,'',''); // for those only use trait.code to distinguish
+	return this._traitsOpCache_getContUsedOp(key0).slice().concat_inplace(this._traitsOpCache_getContUsedOp(key));
 }).
 addBase('traitsOpCache_addUsedOp',function f(dataCode,dataId,op){
 	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'');
@@ -6196,6 +6203,7 @@ addBase('traitsHasId',function f(code,dataId){
 	return this._traitsSet(code).multisetHas(dataId);
 }).
 addBase('traitsUniqueIds',function f(code){
+	// ONLY used to iterate all unique id once. time overhead of `multisetUniques` is amortized.
 	return this._traitsSet(code).multisetUniques();
 }).
 addBase('_traitsWithId',function f(code,id){
