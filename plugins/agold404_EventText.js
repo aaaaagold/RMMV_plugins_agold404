@@ -6,6 +6,10 @@
  * the following lines will be the texts displayed on the event
  * 
  * the next (at-sign)EVENTTEXT in comment (event command) in the same event page will be the next lines of texts
+ * (at-sign)EVENTTEXT<A>
+ *   A can be: L/R/D/O, means align to left/right/down edge or the origin of the event.
+ *   e.g. (at-sign)EVENTTEXT<D> to align to down edge of the event.
+ *   take the LAST setting in a event page as the final setting of this event page.
  * 
  * This plugin can be renamed as you want.
  */
@@ -16,43 +20,70 @@ new cfc(DataManager).add('onLoad_after_map',function f(obj){
 	const rtv=f.ori.apply(this,arguments);
 	this.onLoad_after_map_setEventTexts(obj);
 	return rtv;
-}).add('onLoad_after_map_setEventTexts',function f(obj){
+}).
+addBase('onLoad_after_map_setEventTexts',function f(obj){
 	obj.events.forEach(f.tbl[0]);
 },t=[
-evtd=>{ if(!evtd) return;
+function f(evtd){ if(!evtd) return;
+	if(!f._info){ f._info={
+		pattern:/^@EVENTTEXT(<(.+)>)?$/,
+		aligns:{
+			D:"D",
+			L:"L",
+			O:"O",
+			R:"R",
+			_:"U",
+		},
+	}; }
 	for(let p=0,pgv=evtd.pages,pe=pgv.length;p!==pe;++p){
 		const txtv=pgv[p].textv=[];
 		let isTextComment=false;
+		let align;
 		for(let c=0,cmdv=pgv[p].list,ce=cmdv.length;c!==ce;++c){
 			const cmd=cmdv[c];
 			const code=cmd.code;
 			if(isTextComment){
 				if(code===108||code===408) txtv.push(cmd.parameters[0]);
 				else isTextComment=false;
-			}else if(code===108 && cmd.parameters[0]==="@EVENTTEXT") isTextComment=true;
+			}else if(code===108 && cmd.parameters[0] && cmd.parameters[0].match){
+				const m=cmd.parameters[0].match(f._info.pattern);
+				if(m){
+					align=f._info.aligns[m[2]];
+					isTextComment=true;
+				}
+			}
 		}
+		align=align||f._info.aligns._;
+		txtv._txtalign=align;
 	}
 },
-]);
+]).
+getP;
 
-new cfc(Game_Character.prototype).add('getTextv',function f(){
-	return this._textv;
-}).add('setTextv',function f(arr,isAutoUpdateSprite){
+new cfc(Game_Character.prototype).
+addBase('getTextv',function f(){
+	const rtv=this._textv;
+	rtv._txtalign=this._texta; // consider saves
+	return rtv;
+}).
+addBase('setTextv',function f(arr,isAutoUpdateSprite){
 	this._textv=arr;
+	this._texta=arr._txtalign;
 	if(isAutoUpdateSprite){
 		const sp=SceneManager.getSprite(this);
 		if(sp) sp.setChrTextv(this.getTextv()); // event._erased
 	}
 	return this;
-});
+}).
+getP;
 
 new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 	const rtv=f.ori.apply(this,arguments);
 	this.setChrTextv(chr.getTextv());
 	return rtv;
 }).add('setChrTextv',function f(arr){
-	if(arr) arr=arr.slice();
-	else arr=f.tbl[0];
+	if(!arr) arr=f.tbl[0];
+	this._texta=arr._txtalign;
 	return this.setChrTxt(arr.join('\n'));
 },[
 [], // 0: empty textv
@@ -77,16 +108,40 @@ new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 	const rtv=f.ori.apply(this,arguments);
 	this.updateText();
 	return rtv;
-}).add('updateText',function f(){
+}).
+addBase('updateText',function f(){
 	const p=this._textWnd&&this._textWnd.parent; if(!p) return;
-	p.y=-this.height*this.anchor.y;
-},undefined,true,true).add('getTextWindow',function f(){
+	const func=f.tbl[0][this._texta]||f.tbl[0]._;
+	func.call(this,p);
+},[
+{
+D:function(p){
+	p.position.set(0,this.height*(1-this.anchor.y)+this._textWnd.height);
+},
+L:function(p){
+	p.position.set(this.width*-this.anchor.x,0);
+},
+O:function(p){
+	p.position.set(0,this._textWnd.height>>1);
+},
+R:function(p){
+	p.position.set(this.width*(1-this.anchor.x),0);
+},
+_:function(p){
+	// U
+	p.position.set(0,this.height*-this.anchor.y);
+},
+},
+]).
+addBase('getTextWindow',function f(){
 	return this._textWnd;
-},undefined,true,true).add('reApplyWindowText',function f(){
+}).
+addBase('reApplyWindowText',function f(){
 	const wnd=this.getTextWindow();
 	if(wnd) wnd.reApplyText(false);
 	return this;
-});
+}).
+getP;
 
 new cfc(Game_Event.prototype).
 add('setupPage',function f(){
