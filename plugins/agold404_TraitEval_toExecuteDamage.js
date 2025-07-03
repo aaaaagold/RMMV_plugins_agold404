@@ -41,6 +41,13 @@
  * </traitEval_toExecuteDamage> 
  * 
  * 
+ * ==== ==== ==== ==== ==== ==== ==== ==== 
+ * 
+ * 
+ * Also there're another <traitEval_gotExecuteDamage> ... </traitEval_gotExecuteDamage> sets which means it is the target to modify the value.
+ * They are executed AFTER <traitEval_toExecuteDamage> ... </traitEval_toExecuteDamage> sets.
+ * 
+ * 
  * This plugin can be renamed as you want.
  */
 
@@ -54,7 +61,10 @@ if(!gbb._enumMax) gbb._enumMax=404;
 if(!gbb.addEnum) gbb.addEnum=window.addEnum;
 gbb.addEnum('__END__');
 
-const kwps=['/traitEval_toExecuteDamage','/traitEval_toExecuteHpDamage','/traitEval_toExecuteMpDamage',];
+const kwps=[
+'/traitEval_toExecuteDamage'  , '/traitEval_toExecuteHpDamage'  , '/traitEval_toExecuteMpDamage'  , 
+'/traitEval_gotExecuteDamage' , '/traitEval_gotExecuteHpDamage' , '/traitEval_gotExecuteMpDamage' , 
+];
 const kwpts=kwps.map(kw=>[kw,'TRAIT_'+kw]);
 kwpts._key2content={};
 kwpts.forEach((info,i,a)=>{
@@ -81,6 +91,9 @@ kwpts, // 3: keyNames: [ [note,TRAIT_*] , ... ]
 start:kwpts[0][1],
 hp:kwpts[1][1],
 mp:kwpts[2][1],
+start_got:kwpts[3][1],
+hp_got:kwpts[4][1],
+mp_got:kwpts[5][1],
 }, // 5: type2traitKey
 function(collects,i,a){
 	if(collects) for(let x=0,xs=collects.length;x<xs;++x) this.push(collects[x].txt);
@@ -142,7 +155,8 @@ new cfc(Game_Action.prototype).
 addBase('_traitEvalToExecuteDamage_apply',function f(args){
 	let target=args[0];
 	let value=args[1];
-	const codes=this.subject().traitEvalToExecuteDamage_getCodes(this._traitEvalToExecuteDamage_tmp_type);
+	const btlr=this._traitEvalToExecuteDamage_tmp_type&&this._traitEvalToExecuteDamage_tmp_type.slice(-4)==='_got'?target:this.subject();
+	const codes=btlr.traitEvalToExecuteDamage_getCodes(this._traitEvalToExecuteDamage_tmp_type);
 	for(let ci=0,cs=codes.length,f;ci<cs;++ci){ const code=codes[ci]; { let ci,cs,codes,args; {
 		eval(code);
 	} } }
@@ -152,15 +166,21 @@ addBase('_traitEvalToExecuteDamage_apply',function f(args){
 addBase('traitEvalToExecuteDamage_applyStart',function f(args){
 	this._traitEvalToExecuteDamage_tmp_type='start';
 	this._traitEvalToExecuteDamage_apply(args);
+	this._traitEvalToExecuteDamage_tmp_type='start_got';
+	this._traitEvalToExecuteDamage_apply(args);
 	this._traitEvalToExecuteDamage_tmp_type=undefined;
 }).
 addBase('traitEvalToExecuteDamage_applyHp',function f(args){
 	this._traitEvalToExecuteDamage_tmp_type='hp';
 	this._traitEvalToExecuteDamage_apply(args);
+	this._traitEvalToExecuteDamage_tmp_type='hp_got';
+	this._traitEvalToExecuteDamage_apply(args);
 	this._traitEvalToExecuteDamage_tmp_type=undefined;
 }).
 addBase('traitEvalToExecuteDamage_applyMp',function f(args){
 	this._traitEvalToExecuteDamage_tmp_type='mp';
+	this._traitEvalToExecuteDamage_apply(args);
+	this._traitEvalToExecuteDamage_tmp_type='mp_got';
 	this._traitEvalToExecuteDamage_apply(args);
 	this._traitEvalToExecuteDamage_tmp_type=undefined;
 }).
