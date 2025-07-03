@@ -65,7 +65,7 @@
  */
 
 (()=>{ let k,r,t;
-const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_NameField";
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_InChrVision";
 const params=PluginManager.parameters(pluginName);
 
 t=[
