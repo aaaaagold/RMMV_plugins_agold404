@@ -2393,7 +2393,7 @@ addBase('getKeepWhenDeadStates',function f(){
 	const rtv=[],src=this._stateTurns&&this._states;
 	if(src){ for(let x=0,xs=src.length;x<xs;++x){
 		const dataobj=$dataStates[src[x]]; if(!dataobj||!dataobj.meta||!dataobj.meta.keepWhenDead) continue;
-		rtv.push([src[x],this._stateTurns[src[x]],]);
+		rtv.push([src[x],this._stateTurns[src[x]],this._stateSteps&&this._stateSteps[src[x]],]);
 	} }
 	return rtv;
 }).
@@ -2407,6 +2407,7 @@ addBase('die',function f(){
 function(stateInfo){
 	this._states.push(stateInfo[0]);
 	this._stateTurns[stateInfo[0]]=stateInfo[1];
+	if(this._stateSteps) this._stateSteps[stateInfo[0]]=stateInfo[2];
 }, // 0: put back
 ]).
 getP;
