@@ -68,7 +68,7 @@ addBase('getTextv',function f(){
 }).
 addBase('setTextv',function f(arr,isAutoUpdateSprite){
 	this._textv=arr;
-	this._texta=arr._txtalign;
+	this._texta=arr&&arr._txtalign;
 	if(isAutoUpdateSprite){
 		const sp=SceneManager.getSprite(this);
 		if(sp) sp.setChrTextv(this.getTextv()); // event._erased
