@@ -2376,6 +2376,18 @@ addBase('apply_onEffects',none).
 getP;
 
 
+new cfc(Game_Action.prototype).
+addBase('calcElementRate',function(target) {
+	const item=this.item();
+	if(item.damage.elementId<0){
+		return this.elementsMaxRate(target,this.subject().attackElements(item),item);
+	}else{
+		return target.elementRate(item.damage.elementId,item,this);
+	}
+}).
+getP;
+
+
 new cfc(Game_BattlerBase.prototype).
 addBase('getKeepWhenDeadStates',function f(){
 	const rtv=[],src=this._stateTurns&&this._states;
