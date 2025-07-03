@@ -63,7 +63,7 @@ getP;
 new cfc(Game_Character.prototype).
 addBase('getTextv',function f(){
 	const rtv=this._textv;
-	rtv._txtalign=this._texta; // consider saves
+	if(rtv) rtv._txtalign=this._texta; // consider saves
 	return rtv;
 }).
 addBase('setTextv',function f(arr,isAutoUpdateSprite){
