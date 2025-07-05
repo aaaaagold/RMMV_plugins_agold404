@@ -137,28 +137,27 @@ new cfc(Scene_Item.prototype).add('create',function f(){
 	return rtv;
 });
 new cfc(Window_SkillType.prototype).add('makeCommandList',function f(itemListPrefix){
-	// itemListPrefix === [name,'skill',enabled,stypeId]
+	// itemListPrefix === [ [name,'skill',enabled,stypeId] , ... ]
 	if(this._actor){
 		if(this._skillTree_skillTreeAtFirst){
 			if(!this._skillTree_noSkillTree) (itemListPrefix=itemListPrefix||f.tbl[0]).forEach(f.tbl[1],this);
 		}
-		this._actor.addedSkillTypes().sort(cmpFunc_num).forEach(f.tbl[2],this);
+		f.ori.apply(this,arguments);
 		if(!this._skillTree_skillTreeAtFirst){
 			if(!this._skillTree_noSkillTree) (itemListPrefix=itemListPrefix||f.tbl[0]).forEach(f.tbl[1],this);
 		}
 	}
 },[
 [
-["技能樹",'skill',true,-1],
+["技能樹",'skill',true,"ext-技能樹"],
 ], // 0: default itemListPrefix
 function(prefixItem){ this.addCommand.apply(this,prefixItem); }, // 1: forEach prefixItem this.addCommand
-function(stypeId){this.addCommand($dataSystem.skillTypes[stypeId], 'skill', true, stypeId); }, // 2: forEach skillType this.addCommand
 ]);
 { const p=Window_SkillList.prototype;
 const pp=p.__proto__;
 let t=[pp];
 new cfc(p).add('isTree',function f(){
-	return !(this._stypeId>=0);
+	return this._stypeId==="ext-技能樹";
 }).add('initialize',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this._isSimpleTreeMode=!ConfigManager._skilltree_detailedTreeMode;
