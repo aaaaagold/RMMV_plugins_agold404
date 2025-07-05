@@ -19,9 +19,7 @@ addBase('cacheParamPlusEquips_clearCache',function f(){
 	return this._equips._cache_paramPlusEquips={};
 }).
 addBase('cacheParamPlusEquips_getCont',function f(){
-	if(!this._equips) return {};
-	let rtv=this._equips._cache_paramPlusEquips; if(!rtv) rtv=this.cacheParamPlusEquips_clearCache();
-	return rtv;
+	return this._equips._cache_paramPlusEquips || this.cacheParamPlusEquips_clearCache();
 }).
 addBase('cacheParamPlusEquips_addKey',function f(paramId){
 	const cont=this.cacheParamPlusEquips_getCont();
@@ -72,7 +70,7 @@ add('paramPlus_equips',function f(paramId){
 		this.cacheParamPlusEquips_setVal(paramId,rtv);
 	}
 	return rtv;
-}).
+},undefined,true).
 add('setEquip',function f(slotId,item){
 	const itemPre=this.getEquip(slotId);
 	this.cacheParamPlusEquips_updateFromItemChange(itemPre,item);
