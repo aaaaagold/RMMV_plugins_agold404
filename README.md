@@ -126,6 +126,10 @@ some Game_Event -only plugins
 
 - adjust slot num: `agold404_Trait_adjustEquipSlots.js`
 
+### equip param
+
+- adjust worn equips params: `plugins/agold404_Trait_adjustEquipsParams.js`
+
 
 ## Save/Load (Scene_Save, Scene_Load)
 
