@@ -267,10 +267,13 @@ d:0|0,
 },
 ]);
 new cfc(PIXI.DisplayObject.prototype).addBase('getRect_local',function f(){
-	const a=this.anchor;
+	const a=this.anchor||f.tbl[0];
 	const w=this.width,h=this.height;
 	return new Rectangle(-a.x*w,-a.y*h,w,h);
-}).addBase('containsPoint_local',function f(xy){
+},[
+{x:0,y:0,}, // 0: default anchor
+])
+.addBase('containsPoint_local',function f(xy){
 	return this.getRect_local().contains(xy.x,xy.y);
 }).addBase('containsPoint_global',function f(xy){
 	return this.containsPoint_local(this.toLocal(xy,undefined,undefined,true));
@@ -905,6 +908,15 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 t[0].forEach(info=>Input.keyMapper[info[0]]=info[1]);
 t=undefined;
 //
+new cfc(Window_SkillType.prototype).addBase('makeCommandList',function f(){
+	if(this._actor){
+		this._actor.addedSkillTypes().sort(cmpFunc_num).forEach(f.tbl[0],this);
+	}
+},[
+function(stypeId){ this.addCommand($dataSystem.skillTypes[stypeId],'skill',true,stypeId); }, // 0: forEach skillType this.addCommand
+]).
+getP;
+//
 new cfc(Window_SkillList.prototype).addBase('item',function f(idx){
 	if(idx===undefined) idx=this.index();
 	return this._data && idx >= 0 ? this._data[idx] : null;
@@ -1040,16 +1052,76 @@ new cfc(DataManager).addBase('isSkill',function f(item){
 	return item && $dataWeapons.uniqueHas(item);
 }).addBase('isArmor',function f(item){
 	return item && $dataArmors.uniqueHas(item);
-}).addBase('loadDataFile',function f(name,src,msg,directSrc,mimeType,method,data){
+}).
+addBase('loadDataFile_getPreloadCont',function f(){
+	let rtv=this._loadDataFilePreloadCont; if(!rtv) rtv=this._loadDataFilePreloadCont=new Map();
+	return rtv;
+}).
+addBase('loadDataFile_getPreloadData',function f(cacheKey){
+	return this.loadDataFile_getPreloadCont().get(cacheKey);
+}).
+addBase('loadDataFile_clearPreloadData',function f(cacheKey){
+	return this.loadDataFile_getPreloadCont().delete(cacheKey);
+}).
+addBase('loadDataFile_setPreloadData',function f(cacheKey,data){
+	this.loadDataFile_getPreloadCont().set(cacheKey,data);
+}).
+addBase('loadDataFile_makePreloadKey',function f(doneCallback,src,msg,directSrc,mimeType,method,data){
+	return directSrc?src:('data/'+src);
+}).
+addBase('loadDataFile_preload',function f(doneCallback,src,msg,directSrc,mimeType,method,data){
+	if(typeof doneCallback!=='function'){
+		throw new Error(f.tbl[1]);
+	}
+	const cacheKey=this.loadDataFile_makePreloadKey.apply(this,arguments);
+	const arg0=arguments[0];
+	arguments[0]=f.tbl[0].bind(this,doneCallback,cacheKey);
+	this.loadDataFile.apply(this,arguments);
+	arguments[0]=arg0;
+	return cacheKey;
+},[
+function(doneCallback,cacheKey,xhr,src,msg,e){
+	if(xhr.status===0||xhr.status>=400) this.loadDataFile_setPreloadData(cacheKey,undefined);
+	else this.loadDataFile_setPreloadData(cacheKey,JSON.parse(xhr.responseText));
+	doneCallback.apply(this,arguments);
+}, // 0: onloadFunc
+"doneCallback should be a function", // 1: err msg
+]).
+addBase('loadDataFile_setLoadFromPreloadAbility',function f(setToEnabled){
+	this._loadFromPreload=setToEnabled;
+}).
+addBase('loadDataFile_setLoadFromPreloadEnabledOnce',function f(){
+	this.loadDataFile_setLoadFromPreloadAbility(true);
+	this._loadFromPreloadOnce=true;
+}).
+addBase('loadDataFile',function f(name,src,msg,directSrc,mimeType,method,data){
+	// name = string or custom callback func
 	method=method||'GET';
 	mimeType=mimeType||'application/json';
+	const nameIsFunc=(typeof name==='function');
+	if(!nameIsFunc&&this._loadFromPreload){
+		if(this._loadFromPreloadOnce) this._loadFromPreload=this._loadFromPreloadOnce=false;
+		const cacheKey=this.loadDataFile_makePreloadKey.apply(this,arguments);
+		const data=this.loadDataFile_getPreloadData(cacheKey);
+		if(data!==undefined){
+			window[name]=JSON.parse(JSON.stringify(data));
+			DataManager.onLoad(window[name],name,src,msg);
+			return;
+		}
+	}
 	const xhr=new XMLHttpRequest();
-	src=directSrc?src:('data/'+src);
+	src = directSrc?src:('data/'+src);
 	xhr.open(method,src);
 	xhr.overrideMimeType(mimeType);
-	xhr.onload = f.tbl[0].bind(xhr,name,src,msg);
-	xhr.onerror = this._mapLoader || f.tbl[1].bind(xhr,src);
-	window[name] = null;
+	if(nameIsFunc){
+		// should be bound already
+		xhr.onload=name.bind(undefined,xhr,src,msg);
+		xhr.onerror=name.bind(undefined,xhr,src,msg);
+	}else{
+		xhr.onload=f.tbl[0].bind(xhr,name,src,msg);
+		xhr.onerror=this._mapLoader || f.tbl[1].bind(xhr,src);
+		window[name]=null;
+	}
 	xhr.send(data);
 	return xhr;
 },[
@@ -1479,6 +1551,9 @@ new cfc(p).add('_createAllParts',function f(){
 // ---- ---- ---- ---- refine for future extensions
 
 (()=>{ let k,r,t;
+
+
+
 
 
 new cfc(Game_Party.prototype).
@@ -2711,10 +2786,21 @@ addBase('refresh',function f(){
 getP;
 
 new cfc(Game_Actor.prototype).
+addBase('_skillIds_selfLearned',function f(){
+	return this._skills||f.tbl[0];
+},[
+[], // 0: default
+]).
+addBase('skillIds_selfLearned',function f(){
+	return this._skillIds_selfLearned().slice();
+}).
+addBase('skillIds_addedByTraits',function f(){
+	return this.addedSkills();
+}).
 addBase('skills',function f(){
 	const skillIds=[];
-	skillIds.uniquePushContainer(this._skills);
-	skillIds.uniquePushContainer(this.addedSkills());
+	skillIds.uniquePushContainer(this._skillIds_selfLearned());
+	skillIds.uniquePushContainer(this.skillIds_addedByTraits());
 	return skillIds.map(f.tbl[0]);
 },[
 id=>$dataSkills[id], // 0: skillId to skillDataobj
