@@ -12,7 +12,19 @@
  * @type text
  * @text Globally change amount of brought skills
  * @desc a NaN value will be seen as Infinity.
- * @default "Infinity"
+ * @default Infinity
+ * 
+ * @param BroughtSkillTextOpt
+ * @type note
+ * @text option text
+ * @desc used for eval()
+ * @default "DataManager.getLocale()==='zh-TW'?\"攜帶技能\":\"Brought Skills\""
+ * 
+ * @param BroughtSkillTextCap
+ * @type note
+ * @text capcaity hint text
+ * @desc used for eval(). vars: current,total
+ * @default "let rtv=\"\";\nif(total<current+1) rtv+=\"\\\\C[10]\";\nif(Window_Base.prototype.processEscapeCharacter_textPosition) rtv+=\" \\\\TXTRIGHT:\"+JSON.stringify(current+' / '+total);\nelse rtv+=current+' / '+total;\nrtv;"
  * 
  * 
  * This plugin can be renamed as you want.
@@ -21,7 +33,9 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Trait_adjustEquipSlots";
 const params=PluginManager.parameters(pluginName)||{};
-params._globalChanges=JSON.parse(params.GlobalChanges)-0; if(isNaN(params._globalChanges)) params._globalChanges=Infinity;
+params._globalChanges=params.GlobalChanges-0; if(isNaN(params._globalChanges)) params._globalChanges=Infinity;
+params._broughtSkillTextOpt=JSON.parse(params.BroughtSkillTextOpt||"\"\\\"Brought Skills\\\"\"");
+params._broughtSkillTextCap=JSON.parse(params.BroughtSkillTextCap||"\"{ let rtv=\\\"\\\";\\nif(total<current+1) rtv+=\\\"\\\\\\\\C[10]\\\";\\nif(Window_Base.prototype.processEscapeCharacter_textPosition) rtv+=\\\" \\\\\\\\TXTRIGHT:\\\"+JSON.stringify(current+' / '+total);\\nelse rtv+=current+' / '+total;\\nrtv; }\"");
 
 
 const gbb=Game_BattlerBase;
@@ -178,9 +192,9 @@ add('makeCommandList',function f(){
 	}
 },t=[
 [
-['BringSkill','bringSkills',true,"ext-BringSkills"],
+[params._broughtSkillTextOpt,'bringSkills',true,"ext-BringSkills"],
 ], // 0: default itemListPrefix
-function(prefixItem){ this.addCommand.apply(this,prefixItem); }, // 1: forEach prefixItem this.addCommand
+function(prefixItem){ const tmp=prefixItem.slice(); tmp[0]=EVAL.call(this,tmp[0]); this.addCommand.apply(this,tmp); }, // 1: forEach this.addCommand
 ()=>1, // 2: maxCols
 ]).
 getP;
@@ -197,12 +211,19 @@ add('callUpdateHelp',function f(){
 	return rtv;
 }).
 addBase('updateCntWnd_formText',function f(current,total){
+if(0){
+	// default ref code
 	let rtv="";
 	if(total<current+1) rtv+="\\C[10]";
 	if(Window_Base.prototype.processEscapeCharacter_textPosition) rtv+=" \\TXTRIGHT:"+JSON.stringify(current+' / '+total);
 	else rtv+=current+' / '+total;
 	return rtv;
-}).
+}
+	return f.tbl[1].call(this,current,total,f.tbl[0]._broughtSkillTextCap);
+},[
+params, // 0: params
+new Function("current","total","_s","{ return eval(_s); }"), // 1: func
+]).
 addBase('updateCntWnd',function f(){
 	const actor=this._actor;
 	if(!actor||!this._cntWnd) return;
@@ -462,8 +483,10 @@ addBase('refreshActor_bringSkills',function f(){
 	this._bringSkills_lastActor=actor;
 	const wndB=this._bringSkills_itemWindowBrought;
 	const wndA=this._bringSkills_itemWindowAll;
+	const wndC=this._bringSkills_itemWindowCnt;
 	wndB.setActor(actor);
 	wndA.setActor(actor);
+	wndB.updateCntWnd();
 }).
 getP;
 
