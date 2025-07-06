@@ -1053,6 +1053,21 @@ new cfc(DataManager).addBase('isSkill',function f(item){
 }).addBase('isArmor',function f(item){
 	return item && $dataArmors.uniqueHas(item);
 }).
+addBase('arrMapFunc_idToDataobj_skill',i=>{
+	return $dataSkills[i];
+}).
+addBase('arrMapFunc_idToDataobj_item',i=>{
+	return $dataItems[i];
+}).
+addBase('arrMapFunc_idToDataobj_weapon',i=>{
+	return $dataWeapons[i];
+}).
+addBase('arrMapFunc_idToDataobj_armor',i=>{
+	return $dataArmors[i];
+}).
+addBase('arrMapFunc_idToSkillType',i=>{
+	return $dataSystem.skillTypes[i];
+}).
 addBase('loadDataFile_getPreloadCont',function f(){
 	let rtv=this._loadDataFilePreloadCont; if(!rtv) rtv=this._loadDataFilePreloadCont=new Map();
 	return rtv;
@@ -2801,10 +2816,8 @@ addBase('skills',function f(){
 	const skillIds=[];
 	skillIds.uniquePushContainer(this._skillIds_selfLearned());
 	skillIds.uniquePushContainer(this.skillIds_addedByTraits());
-	return skillIds.map(f.tbl[0]);
-},[
-id=>$dataSkills[id], // 0: skillId to skillDataobj
-]).
+	return skillIds.map(DataManager.arrMapFunc_idToDataobj_skill);
+}).
 getP;
 
 
