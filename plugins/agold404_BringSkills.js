@@ -26,6 +26,12 @@
  * @desc used for eval(). vars: current,total
  * @default "let rtv=\"\";\nif(total<current+1) rtv+=\"\\\\C[10]\";\nif(Window_Base.prototype.processEscapeCharacter_textPosition) rtv+=\" \\\\TXTRIGHT:\"+JSON.stringify(current+' / '+total);\nelse rtv+=current+' / '+total;\nrtv;"
  * 
+ * @param BroughtSkillTextSwitchType
+ * @type note
+ * @text hint text for switch types in BroughtSkill
+ * @desc used for eval()
+ * @default "DataManager.getLocale()==='zh-TW'?\"按 shift 或點擊右方的 \\\"ALL\\\" 來切換技能類別\":\"press shift or tap text \\\"ALL\\\" on the right to change skill type\""
+ * 
  * 
  * This plugin can be renamed as you want.
  */
@@ -36,6 +42,7 @@ const params=PluginManager.parameters(pluginName)||{};
 params._globalChanges=params.GlobalChanges-0; if(isNaN(params._globalChanges)) params._globalChanges=Infinity;
 params._broughtSkillTextOpt=JSON.parse(params.BroughtSkillTextOpt||"\"\\\"Brought Skills\\\"\"");
 params._broughtSkillTextCap=JSON.parse(params.BroughtSkillTextCap||"\"{ let rtv=\\\"\\\";\\nif(total<current+1) rtv+=\\\"\\\\\\\\C[10]\\\";\\nif(Window_Base.prototype.processEscapeCharacter_textPosition) rtv+=\\\" \\\\\\\\TXTRIGHT:\\\"+JSON.stringify(current+' / '+total);\\nelse rtv+=current+' / '+total;\\nrtv; }\"");
+params._broughtSkillTextSwitchType=JSON.parse(params.BroughtSkillTextSwitchType||"\"DataManager.getLocale()==='zh-TW'?\\\"按 shift 或點擊右方的 \\\\\\\"ALL\\\\\\\" 來切換技能類別\\\":\\\"press shift or tap text \\\\\\\"ALL\\\\\\\" on the right to change skill type\\\"\"");
 
 
 const gbb=Game_BattlerBase;
@@ -68,7 +75,14 @@ window.isTest(), // 2: isTest
 kwpts, // 3: keyNames: [ [note,TRAIT_*,dataCode,[immDataCode,immTRAIT_*]] , ... ]
 null,
 'string',
-none,
+none, // 6: this arr's sep.
+[
+[params._broughtSkillTextOpt,'bringSkills',true,"ext-BringSkills"],
+], // 7: default itemListPrefix
+function(prefixItem){ const tmp=prefixItem.slice(); tmp[0]=EVAL.call(this,tmp[0]); this.addCommand.apply(this,tmp); }, // 8: forEach this.addCommand
+()=>1, // 9: maxCols for Window_BringSkills_commonItems
+new Function("current","total","_s","{ return eval(_s); }"), // 10: func
+"ALL", // 11: default allItems type
 ];
 
 
@@ -183,20 +197,14 @@ new cfc(Window_SkillType.prototype).
 add('makeCommandList',function f(){
 	if(this._actor){
 		if(!this._bringSkills_optionAtLast){
-			if(!this._bringSkills_hideOpt) (f.tbl[0]).forEach(f.tbl[1],this);
+			if(!this._bringSkills_hideOpt) (f.tbl[7]).forEach(f.tbl[8],this);
 		}
 		f.ori.apply(this,arguments);
 		if(this._bringSkills_optionAtLast){
-			if(!this._bringSkills_hideOpt) (f.tbl[0]).forEach(f.tbl[1],this);
+			if(!this._bringSkills_hideOpt) (f.tbl[7]).forEach(f.tbl[8],this);
 		}
 	}
-},t=[
-[
-[params._broughtSkillTextOpt,'bringSkills',true,"ext-BringSkills"],
-], // 0: default itemListPrefix
-function(prefixItem){ const tmp=prefixItem.slice(); tmp[0]=EVAL.call(this,tmp[0]); this.addCommand.apply(this,tmp); }, // 1: forEach this.addCommand
-()=>1, // 2: maxCols
-]).
+},t).
 getP;
 
 { const a=class Window_BringSkills_commonItems extends Window_SkillList{
@@ -219,11 +227,8 @@ if(0){
 	else rtv+=current+' / '+total;
 	return rtv;
 }
-	return f.tbl[1].call(this,current,total,f.tbl[0]._broughtSkillTextCap);
-},[
-params, // 0: params
-new Function("current","total","_s","{ return eval(_s); }"), // 1: func
-]).
+	return f.tbl[10].call(this,current,total,f.tbl[1]._broughtSkillTextCap);
+},t).
 addBase('updateCntWnd',function f(){
 	const actor=this._actor;
 	if(!actor||!this._cntWnd) return;
@@ -232,7 +237,7 @@ addBase('updateCntWnd',function f(){
 		actor.bringSkills_getTotalAmount(),
 	));
 }).
-addBase('maxCols',t[2]).
+addBase('maxCols',t[9]).
 addBase('toSkillDataobj',function f(skillId){
 	return $dataSkills[skillId];
 }).
@@ -260,13 +265,23 @@ window[a.name]=a;
 new cfc(a.prototype).
 addBase('makeItemList',function f(){
 	const actor=this._actor;
-	const arr=this._data=(actor?actor.skillIds_selfLearned():[]).map(this.toSkillDataobj);
+	const arr=this._data=(actor?actor.skillIds_selfLearned():[]).map(this.toSkillDataobj).filter(this.includes,this);
 	if(!arr.length) arr.push(null);
 }).
 addBase('isEnabled',function f(item){
 	const actor=this._actor;
 	return actor&&!actor.bringSkills_isSkillBrought(item.id);
 }).
+addBase('includes',function f(skill){
+	if(!DataManager.isSkill(skill)) return;
+	if(undefined===this._lastSkillTypeId||f.tbl[11]===this._lastSkillTypeId) return true;
+	return skill.stypeId===this._lastSkillTypeId;
+},t).
+addBase('setType',function f(skillTypeId){
+	if(this._lastSkillTypeId===skillTypeId) return;
+	this._lastSkillTypeId=skillTypeId;
+	this.refresh();
+},t).
 getP;
 window[a.name]=a;
 }
@@ -326,6 +341,9 @@ addBase('create_bringSkills',function f(){
 	wndB._cntWnd=wndC;
 	wndA._cntWnd=wndC;
 	this.addChild(wndC);
+	
+	const wndT=this._bringSkills_itemWindowType=new Window_Help(1);
+	this.addChild(wndT);
 }).
 addBase('bringSkills_cmd_goBackToTypes',function f(){
 	const wndB=this._bringSkills_itemWindowBrought;
@@ -376,7 +394,7 @@ addBase('bringSkills_cmd_bring',function f(){
 addBase('bringSkills_isCurrentlyEnabled',function f(){
 	if(this._bringSkills_hideOpt) return false;
 	const ref=this._itemWindow;
-	const enabled=ref&&ref._stypeId===f.tbl[0][0][3];
+	const enabled=ref&&ref._stypeId===f.tbl[7][0][3];
 	return enabled;
 },t).
 add('update',function f(){
@@ -385,7 +403,9 @@ add('update',function f(){
 	return rtv;
 }).
 addBase('update_bringSkills',function f(){
+	this.update_bringSkills_hintText_switchType();
 	if(!this.update_bringSkills_active()) return;
+	this.update_bringSkills_switchType();
 	this.update_bringSkills_size();
 	this.refreshActor_bringSkills();
 }).
@@ -398,12 +418,14 @@ addBase('update_bringSkills_active',function f(){
 	const wndB=this._bringSkills_itemWindowBrought;
 	const wndA=this._bringSkills_itemWindowAll;
 	const wndC=this._bringSkills_itemWindowCnt;
+	const wndT=this._bringSkills_itemWindowType;
 	const ref=this._itemWindow;
 	
-	if(wndA)
+	if(wndB)
 	wndB.visible=
 	wndA.visible=
 	wndC.visible=
+	wndT.visible=
 	!(ref.visible=!enabled);
 	
 	if(!enabled) return;
@@ -437,20 +459,52 @@ addBase('update_bringSkills_active',function f(){
 	
 	return true;
 }).
+addBase('update_bringSkills_switchType_playSe',function f(){
+	SoundManager.playCursor();
+}).
+addBase('update_bringSkills_switchType',function f(){
+	let isSetTextTrigger=false; // should setText if true
+	let isChangeTrigger=false; // should setText if true
+	
+	const actor=this.actor();
+	if(this._bringSkills_skillType_lastActor!==actor){
+		this._bringSkills_skillType_lastActor=actor;
+		this._bringSkills_skillType_idx=0;
+		this._bringSkills_skillTypeIds=[f.tbl[11],].concat_inplace(actor.addedSkillTypes().sort(cmpFunc_num));
+		isSetTextTrigger=true;
+	}
+	
+	if(Input.isTriggered('shift')) isSetTextTrigger=isChangeTrigger=true;
+	if(TouchInput.isTriggered() && this._bringSkills_itemWindowType.containsPoint_global(TouchInput)) isSetTextTrigger=isChangeTrigger=true;
+	
+	if(!isSetTextTrigger) return;
+	
+	const arr=this._bringSkills_skillTypeIds;
+	let idx=this._bringSkills_skillType_idx;
+	if(isChangeTrigger){
+		idx=this._bringSkills_skillType_idx=(idx+1)%arr.length;
+		this.update_bringSkills_switchType_playSe();
+	}
+	this._bringSkills_itemWindowType.setText(idx?DataManager.arrMapFunc_idToSkillType(arr[idx]):arr[0]);
+	this._bringSkills_itemWindowAll.setType(arr[idx]);
+},t).
 addBase('update_bringSkills_size',function f(){
 	const enabled=this.bringSkills_isCurrentlyEnabled();
 	if(!enabled) return;
 	const wndB=this._bringSkills_itemWindowBrought;
 	const wndA=this._bringSkills_itemWindowAll;
 	const wndC=this._bringSkills_itemWindowCnt;
+	const wndT=this._bringSkills_itemWindowType;
 	const ref=this._itemWindow;
 	const X=ref.x,W=ref.width;
 	const Y=ref.y,H=ref.height;
 	const CX=X+((W-X)>>1);
 	const CY=Y+wndC.height;
+	const CYT=Y+wndT.height;
 	const rectB=new Rectangle(X,CY,CX-X,H-(CY-Y));
-	const rectA=new Rectangle(CX,Y,W-(CX-X),H);
 	const rectC=new Rectangle(X,Y,CX-X,CY-Y);
+	const rectA=new Rectangle(CX,CYT,W-(CX-X),H-(CYT-Y));
+	const rectT=new Rectangle(CX,Y,W-(CX-X),CYT-Y);
 	if(!rectB.equals(wndB)){
 		wndB.x=rectB.x;
 		wndB.y=rectB.y;
@@ -469,7 +523,20 @@ addBase('update_bringSkills_size',function f(){
 		wndC.width  = rectC.width;
 		wndC.height = rectC.height;
 	}
+	if(!rectT.equals(wndT)){
+		wndT.x=rectT.x;
+		wndT.y=rectT.y;
+		wndT.width  = rectT.width;
+		wndT.height = rectT.height;
+	}
 }).
+addBase('update_bringSkills_hintText_switchType',function f(){
+	const enabled=this.bringSkills_isCurrentlyEnabled();
+	if(!this._bringSkills_hintText_switchType_lastEnabled===!enabled) return;
+	this._bringSkills_hintText_switchType_lastEnabled=enabled;
+	if(!enabled) return;
+	this._helpWindow.setText(EVAL.call(this,t[1]._broughtSkillTextSwitchType));
+},t).
 add('refreshActor',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.refreshActor_bringSkills.apply(this,arguments);
@@ -479,8 +546,8 @@ addBase('refreshActor_bringSkills',function f(){
 	const enabled=this.bringSkills_isCurrentlyEnabled();
 	if(!enabled) return -1;
 	const actor=this.actor();
-	if(this._bringSkills_lastActor===actor) return -2;
-	this._bringSkills_lastActor=actor;
+	if(this._bringSkills_refreshActor_lastActor===actor) return -2;
+	this._bringSkills_refreshActor_lastActor=actor;
 	const wndB=this._bringSkills_itemWindowBrought;
 	const wndA=this._bringSkills_itemWindowAll;
 	const wndC=this._bringSkills_itemWindowCnt;
