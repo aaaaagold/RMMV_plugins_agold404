@@ -119,6 +119,8 @@ some Game_Event -only plugins
 
 - skill tree: `agold404_SkillTree.js`
 
+- bring skills: `agold404_BringSkills.js`
+
 
 ## Equips (Scene_Equip)
 
