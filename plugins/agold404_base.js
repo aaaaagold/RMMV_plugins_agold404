@@ -1053,21 +1053,12 @@ new cfc(DataManager).addBase('isSkill',function f(item){
 }).addBase('isArmor',function f(item){
 	return item && $dataArmors.uniqueHas(item);
 }).
-addBase('arrMapFunc_idToDataobj_skill',i=>{
-	return $dataSkills[i];
-}).
-addBase('arrMapFunc_idToDataobj_item',i=>{
-	return $dataItems[i];
-}).
-addBase('arrMapFunc_idToDataobj_weapon',i=>{
-	return $dataWeapons[i];
-}).
-addBase('arrMapFunc_idToDataobj_armor',i=>{
-	return $dataArmors[i];
-}).
-addBase('arrMapFunc_idToSkillType',i=>{
-	return $dataSystem.skillTypes[i];
-}).
+addBase('arrMapFunc_idToDataobj_skill',  i=>$dataSkills[i]).
+addBase('arrMapFunc_idToDataobj_item',   i=>$dataItems[i]).
+addBase('arrMapFunc_idToDataobj_weapon', i=>$dataWeapons[i]).
+addBase('arrMapFunc_idToDataobj_armor',  i=>$dataArmors[i]).
+addBase('arrMapFunc_idToDataobj_state',  i=>$dataStates[i]).
+addBase('arrMapFunc_idToSkillType',    i=>$dataSystem.skillTypes[i]).
 addBase('loadDataFile_getPreloadCont',function f(){
 	let rtv=this._loadDataFilePreloadCont; if(!rtv) rtv=this._loadDataFilePreloadCont=new Map();
 	return rtv;
@@ -2479,6 +2470,62 @@ getP;
 
 
 new cfc(Game_BattlerBase.prototype).
+addBase('statesContainer_addStateId',function f(stateId){
+	this._states.multisetPush(stateId);
+}).
+addBase('statesContainer_delStateId',function f(stateId){
+	this._states.multisetPop(stateId);
+}).
+addBase('statesContainer_hasStateId',function f(stateId){
+	return this._states.multisetHas(stateId);
+}).
+addBase('sortStates',function f(){
+	if(f.tbl[2]){
+		throw new Error(f.tbl[3]);
+	}else console.warn(f.tbl[3]);
+},[
+undefined,
+undefined,
+window.isTest(), // 2: is test? align to plugins' position
+"due to data structure, DO NOT use `sortStates`", // 3: err msg
+]).
+addBase('isDeathStateId',function f(stateId){
+	return f.tbl[0].has(stateId);
+},[
+new Set([
+1,
+]), // 0: death state ids
+]).
+addBase('onAddDeathState',none).
+addBase('addNewState',function(stateId) {
+	const isAddingDeathState=this.isDeathStateId(stateId);
+	if(isAddingDeathState){
+		this.die();
+	}
+	const restricted=this.isRestricted();
+	this.statesContainer_addStateId(stateId);
+	//this.sortStates(); // do not use it
+	if(!restricted && this.isRestricted()){
+		this.onRestrict();
+	}
+	this.onAddDeathState();
+}).
+addBase('eraseState',function f(stateId){
+	this.statesContainer_delStateId(stateId);
+	delete this._stateTurns[stateId];
+}).
+addBase('isStateAffected',function f(stateId){
+	return this.statesContainer_hasStateId(stateId);
+}).
+addBase('sortStatesCmpFunc',function f(stateIdA,stateIdB){
+	const p1=$dataStates[stateIdA].priority;
+	const p2=$dataStates[stateIdB].priority;
+	// greater priority first
+	return p1===p2?stateIdA-stateIdB:p2-p1;
+}).
+addBase('states',function f(){
+	return this._states.slice().sort(this.sortStatesCmpFunc,this).map(DataManager.arrMapFunc_idToDataobj_state);
+}).
 addBase('getKeepWhenDeadStates',function f(){
 	const rtv=[],src=this._stateTurns&&this._states;
 	if(src){ for(let x=0,xs=src.length;x<xs;++x){
@@ -2490,15 +2537,15 @@ addBase('getKeepWhenDeadStates',function f(){
 addBase('die',function f(){
 	this._hp=0;
 	const arr=this.getKeepWhenDeadStates();
-	this.clearStates();
+	this.clearStates(); // expected to generate a new []
 	arr.forEach(f.tbl[0],this);
 	this.clearBuffs();
 },[
 function(stateInfo){
-	this._states.push(stateInfo[0]);
+	this.statesContainer_addStateId(stateInfo[0]);
 	this._stateTurns[stateInfo[0]]=stateInfo[1];
 	if(this._stateSteps) this._stateSteps[stateInfo[0]]=stateInfo[2];
-}, // 0: put back
+}, // 0: forEach put back
 ]).
 getP;
 
