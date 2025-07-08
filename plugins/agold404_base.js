@@ -6321,33 +6321,36 @@ addBase('traitsOpCache_getCacheVal_wId',function f(dataCode,dataId){
 	return this.traitsOpCache_updateVal_wId_getValObj(dataCode,dataId);
 }).
 // MId
-addBase('traitsOpCache_updateVal_MId_getValObj',function f(dataCode,dataId){
+addBase('traitsOpCache_updateVal_MId_getValObj',function f(dataCode,dataId,cmp3Func){
 	// `dataId` is not used
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(dataCode,'','MId');
-	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=({h:new Heap(),c:new Map(),}));
+	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=({h:new Heap(cmp3Func),c:new Map(),}));
 	return rtv;
 }).
-addBase('traitsOpCache_updateVal_MId_add',function f(trait){
-	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code);
-	const eleVal=trait.dataId-0||0;
+addBase('traitsOpCache_updateVal_MId_genEleVal',function f(traitDataId){
+	return (traitDataId instanceof Array)?''+traitDataId:(traitDataId-0||0); // TODO: fully support non-literals
+}).
+addBase('traitsOpCache_updateVal_MId_add',function f(trait,cmp3Func){
+	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code,undefined,cmp3Func);
+	const eleVal=this.traitsOpCache_updateVal_MId_genEleVal(trait.dataId);
 	const newVal=(valObj.c.get(eleVal)|0)+1;
 	if(!newVal) valObj.c.delete(eleVal);
 	else valObj.c.set(eleVal,newVal);
-	valObj.h.push(eleVal);
+	valObj.h.push(trait.dataId);
 }).
-addBase('traitsOpCache_updateVal_MId_del',function f(trait){
-	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code);
-	const eleVal=trait.dataId-0||0;
+addBase('traitsOpCache_updateVal_MId_del',function f(trait,cmp3Func){
+	const valObj=this.traitsOpCache_updateVal_MId_getValObj(trait.code,undefined,cmp3Func);
+	const eleVal=this.traitsOpCache_updateVal_MId_genEleVal(trait.dataId);
 	const newVal=(valObj.c.get(eleVal)|0)-1;
 	if(!newVal) valObj.c.delete(eleVal);
 	else valObj.c.set(eleVal,newVal);
-	while(valObj.h.length&&!valObj.c.has(valObj.h.top)) valObj.h.pop();
+	while(valObj.h.length&&!valObj.c.has(this.traitsOpCache_updateVal_MId_genEleVal(valObj.h.top))) valObj.h.pop();
 }).
-addBase('traitsOpCache_getCacheVal_MId',function f(dataCode,dataId){
+addBase('traitsOpCache_getCacheVal_MId',function f(dataCode,dataId,cmp3Func){
 	// `dataId` is not used
 	// default value = undefined (empty Heap .top)
-	return this.traitsOpCache_updateVal_MId_getValObj(dataCode).h.top;
+	return this.traitsOpCache_updateVal_MId_getValObj(dataCode,undefined,cmp3Func).h.top;
 }).
 // change trait
 addBase('_traitsOpCache_changeTrait_common',function f(trait,ops,tbl0){
@@ -6537,6 +6540,49 @@ addBase('restriction',function f(){
 	this.restriction_init();
 	return this.traitsOpCache_getCacheVal_MId(f.tbl[0].code)-0||0;
 },t).
+// first sorted state 
+addBase('firstSortedState_init',function f(){
+	// initializing here
+	const code=f.tbl[0].code;
+	if(!this.traitsOpCache_hasUsedOp(code,'','MId')){
+		this.traitsOpCache_addUsedOp(code,'','MId');
+		if(this._states) for(let i=this._states.length;i--;) this.firstSortedState_add(this._states[i]);
+	}
+},t=[
+{code:"stateFirstSortedStateValue",dataId:0,}, // dummy obj for first sorted state info
+undefined, // 1: placeholder for Heap cmp3 func
+]).
+addBase('firstSortedState_getCmp3Func',function f(){
+	if(!f.tbl[1]) f.tbl[1]=((a,b)=>-Game_BattlerBase.prototype.sortStates_cmpFunc(a,b)); // 1: Heap cmp3 func
+	return f.tbl[1];
+},t).
+addBase('firstSortedState_add',function f(stateId){
+	const dataobj=$dataStates[stateId]; if(!dataobj) return;
+	this.firstSortedState_init();
+	const trait=f.tbl[0];
+	trait.dataId=stateId;
+	this.traitsOpCache_updateVal_MId_add(trait,this.firstSortedState_getCmp3Func());
+},t).
+addBase('firstSortedState_del',function f(stateId){
+	const dataobj=$dataStates[stateId]; if(!dataobj) return;
+	this.firstSortedState_init();
+	const trait=f.tbl[0];
+	trait.dataId=stateId;
+	this.traitsOpCache_updateVal_MId_del(trait,this.firstSortedState_getCmp3Func());
+},t).
+addBase('firstSortedState_get',function f(){
+	// return first sorted state's id
+	this.firstSortedState_init();
+	return this.traitsOpCache_getCacheVal_MId(f.tbl[0].code,undefined,this.firstSortedState_getCmp3Func());
+},t).
+addBase('stateMotionIndex',function f(){
+	const dataobj=$dataStates[this.firstSortedState_get()];
+	return dataobj?dataobj.motion:0;
+}).
+addBase('stateOverlayIndex',function f(){
+	const dataobj=$dataStates[this.firstSortedState_get()];
+	return dataobj?dataobj.overlay:0;
+}).
 // placeholders
 addBase('removeStatesByDamage_add',none).
 addBase('removeStatesByDamage_del',none).
@@ -6549,6 +6595,7 @@ addBase('traitsOpCache_addTraitObj_state',function f(stateId){
 	this.traitsOpCache_addTraitObj(dataobj);
 	
 	this.restriction_add(stateId);
+	this.firstSortedState_add(stateId);
 	this.removeStatesByDamage_add(stateId);
 	this.removeStatesByRestriction_add(stateId);
 }).
@@ -6559,6 +6606,7 @@ addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	this.traitsOpCache_delTraitObj(dataobj);
 	
 	this.restriction_del(stateId);
+	this.firstSortedState_del(stateId);
 	this.removeStatesByDamage_del(stateId);
 	this.removeStatesByRestriction_del(stateId);
 }).
