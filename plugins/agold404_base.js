@@ -1059,6 +1059,13 @@ addBase('arrMapFunc_idToDataobj_weapon', i=>$dataWeapons[i]).
 addBase('arrMapFunc_idToDataobj_armor',  i=>$dataArmors[i]).
 addBase('arrMapFunc_idToDataobj_state',  i=>$dataStates[i]).
 addBase('arrMapFunc_idToSkillType',    i=>$dataSystem.skillTypes[i]).
+addBase('arrSortFunc_mostImportantStateAtFirst',function f(stateIdA,stateIdB){
+	// cmp3
+	const p1=$dataStates[stateIdA].priority;
+	const p2=$dataStates[stateIdB].priority;
+	// greater priority first
+	return p1===p2?stateIdA-stateIdB:p2-p1;
+}).
 addBase('loadDataFile_getPreloadCont',function f(){
 	let rtv=this._loadDataFilePreloadCont; if(!rtv) rtv=this._loadDataFilePreloadCont=new Map();
 	return rtv;
@@ -2517,12 +2524,7 @@ addBase('eraseState',function f(stateId){
 addBase('isStateAffected',function f(stateId){
 	return this.statesContainer_hasStateId(stateId);
 }).
-addBase('sortStates_cmpFunc',function f(stateIdA,stateIdB){
-	const p1=$dataStates[stateIdA].priority;
-	const p2=$dataStates[stateIdB].priority;
-	// greater priority first
-	return p1===p2?stateIdA-stateIdB:p2-p1;
-}).
+addBase('sortStates_cmpFunc',(a,b)=>DataManager.arrSortFunc_mostImportantStateAtFirst(a,b)).
 addBase('states',function f(){
 	return this._states.slice().sort(this.sortStates_cmpFunc,this).map(DataManager.arrMapFunc_idToDataobj_state);
 }).
@@ -6540,6 +6542,55 @@ addBase('restriction',function f(){
 	this.restriction_init();
 	return this.traitsOpCache_getCacheVal_MId(f.tbl[0].code)-0||0;
 },t).
+// cmp3 for heap: most important state on top
+addBase('_get_cmp3ForHeap_mostImportantStateOnTop',function f(){
+	if(!f.tbl[0]) f.tbl[0]=((a,b)=>-Game_BattlerBase.prototype.sortStates_cmpFunc(a,b));
+	return f.tbl[0];
+},[
+undefined, // 0: placeholder for Heap cmp3 func
+]).
+// msg3
+addBase('mostImportantStateText_init',function f(){
+	// initializing here
+	const code=f.tbl[0].code;
+	if(!this.traitsOpCache_hasUsedOp(code,'','MId')){
+		this.traitsOpCache_addUsedOp(code,'','MId');
+		if(this._states) for(let i=this._states.length;i--;) this.mostImportantStateText_add(this._states[i]);
+	}
+},t=[
+{code:"stateMostImportantStateTextValue",dataId:0,}, // dummy obj for first sorted state info
+]).
+addBase('mostImportantStateText_getCmp3Func',function f(){
+	return this._get_cmp3ForHeap_mostImportantStateOnTop();
+},t).
+addBase('mostImportantStateText_isTargetStateId',function f(stateId){
+	// return the state's dataobj if stateId is (one of) the target(s)
+	const dataobj=$dataStates[stateId];
+	return dataobj&&dataobj.message3?dataobj:undefined;
+}).
+addBase('mostImportantStateText_add',function f(stateId){
+	const dataobj=this.mostImportantStateText_isTargetStateId(stateId); if(!dataobj) return;
+	this.mostImportantStateText_init();
+	const trait=f.tbl[0];
+	trait.dataId=stateId;
+	this.traitsOpCache_updateVal_MId_add(trait,this.mostImportantStateText_getCmp3Func());
+},t).
+addBase('mostImportantStateText_del',function f(stateId){
+	const dataobj=this.mostImportantStateText_isTargetStateId(stateId); if(!dataobj) return;
+	this.mostImportantStateText_init();
+	const trait=f.tbl[0];
+	trait.dataId=stateId;
+	this.traitsOpCache_updateVal_MId_del(trait,this.mostImportantStateText_getCmp3Func());
+},t).
+addBase('mostImportantStateText_get',function f(){
+	// return first sorted state(with msg3)'s id
+	this.mostImportantStateText_init();
+	return this.traitsOpCache_getCacheVal_MId(f.tbl[0].code,undefined,this.mostImportantStateText_getCmp3Func());
+},t).
+addBase('mostImportantStateText',function f(){
+	const dataobj=$dataStates[this.mostImportantStateText_get()];
+	return dataobj?dataobj.message3:'';
+}).
 // first sorted state 
 addBase('firstSortedState_init',function f(){
 	// initializing here
@@ -6550,11 +6601,9 @@ addBase('firstSortedState_init',function f(){
 	}
 },t=[
 {code:"stateFirstSortedStateValue",dataId:0,}, // dummy obj for first sorted state info
-undefined, // 1: placeholder for Heap cmp3 func
 ]).
 addBase('firstSortedState_getCmp3Func',function f(){
-	if(!f.tbl[1]) f.tbl[1]=((a,b)=>-Game_BattlerBase.prototype.sortStates_cmpFunc(a,b)); // 1: Heap cmp3 func
-	return f.tbl[1];
+	return this._get_cmp3ForHeap_mostImportantStateOnTop();
 },t).
 addBase('firstSortedState_add',function f(stateId){
 	const dataobj=$dataStates[stateId]; if(!dataobj) return;
@@ -6595,6 +6644,7 @@ addBase('traitsOpCache_addTraitObj_state',function f(stateId){
 	this.traitsOpCache_addTraitObj(dataobj);
 	
 	this.restriction_add(stateId);
+	this.mostImportantStateText_add(stateId);
 	this.firstSortedState_add(stateId);
 	this.removeStatesByDamage_add(stateId);
 	this.removeStatesByRestriction_add(stateId);
@@ -6606,6 +6656,7 @@ addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	this.traitsOpCache_delTraitObj(dataobj);
 	
 	this.restriction_del(stateId);
+	this.mostImportantStateText_del(stateId);
 	this.firstSortedState_del(stateId);
 	this.removeStatesByDamage_del(stateId);
 	this.removeStatesByRestriction_del(stateId);
