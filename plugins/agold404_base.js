@@ -6635,6 +6635,8 @@ addBase('stateOverlayIndex',function f(){
 // placeholders
 addBase('removeStatesByDamage_add',none).
 addBase('removeStatesByDamage_del',none).
+addBase('removeStatesByBattleEnd_add',none).
+addBase('removeStatesByBattleEnd_del',none).
 addBase('removeStatesByRestriction_add',none).
 addBase('removeStatesByRestriction_del',none).
 // state common
@@ -6647,6 +6649,7 @@ addBase('traitsOpCache_addTraitObj_state',function f(stateId){
 	this.mostImportantStateText_add(stateId);
 	this.firstSortedState_add(stateId);
 	this.removeStatesByDamage_add(stateId);
+	this.removeStatesByBattleEnd_add(stateId);
 	this.removeStatesByRestriction_add(stateId);
 }).
 addBase('traitsOpCache_delTraitObj_state',function f(stateId){
@@ -6659,6 +6662,7 @@ addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	this.mostImportantStateText_del(stateId);
 	this.firstSortedState_del(stateId);
 	this.removeStatesByDamage_del(stateId);
+	this.removeStatesByBattleEnd_del(stateId);
 	this.removeStatesByRestriction_del(stateId);
 }).
 add('addNewState',function f(stateId){
@@ -6741,7 +6745,45 @@ addBase('removeStatesByDamage',function f(){
 	const arr=this.removeStatesByDamage_getStateIdsToBeRemoved();
 	for(let x=arr.length;x--;) this.removeState(arr[x]);
 }).
-// removeStatesByRestriction
+// removeBattleStates
+addBase('removeStatesByBattleEnd_init',function f(){
+	// initializing here
+	const code=f.tbl[0].code;
+	if(!this.traitsOpCache_hasUsedOp(code,'','set')){
+		this.traitsOpCache_addUsedOp(code,'','set');
+		if(this._states) for(let i=this._states.length;i--;) this.removeStatesByBattleEnd_add(this._states[i]);
+	}
+},t=[
+{code:"stateRemoveStatesByBattleEndValue",dataId:0,}, // dummy obj for removeStatesByBattleEnd
+]).
+addBase('removeStatesByBattleEnd_isTargetStateId',function f(stateId){
+	// return the state's dataobj if stateId is (one of) the target(s)
+	const dataobj=$dataStates[stateId];
+	return dataobj&&dataobj.removeAtBattleEnd?dataobj:undefined;
+}).
+addBase('removeStatesByBattleEnd_add',function f(stateId){
+	const dataobj=this.removeStatesByBattleEnd_isTargetStateId(stateId); if(!dataobj) return;
+	this.removeStatesByBattleEnd_init();
+	const trait=f.tbl[0];
+	trait.dataId=stateId;
+	this.traitsOpCache_updateVal_set_add(trait);
+},t).
+addBase('removeStatesByBattleEnd_del',function f(stateId){
+	const dataobj=this.removeStatesByBattleEnd_isTargetStateId(stateId); if(!dataobj) return;
+	this.removeStatesByBattleEnd_init();
+	const trait=f.tbl[0];
+	trait.dataId=stateId;
+	this.traitsOpCache_updateVal_set_del(trait);
+},t).
+addBase('removeStatesByBattleEnd_getStateIdsToBeRemoved',function f(){
+	this.removeStatesByBattleEnd_init();
+	return this.traitsOpCache_getCacheVal_set(f.tbl[0].code).slice();
+},t).
+addBase('removeBattleStates',function f(){
+	const arr=this.removeStatesByBattleEnd_getStateIdsToBeRemoved();
+	for(let x=arr.length;x--;) this.removeState(arr[x]);
+}).
+// onRestrict
 addBase('removeStatesByRestriction_init',function f(){
 	// initializing here
 	const code=f.tbl[0].code;
@@ -6750,7 +6792,7 @@ addBase('removeStatesByRestriction_init',function f(){
 		if(this._states) for(let i=this._states.length;i--;) this.removeStatesByRestriction_add(this._states[i]);
 	}
 },t=[
-{code:"stateRemoveByRestrictionValue",dataId:0,}, // dummy obj for chanceByDamage info
+{code:"stateRemoveByRestrictionValue",dataId:0,}, // dummy obj for removeStatesByRestriction info
 ]).
 addBase('removeStatesByRestriction_isTargetStateId',function f(stateId){
 	// return the state's dataobj if stateId is (one of) the target(s)
@@ -6773,7 +6815,7 @@ addBase('removeStatesByRestriction_del',function f(stateId){
 },t).
 addBase('removeStatesByRestriction_getStateIdsToBeRemoved',function f(){
 	this.removeStatesByRestriction_init();
-	return this.traitsOpCache_getCacheVal_set(f.tbl[0].code).multisetUniques();
+	return this.traitsOpCache_getCacheVal_set(f.tbl[0].code).slice();
 },t).
 addBase('removeStatesByRestriction',function f(){
 	const arr=this.removeStatesByRestriction_getStateIdsToBeRemoved();
