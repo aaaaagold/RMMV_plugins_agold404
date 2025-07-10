@@ -6764,6 +6764,7 @@ addBase('removeStatesByTiming_del',function f(stateId){
 	this.removeStatesByTiming_init();
 	const trait=f.tbl[0];
 	trait.dataId=dataobj.autoRemovalTiming;
+	trait.value=stateId;
 	this.removeStatesByTiming_init1(trait.dataId);
 	this.traitsOpCache_updateVal_vls_del(trait);
 },t).
@@ -7037,6 +7038,28 @@ new cfc(Game_BattlerBase.prototype).
 addBase('attackStatesRate',function f(){
 	return this.traitsUniqueIds(Game_BattlerBase.TRAIT_ATTACK_STATE);
 }).
+getP;
+
+
+// due to built-in API updated
+
+new cfc(Bitmap.prototype).
+add('drawText',function f(text, x, y, maxWidth, lineHeight, align){
+	if(!f.tbl[0][5][0].has(arguments[5])){
+		if(arguments.length<6) arguments.length=6;
+		arguments[5]=f.tbl[0][5][1];
+	}
+	return f.ori.apply(this,arguments);
+},[
+[
+undefined, // 0-0: 
+undefined, // 0-1: 
+undefined, // 0-2: 
+undefined, // 0-3: 
+undefined, // 0-4: 
+[new Set('left','center','right',),'left'], // 0-5: valid align values
+], // 0: valid values
+]).
 getP;
 
 
