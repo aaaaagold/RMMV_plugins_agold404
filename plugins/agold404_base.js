@@ -6097,10 +6097,11 @@ function(v,k){ this[v]=0; }, // 4: init pi special val cnt
 new Set([
 'ccc', // same code traits // traits
 'wId', // multiset traits  // traitsWithId
+'vls', // multiset values  // removeStatesAuto
 'sum', // sum              // traitsSum
 'sac', // sum all by code  // traitsSumAll
 'mul', // multiply         // traitsPi
-'has', // has value        // traitsHasId // NOT USED
+//'has', // has (c,d)->value // traitsHasValue // NOT USED
 'set', // multiset dataId  // traitsSet
 'MId', // max id           // traitsMaxId ( slotType collapseType )
 ]), // 5: planned cacheVal ops. also see `traitsOpCache_addTrait` `traitsOpCache_delTrait`
@@ -6262,24 +6263,24 @@ addBase('traitsOpCache_getCacheVal_mul',function f(dataCode,dataId){
 	return valObj.preCal;
 }).
 // has // NOT USED
-addBase('traitsOpCache_updateVal_has_add',function f(trait){
-	const vals=this.traitsOpCache_getContVals();
-	const key=this.traitsOpCache_genCacheKey(trait.code,trait.dataId,'has');
-	const newVal=((vals.get(key)-0||0)|0)+1;
-	if(!newVal) vals.delete(key);
-	else vals.set(key,newVal);
-}).
-addBase('traitsOpCache_updateVal_has_del',function f(trait){
-	const vals=this.traitsOpCache_getContVals();
-	const key=this.traitsOpCache_genCacheKey(trait.code,trait.dataId,'has');
-	const newVal=((vals.get(key)-0||0)|0)-1;
-	if(!newVal) vals.delete(key);
-	else vals.set(key,newVal);
-}).
-addBase('traitsOpCache_getCacheVal_has',function f(dataCode,dataId){
+addBase('traitsOpCache_updateVal_has_getValObj',function f(dataCode,dataId){
+	// `dataId` is not used
 	const vals=this.traitsOpCache_getContVals();
 	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'has');
-	return 0<vals.get(key);
+	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=[]);
+	return rtv;
+}).
+addBase('traitsOpCache_updateVal_has_add',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_has_getValObj(trait.code,trait.dataId);
+	valObj.multisetPush(trait.value);
+}).
+addBase('traitsOpCache_updateVal_has_del',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_has_getValObj(trait.code,trait.dataId);
+	valObj.multisetPop(trait.value);
+}).
+addBase('traitsOpCache_getCacheVal_has',function f(dataCode,dataId,value){
+	const valObj=this.traitsOpCache_updateVal_has_getValObj(trait.code,trait.dataId);
+	return valObj.multisetHas(value);
 }).
 // set
 addBase('traitsOpCache_updateVal_set_getValObj',function f(dataCode,dataId){
@@ -6321,6 +6322,25 @@ addBase('traitsOpCache_updateVal_wId_del',function f(trait){
 addBase('traitsOpCache_getCacheVal_wId',function f(dataCode,dataId){
 	// default value = []
 	return this.traitsOpCache_updateVal_wId_getValObj(dataCode,dataId);
+}).
+// vls
+addBase('traitsOpCache_updateVal_vls_getValObj',function f(dataCode,dataId){
+	const vals=this.traitsOpCache_getContVals();
+	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'vls');
+	let rtv=vals.get(key); if(!rtv) vals.set(key,rtv=[]);
+	return rtv;
+}).
+addBase('traitsOpCache_updateVal_vls_add',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_vls_getValObj(trait.code,trait.dataId);
+	valObj.multisetPush(trait.value);
+}).
+addBase('traitsOpCache_updateVal_vls_del',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_vls_getValObj(trait.code,trait.dataId);
+	valObj.multisetPop(trait.value);
+}).
+addBase('traitsOpCache_getCacheVal_vls',function f(dataCode,dataId){
+	// default value = []
+	return this.traitsOpCache_updateVal_vls_getValObj(dataCode,dataId);
 }).
 // MId
 addBase('traitsOpCache_updateVal_MId_getValObj',function f(dataCode,dataId,cmp3Func){
@@ -6367,6 +6387,7 @@ addBase('traitsOpCache_addTrait',function f(trait){
 	if(!f.tbl[0]){ f.tbl[0]=new Map([
 		['ccc', this.traitsOpCache_updateVal_ccc_add ],
 		['wId', this.traitsOpCache_updateVal_wId_add ],
+		['vls', this.traitsOpCache_updateVal_vls_add ],
 		['sum', this.traitsOpCache_updateVal_sum_add ],
 		['sac', this.traitsOpCache_updateVal_sac_add ],
 		['mul', this.traitsOpCache_updateVal_mul_add ],
@@ -6386,6 +6407,7 @@ addBase('traitsOpCache_delTrait',function f(trait){
 	if(!f.tbl[0]){ f.tbl[0]=new Map([
 		['ccc', this.traitsOpCache_updateVal_ccc_del ],
 		['wId', this.traitsOpCache_updateVal_wId_del ],
+		['vls', this.traitsOpCache_updateVal_vls_del ],
 		['sum', this.traitsOpCache_updateVal_sum_del ],
 		['sac', this.traitsOpCache_updateVal_sac_del ],
 		['mul', this.traitsOpCache_updateVal_mul_del ],
@@ -6633,6 +6655,8 @@ addBase('stateOverlayIndex',function f(){
 	return dataobj?dataobj.overlay:0;
 }).
 // placeholders
+addBase('removeStatesByTiming_add',none).
+addBase('removeStatesByTiming_del',none).
 addBase('removeStatesByDamage_add',none).
 addBase('removeStatesByDamage_del',none).
 addBase('removeStatesByBattleEnd_add',none).
@@ -6648,6 +6672,7 @@ addBase('traitsOpCache_addTraitObj_state',function f(stateId){
 	this.restriction_add(stateId);
 	this.mostImportantStateText_add(stateId);
 	this.firstSortedState_add(stateId);
+	this.removeStatesByTiming_add(stateId);
 	this.removeStatesByDamage_add(stateId);
 	this.removeStatesByBattleEnd_add(stateId);
 	this.removeStatesByRestriction_add(stateId);
@@ -6661,6 +6686,7 @@ addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	this.restriction_del(stateId);
 	this.mostImportantStateText_del(stateId);
 	this.firstSortedState_del(stateId);
+	this.removeStatesByTiming_del(stateId);
 	this.removeStatesByDamage_del(stateId);
 	this.removeStatesByBattleEnd_del(stateId);
 	this.removeStatesByRestriction_del(stateId);
@@ -6700,6 +6726,55 @@ addBase('attackElements',function(){
 getP;
 
 new cfc(Game_Battler.prototype).
+// removeStatesAuto
+addBase('removeStatesByTiming_init',function f(){
+	// initializing here
+	const code=f.tbl[0].code;
+	if(!this.traitsOpCache_hasUsedOp(code,'','vls')){
+		this.traitsOpCache_addUsedOp(code,'','vls');
+		if(this._states) for(let i=this._states.length;i--;) this.removeStatesByTiming_add(this._states[i]);
+	}
+},t=[
+{code:"stateRemoveStatesByTimingValue",dataId:0,value:undefined,}, // dummy obj for removeStatesByTiming info
+]).
+addBase('removeStatesByTiming_init1',function f(timing){
+	const code=f.tbl[0].code;
+	if(!this.traitsOpCache_hasUsedOp(code,timing,'vls')){
+		this.traitsOpCache_addUsedOp(code,timing,'vls');
+	}
+},t).
+addBase('removeStatesByTiming_isTargetStateId',function f(stateId){
+	// return the state's dataobj if stateId is (one of) the target(s)
+	const dataobj=$dataStates[stateId];
+	return dataobj&&dataobj[f.tbl[0]]?dataobj:undefined;
+},[
+'autoRemovalTiming', // 0: target key // only query for 1 and 2
+]).
+addBase('removeStatesByTiming_add',function f(stateId){
+	const dataobj=this.removeStatesByTiming_isTargetStateId(stateId); if(!dataobj) return;
+	this.removeStatesByTiming_init();
+	const trait=f.tbl[0];
+	trait.dataId=dataobj.autoRemovalTiming;
+	trait.value=stateId;
+	this.removeStatesByTiming_init1(trait.dataId);
+	this.traitsOpCache_updateVal_vls_add(trait);
+},t).
+addBase('removeStatesByTiming_del',function f(stateId){
+	const dataobj=this.removeStatesByTiming_isTargetStateId(stateId); if(!dataobj) return;
+	this.removeStatesByTiming_init();
+	const trait=f.tbl[0];
+	trait.dataId=dataobj.autoRemovalTiming;
+	this.removeStatesByTiming_init1(trait.dataId);
+	this.traitsOpCache_updateVal_vls_del(trait);
+},t).
+addBase('removeStatesByTiming_getStateIdsToBeRemoved',function f(timing){
+	this.removeStatesByTiming_init();
+	return this.traitsOpCache_getCacheVal_vls(f.tbl[0].code,timing).slice();
+},t).
+addBase('removeStatesAuto',function f(timing){
+	const arr=this.removeStatesByTiming_getStateIdsToBeRemoved(timing);
+	for(let x=arr.length;x--;) if(this.isStateExpired(arr[x])) this.removeState(arr[x]);
+}).
 // removeStatesByDamage
 addBase('removeStatesByDamage_init',function f(){
 	// initializing here
