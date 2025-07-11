@@ -1566,9 +1566,6 @@ new cfc(p).add('_createAllParts',function f(){
 (()=>{ let k,r,t;
 
 
-
-
-
 new cfc(Game_Party.prototype).
 add('initAllItems',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -2549,6 +2546,25 @@ function(stateInfo){
 	if(this._stateSteps) this._stateSteps[stateInfo[0]]=stateInfo[2];
 }, // 0: forEach put back
 ]).
+getP;
+
+
+new cfc(Game_Actor.prototype).
+addBase('onPlayerWalk_updateStatesSteps',function f(){
+	this._states.slice().forEach(f.tbl[0],this);
+},[
+function(stateId){ const state=$dataStates[stateId]; if(state) this.updateStateSteps(state); }, // 0: forEach
+]).
+addBase('onPlayerWalk',function(){
+	this.clearResult();
+	this.checkFloorEffect();
+	if($gamePlayer.isNormal()){
+		this.turnEndOnMap();
+		this.onPlayerWalk_updateStatesSteps();
+		this.showAddedStates();
+		this.showRemovedStates();
+	}
+}).
 getP;
 
 
@@ -6248,7 +6264,7 @@ addBase('traitsOpCache_updateVal_mul_del',function f(trait){
 		--valObj[cntName];
 	}
 	if(0===--valObj.traitCnt) valObj.preCal=1;
-}).
+},t).
 addBase('traitsOpCache_getCacheVal_mul',function f(dataCode,dataId){
 	// default value = 1
 	const valObj=this.traitsOpCache_updateVal_mul_getValObj(dataCode,dataId);
@@ -6663,6 +6679,8 @@ addBase('removeStatesByBattleEnd_add',none).
 addBase('removeStatesByBattleEnd_del',none).
 addBase('removeStatesByRestriction_add',none).
 addBase('removeStatesByRestriction_del',none).
+addBase('removeStatesBySteps_add',none).
+addBase('removeStatesBySteps_del',none).
 // state common
 addBase('traitsOpCache_addTraitObj_state',function f(stateId){
 	// before actually change `this._states`
@@ -6676,6 +6694,7 @@ addBase('traitsOpCache_addTraitObj_state',function f(stateId){
 	this.removeStatesByDamage_add(stateId);
 	this.removeStatesByBattleEnd_add(stateId);
 	this.removeStatesByRestriction_add(stateId);
+	this.removeStatesBySteps_add(stateId);
 }).
 addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	// before actually change `this._states`
@@ -6690,6 +6709,7 @@ addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	this.removeStatesByDamage_del(stateId);
 	this.removeStatesByBattleEnd_del(stateId);
 	this.removeStatesByRestriction_del(stateId);
+	this.removeStatesBySteps_del(stateId);
 }).
 add('addNewState',function f(stateId){
 	this.traitsOpCache_addTraitObj_state(stateId); // before actually change `this._states`
@@ -6904,6 +6924,47 @@ addBase('onRestrict',function f(){
 }).
 getP;
 
+new cfc(Game_Actor.prototype).
+// onPlayerWalk_updateStatesSteps
+addBase('removeStatesBySteps_init',function f(){
+	// initializing here
+	const code=f.tbl[0].code;
+	if(!this.traitsOpCache_hasUsedOp(code,'','set')){
+		this.traitsOpCache_addUsedOp(code,'','set');
+		if(this._states) for(let i=this._states.length;i--;) this.removeStatesBySteps_add(this._states[i]);
+	}
+},t=[
+{code:"stateRemoveStatesByStepsValue",dataId:0,}, // dummy obj for removeStatesBySteps
+]).
+addBase('removeStatesBySteps_isTargetStateId',function f(stateId){
+	// return the state's dataobj if stateId is (one of) the target(s)
+	const dataobj=$dataStates[stateId];
+	return dataobj&&dataobj.removeByWalking?dataobj:undefined;
+}).
+addBase('removeStatesBySteps_add',function f(stateId){
+	const dataobj=this.removeStatesBySteps_isTargetStateId(stateId); if(!dataobj) return;
+	this.removeStatesBySteps_init();
+	const trait=f.tbl[0];
+	trait.dataId=stateId;
+	this.traitsOpCache_updateVal_set_add(trait);
+},t).
+addBase('removeStatesBySteps_del',function f(stateId){
+	const dataobj=this.removeStatesBySteps_isTargetStateId(stateId); if(!dataobj) return;
+	this.removeStatesBySteps_init();
+	const trait=f.tbl[0];
+	trait.dataId=stateId;
+	this.traitsOpCache_updateVal_set_del(trait);
+},t).
+addBase('removeStatesBySteps_getStateIdsToBeTested',function f(){
+	this.removeStatesBySteps_init();
+	return this.traitsOpCache_getCacheVal_set(f.tbl[0].code).multisetUniques();
+},t).
+addBase('onPlayerWalk_updateStatesSteps',function f(){
+	const arr=this.removeStatesBySteps_getStateIdsToBeTested();
+	for(let x=arr.length;x--;) if(!(0<--this._stateSteps[arr[x]])) this.removeState(arr[x]);
+}).
+getP;
+
 new cfc(Game_Enemy.prototype).
 add('transform',function f(enemyId){
 	this.traitsOpCache_changeDataobj(
@@ -6929,7 +6990,7 @@ add('setEquip',function f(slotId,item){
 	);
 	return f.ori.apply(this,arguments);
 }).
-addBase('attackElements',function() {
+addBase('attackElements',function(){
 	let set=Game_Battler.prototype._attackElements.call(this);
 	if(this.hasNoWeapons()){
 		const bareHandsElementId=this.bareHandsElementId();
