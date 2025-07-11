@@ -7119,7 +7119,7 @@ undefined, // 0-1:
 undefined, // 0-2: 
 undefined, // 0-3: 
 undefined, // 0-4: 
-[new Set('left','center','right',),'left'], // 0-5: valid align values
+[new Set(['left','center','right',]),'left'], // 0-5: valid align values
 ], // 0: valid values
 ]).
 getP;
