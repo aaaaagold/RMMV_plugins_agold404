@@ -6790,7 +6790,7 @@ addBase('removeStatesByTiming_del',function f(stateId){
 },t).
 addBase('removeStatesByTiming_getStateIdsToBeRemoved',function f(timing){
 	this.removeStatesByTiming_init();
-	return this.traitsOpCache_getCacheVal_vls(f.tbl[0].code,timing).slice();
+	return this.traitsOpCache_getCacheVal_vls(f.tbl[0].code,timing).multisetUniques();
 },t).
 addBase('removeStatesAuto',function f(timing){
 	const arr=this.removeStatesByTiming_getStateIdsToBeRemoved(timing);
@@ -6830,10 +6830,11 @@ addBase('removeStatesByDamage_getStateIdsToBeRemoved',function f(){
 	// result may differ in each call due to the use of `Math.random()`.
 	this.removeStatesByDamage_init();
 	const valObj=this.traitsOpCache_getCacheVal_set(f.tbl[0].code);
+	const arr=valObj.multisetUniques();
 	const rtv=[];
-	for(let x=valObj.length;x--;){
-		const state=$dataStates[valObj[x]];
-		if(Math.random()*100<state.chanceByDamage) rtv.push(valObj[x]);
+	for(let x=arr.length;x--;){
+		const state=$dataStates[arr[x]];
+		if(Math.random()*100<state.chanceByDamage) rtv.push(arr[x]);
 	}
 	return rtv;
 },t).
