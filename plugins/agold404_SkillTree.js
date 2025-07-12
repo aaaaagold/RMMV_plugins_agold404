@@ -516,9 +516,9 @@ new Set([
 [itemAct_learn,"learn","itemActionWindow_canLearn"],
 [itemAct_cancel,"cancel"],
 ], // 1: cmds
-]).add('itemActionWindow_hasSkill',function f(item){
+]).add('itemActionWindow_hasSkill',function f(item,isIncludingTraits){
 	const w=this._itemWindow;
-	return w._actor && w._actor._skills.uniqueHas(item&&item.id);
+	return w._actor && (w._actor._skills.uniqueHas(item&&item.id) || (isIncludingTraits&&w._actor.hasSkill(item&&item.id)));
 }).add('itemActionWindow_canUse',function f(idx){
 	const w=this._itemWindow;
 	const item=w.item(idx);
