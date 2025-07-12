@@ -2842,6 +2842,13 @@ addBase('actionPlusSet',function f(){
 getP;
 
 new cfc(Game_Battler.prototype).
+addBase('isStateAddable',function(stateId) {
+	return ($dataStates[stateId] && this.isAlive() && 
+		!this.isStateResist(stateId) && 
+		//!this._result.isStateRemoved(stateId) && // weird
+		!this.isStateRestrict(stateId) && 
+	true);
+}).
 addBase('makeActionTimes',function f(){
 	const val=1+this.traitsSumAll(Game_BattlerBase.TRAIT_ACTION_PLUS);
 	return val+(Math.random()<val%1);
