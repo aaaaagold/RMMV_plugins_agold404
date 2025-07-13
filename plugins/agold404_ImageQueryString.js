@@ -20,7 +20,9 @@ const tuneN=(n,meta)=>{
 	return uqh.join('');
 };
 
-new cfc(Game_Battler.prototype).addBase('_battlerName_grayscalize',function f(n){
+k='_battlerName_grayscalize';
+if(!Game_Battler.prototype[k]) new cfc(Game_Battler.prototype).
+addBase(k,function f(n){
 	const stat=this.states().find(f.tbl[0]);
 	if(stat && n) n=tuneN(n,stat.meta);
 	return n;
