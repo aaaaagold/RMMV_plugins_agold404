@@ -2480,6 +2480,9 @@ addBase('statesContainer_addStateId',function f(stateId){
 addBase('statesContainer_delStateId',function f(stateId){
 	this._states.multisetPop(stateId);
 }).
+addBase('statesContainer_cntStateId',function f(stateId){
+	return this._states.multisetGetCnt(stateId);
+}).
 addBase('statesContainer_hasStateId',function f(stateId){
 	return this._states.multisetHas(stateId);
 }).
@@ -2547,6 +2550,56 @@ function(stateInfo){
 	if(this._stateSteps) this._stateSteps[stateInfo[0]]=stateInfo[2];
 }, // 0: forEach put back
 ]).
+getP;
+
+new cfc(Game_Battler.prototype).
+addBase('addState',function(stateId) {
+	if(this.isStateAddable(stateId)){
+		// state can be added to refresh stateCounts
+		if(this.addNewState_condOk(stateId)){
+			this.addNewState(stateId);
+			if(this._result) this._result.pushAddedState(stateId);
+			this.refresh();
+		}
+		this.resetStateCounts(stateId);
+	}
+}).
+addBase('addNewState_condOk',function f(stateId){
+	return !this.isStateAffected(stateId);
+}).
+getP;
+
+new cfc(Game_ActionResult.prototype).
+addBase('isStateAdded',function f(stateId){
+	return this.addedStates.multisetHas(stateId);
+}).
+addBase('pushAddedState',function f(stateId){
+	this.addedStates.multisetPush(stateId);
+}).
+addBase('isStateRemoved',function f(stateId){
+	return this.removedStates.multisetHas(stateId);
+}).
+addBase('pushRemovedState',function f(stateId){
+	this.removedStates.multisetPush(stateId);
+}).
+addBase('isBuffAdded',function f(stateId){
+	return this.addedBuffs.multisetHas(stateId);
+}).
+addBase('pushAddedBuff',function f(stateId){
+	this.addedBuffs.multisetPush(stateId);
+}).
+addBase('isDebuffAdded',function f(stateId){
+	return this.addedDebuffs.multisetHas(stateId);
+}).
+addBase('pushAddedDebuff',function f(stateId){
+	this.addedDebuffs.multisetPush(stateId);
+}).
+addBase('isBuffRemoved',function f(stateId){
+	return this.removedBuffs.multisetHas(stateId);
+}).
+addBase('pushRemovedBuff',function f(stateId){
+	this.removedBuffs.multisetPush(stateId);
+}).
 getP;
 
 
