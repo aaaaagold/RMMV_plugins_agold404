@@ -51,6 +51,8 @@ actor/enemy ability
 - adjust existing abilities: `agold404_CustomAbilityEval.js`
 - custom ability properties: `agold404_AllocateAbility.js`
 - drop rate: `agold404_DropRate.js`
+- states
+  - duplicated state (stacked multiple times): `agold404_Trait_duplicatedStates.js`
 
 
 ## Initialization Loading (Scene_Boot)
