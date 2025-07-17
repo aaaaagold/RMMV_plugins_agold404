@@ -2770,11 +2770,12 @@ addBase('discardEquip',function f(item){
 	return true;
 }).
 addBase('releaseUnequippableItems',function(forcing){
-	for(;;){
+	let changed=false;
+	do{
 		this.releaseUnequippableItems_roundStart.apply(this,arguments);
 		const slots=this.equipSlots();
 		const equips=this.equips();
-		let changed=false;
+		changed=false;
 		for(let i=0,sz=equips.length;i<sz;++i){
 			const item=equips[i];
 			if(item && (!this.canEquip(item)||item.etypeId!==slots[i])){
@@ -2785,14 +2786,42 @@ addBase('releaseUnequippableItems',function(forcing){
 				changed=true;
 			}
 		}
-		if(!changed){
-			break;
-		}
-	}
+	}while(changed);
 }).
 addBase('releaseUnequippableItems_roundStart',none).
 addBase('isEquipChangeOk',function(slotId){
 	return !this.isEquipTypeLocked(this._getEquipSlot(slotId)) && !this.isEquipTypeSealed(this._getEquipSlot(slotId)) ;
+}).
+addBase('equipSlotsLength',function f(){
+	return this.equipSlots().length;
+}).
+addBase('clearEquipments',function f(){
+	for(let slotId=this.equipSlotsLength();slotId--;) if(this.isEquipChangeOk(slotId)) this.changeEquip(slotId,null);
+}).
+addBase('optimizeEquipments',function(){
+	this.clearEquipments();
+	const slots=this.equipSlots();
+	const slotIdEnd=slots.length;
+	for(let slotId=slotIdEnd;slotId--;){
+		if(this.isEquipChangeOk(slotId)){
+			this.changeEquip(slotId,this.bestEquipItem(slots[slotId]));
+		}
+	}
+}).
+addBase('bestEquipItem',function f(etypeId){
+	const items=$gameParty.equipItems().filter(function(item){
+		return item.etypeId===etypeId&&this.canEquip(item);
+	},this);
+	let bestItem=null;
+	let bestPerformance=-1e9;
+	for(let i=items.length;i--;){
+		const performance=this.calcEquipItemPerformance(items[i]);
+		if(performance>bestPerformance){
+			bestPerformance=performance;
+			bestItem=items[i];
+		}
+	}
+	return bestItem;
 }).
 getP;
 
@@ -2802,7 +2831,7 @@ addBase('item',function f(){
 }).
 addBase('drawItem',function f(index){
 	if(!this._actor) return;
-	const rect = this.itemRectForText(index);
+	const rect=this.itemRectForText(index);
 	this.changeTextColor(this.systemColor());
 	this.changePaintOpacity(this.isEnabled(index));
 	this.drawText(this.slotName(index), rect.x, rect.y, 138, this.lineHeight());
