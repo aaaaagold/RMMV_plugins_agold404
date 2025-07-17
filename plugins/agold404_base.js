@@ -2764,10 +2764,10 @@ addBase('forceChangeEquip',function f(slotId,item){
 	this.refresh();
 }).
 addBase('discardEquip',function f(item){
+	if(!this.isEquipped(item)) return;
 	const slotId=this.equips().indexOf(item);
-	if(slotId>=0){
-		this.setEquip(slotId,null);
-	}
+	this.setEquip(slotId,null);
+	return true;
 }).
 addBase('releaseUnequippableItems',function(forcing){
 	for(;;){
@@ -3715,6 +3715,14 @@ window.isTest(), // 1: isTest
 ]).
 getP;
 }
+
+
+new cfc(Game_Action.prototype).
+addBase('isMagicSkill',function() {
+	const item=this.item();
+	return $dataSystem.magicSkills.uniqueHas(item&&item.stypeId);
+}).
+getP;
 
 
 new cfc(Game_Enemy.prototype).
