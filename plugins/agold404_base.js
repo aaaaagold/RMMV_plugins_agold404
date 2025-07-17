@@ -1650,6 +1650,11 @@ addBase('setLastGainedItem',function(item,amount){
 addBase('allItems',function f(){
 	return [].concat_inplace(this.items(),this.weapons(),this.armors());
 }).
+addBase('isAnyMemberEquipped',function f(item){
+	const arr=this.members();
+	for(let x=arr.length;x--;) if(arr[x].isEquipped(item)) return true;
+	return false;
+}).
 getP;
 
 
@@ -2646,6 +2651,31 @@ addBase('paramPlus_equips',function f(paramId){
 getP;
 
 new cfc(Game_Actor.prototype).
+addBase('_equipsTbl_normalizeItem',function f(item){
+	return item==null?null:item; // undefined->null
+}).
+addBase('_equipsTbl_getCont',function f(){
+	const arr=this._equips;
+	if(!arr) return [];
+	let rtv=arr._equippedTbl;
+	if(!rtv){
+		rtv=arr._equippedTbl=[];
+		for(let x=arr.length;x--;) rtv.multisetPush(this._equipsTbl_normalizeItem(arr[x]&&arr[x].object()));
+	}
+	return rtv;
+}).
+addBase('_equipsTbl_add',function f(item){
+	return this._equipsTbl_getCont().multisetPush(this._equipsTbl_normalizeItem(item));
+}).
+addBase('_equipsTbl_del',function f(item){
+	return this._equipsTbl_getCont().multisetPop(this._equipsTbl_normalizeItem(item));
+}).
+addBase('_equipsTbl_has',function f(item){
+	return this._equipsTbl_getCont().multisetHas(this._equipsTbl_normalizeItem(item));
+}).
+addBase('_equipsTbl_cnt',function f(item){
+	return this._equipsTbl_getCont().multisetGetCnt(this._equipsTbl_normalizeItem(item));
+}).
 addBase('_setEquip_getDataarr',function f(slotId,slots){
 	return slots[slotId]===1?$dataWeapons:$dataArmors;
 }).
@@ -2653,8 +2683,16 @@ addBase('_setEquip',function f(slotId,item){
 	// internal api
 	const arr=this._equips;
 	const gameItem=arr&&arr[slotId];
-	if(gameItem) gameItem.setObject(item);
-	else if(arr) (arr[slotId]=new Game_Item()).setObject(item);
+	if(gameItem){
+		const oldItem=gameItem.object();
+		this._equipsTbl_del(oldItem);
+		this._equipsTbl_add(item);
+		gameItem.setObject(item);
+	}else if(arr){
+		for(let x=arr.length;x<slotId;++x) this._equipsTbl_add(arr[x]&&arr[x].object());
+		this._equipsTbl_add(item);
+		(arr[slotId]=new Game_Item()).setObject(item);
+	}
 }).
 addBase('_getEquip',function f(slotId){
 	// internal api
@@ -3688,6 +3726,14 @@ function(r,di){
 	return r;
 }, // 0: reduce
 ]);
+
+
+new cfc(Game_Actor.prototype).
+addBase('isEquipped',function f(item){
+	return this._equipsTbl_has(item);
+}).
+getP;
+
 
 })(); // performance
 
