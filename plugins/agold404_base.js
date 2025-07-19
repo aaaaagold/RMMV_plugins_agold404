@@ -1043,15 +1043,57 @@ function(){ Scene_Base.prototype.stop.call(this); },
 	if(this._lastBgBm) SceneManager._backgroundBitmap=this._lastBgBm;
 },t);
 //
+// ==== dataArr mgr ====
+new cfc(DataManager).
+addBase('dataarr_resetTable',function f(dataarr){
+	dataarr[f.tbl[0]]=dataarr[f.tbl[0]]||new Map();
+	dataarr[f.tbl[0]].clear();
+	dataarr.forEach(f.tbl[1],dataarr[f.tbl[0]]);
+	return dataarr[f.tbl[0]];
+},t=[
+'_tbl_hasDataobj', // 0: tblKey for hasDataobj
+function f(dataobj,i,arr){
+	if(dataobj) this.set(dataobj,i);
+}, // 0: forEach:rebuild hasDataobj tbl
+]).
+addBase('dataarr_ensureTableInited',function f(dataarr){
+	return dataarr[f.tbl[0]]||this.dataarr_resetTable(dataarr);
+},t).
+addBase('dataarr_resetLength',function f(dataarr){
+	const baseLength=useDefaultIfIsNaN(dataarr.baseLength,dataarr.length);
+	dataarr.length=dataarr.baseLength=baseLength;
+	this.dataarr_resetTable(dataarr);
+},t).
+addBase('dataarr_reset',function f(dataarr){
+	this.dataarr_resetLength(dataarr);
+},t).
+addBase('dataarr_addDataobj',function f(dataarr,dataobj,putToIdx){
+	if(!dataobj) return;
+	const m=this.dataarr_ensureTableInited(dataarr);
+	const newId=useDefaultIfIsNaN(putToIdx,dataarr.length);
+	const oldObj=dataarr[newId];
+	if(oldObj===dataobj) return;
+	m.delete(oldObj);
+	m.set(dataarr[newId]=dataobj,dataobj.id=newId);
+	return oldObj;
+}).
+addBase('dataarr_hasDataobj',function f(dataarr,dataobj){
+	return this.dataarr_ensureTableInited(dataarr).has(dataobj);
+}).
+addBase('dataarr_getIdxOfDataobj',function f(dataarr,dataobj){
+	return this.dataarr_ensureTableInited(dataarr).get(dataobj);
+}).
+getP;
+//
 // DO NOT change _onLoad* which are starting with a '_'
 new cfc(DataManager).addBase('isSkill',function f(item){
-	return item && $dataSkills.uniqueHas(item);
+	return item && this.dataarr_hasDataobj($dataSkills,item);
 }).addBase('isItem',function f(item){
-	return item && $dataItems.uniqueHas(item);
+	return item && this.dataarr_hasDataobj($dataItems,item);
 }).addBase('isWeapon',function f(item){
-	return item && $dataWeapons.uniqueHas(item);
+	return item && this.dataarr_hasDataobj($dataWeapons,item);
 }).addBase('isArmor',function f(item){
-	return item && $dataArmors.uniqueHas(item);
+	return item && this.dataarr_hasDataobj($dataArmors,item);
 }).
 addBase('arrMapFunc_idToDataobj_skill',  i=>$dataSkills[i]).
 addBase('arrMapFunc_idToDataobj_item',   i=>$dataItems[i]).
@@ -1882,6 +1924,30 @@ new cfc(Window.prototype).addBase('_updateCursor',function f(){
 },[
 0.5,
 ]);
+
+
+new cfc(Window_Selectable.prototype).
+addBase('hitTest_condOk',function(x,y){
+	return this.isContentsArea(x,y);
+}).
+addBase('hitTest_do',function(x,y){
+	const cx=x-this.padding;
+	const cy=y-this.padding;
+	const topIndex=this.topIndex();
+	const maxPageItems=this.maxPageItems();
+	const idxEnd=this.maxItems();
+	for(var i=0;i<=this.maxPageItems();i++){
+		const idx=topIndex+i; if(idx>=idxEnd) break;
+		if(this.itemRect(idx).contains(cx,cy)) return idx;
+	}
+	return -1;
+}).
+addBase('hitTest',function(x, y){
+	let rtv=-1;
+	if(this.hitTest_condOk.apply(this,arguments)) rtv=this.hitTest_do.apply(this,arguments);
+	return rtv;
+}).
+getP;
 
 
 new cfc(Window_SkillStatus.prototype).addBase('refresh',function f(){
@@ -3014,6 +3080,94 @@ addBase('skills',function f(){
 getP;
 
 
+new cfc(Game_Party.prototype).
+addBase('_actorsTbl_getCont',function f(){
+	const actors=this._actors; if(!actors){ return new Map(); }
+	let rtv=actors._actorIdCntTbl; if(!rtv) rtv=actors._actorIdCntTbl=new Map();
+	return rtv;
+}).
+addBase('_actorsTbl_add',function f(actorId){
+	const cont=this._actorsTbl_getCont();
+	const newVal=(cont.get(actorId)|0)+1;
+	cont.set(actorId,newVal);
+	return newVal;
+}).
+addBase('_actorsTbl_del',function f(actorId){
+	const cont=this._actorsTbl_getCont();
+	const oldVal=(cont.get(actorId)|0);
+	if(!oldVal) return oldVal;
+	const newVal=oldVal-1;
+	cont.set(actorId,newVal-1);
+	return newVal;
+}).
+addBase('_actorsTbl_cnt',function f(actorId){
+	const cont=this._actorsTbl_getCont();
+	return cont.get(actorId)|0;
+}).
+addBase('onActorsChanged_enable',function(){
+	this._isDisablingOnActorsChanged=undefined;
+}).
+addBase('onActorsChanged_disable',function(){
+	this._isDisablingOnActorsChanged=true;
+}).
+addBase('onActorsChanged_isDisabled',function(){
+	return this._isDisablingOnActorsChanged;
+}).
+addBase('onActorsChanged',function f(actorId){
+	if(this.onActorsChanged_isDisabled()) return;
+	$gamePlayer.refresh();
+	$gameMap.requestRefresh();
+}).
+addBase('addActor_condOk',function f(actorId){
+	return this._actorsTbl_cnt(actorId)===0;
+}).
+addBase('addActor_do',function f(actorId){
+	this._actorsTbl_add(actorId);
+	this._actors.push(actorId);
+}).
+addBase('addActor',function f(actorId){
+	if(this.addActor_condOk(actorId)){
+		this.addActor_do(actorId);
+		this.onAddActor(actorId);
+	}
+}).
+addBase('onAddActor',function f(actorId){
+	this.onActorsChanged(actorId);
+}).
+addBase('removeActor_condOk',function(actorId){
+	return 0<this._actorsTbl_cnt(actorId);
+}).
+addBase('removeActor_do',function(actorId){
+	this._actorsTbl_del(actorId);
+	this._actors.splice(this._actors.indexOf(actorId),1);
+}).
+addBase('removeActor',function(actorId){
+	if(this.removeActor_condOk(actorId)){
+		this.removeActor_do(actorId);
+		this.onRemoveActor(actorId);
+	}
+}).
+addBase('onRemoveActor',function f(actorId){
+	this.onActorsChanged(actorId);
+}).
+getP;
+
+
+{ const p=Game_System.prototype;
+new cfc(p).
+addBase('onAfterLoad_main',p.onAfterLoad).
+addBase('onAfterLoad_before',none).
+addBase('onAfterLoad_after',none).
+addBase('onAfterLoad',function f(){
+	this.onAfterLoad_before();
+	const rtv=this.onAfterLoad_main();
+	this.onAfterLoad_after();
+	return rtv;
+}).
+getP;
+}
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
@@ -3539,7 +3693,7 @@ addBase('_refreshCursor',function f(useThisSprite){
 	}else{
 	}
 	useThisSprite.setFrame(0, 0, w2, h2);
-	useThisSprite.move(x2,y2);
+	useThisSprite.move(x,y);
 	
 	return;
 
@@ -7249,7 +7403,10 @@ new cfc(Window_Selectable.prototype).addBase('maxPageRows',function(isReturnReal
 }).addBase('isCursorVisible',function f(){
 	const rect=this.itemRect_curr();
 	const c=this._windowContentsSprite;
-	return c&&rect.overlap(c);
+	if(!c) return false;
+	rect.x+=c.x;
+	rect.y+=c.y;
+	return rect.overlap(c);
 }).add('processCursorMove',function f(){
 	const idx=this.index();
 	const rtv=f.ori.apply(this,arguments);
@@ -7312,6 +7469,23 @@ undefined, // 0-4:
 [new Set(['left','center','right',]),'left'], // 0-5: valid align values
 ], // 0: valid values
 ]).
+getP;
+
+
+new cfc(Game_Party.prototype).
+addBase('battleMembers',function() {
+	const maxBattleMembers=this.maxBattleMembers();
+	const allMembers=this.allMembers();
+	const rtv=[];
+	if(rtv.length<allMembers.length){ for(let x=0,xs=allMembers.length;x<xs;++x){
+		const actor=allMembers[x];
+		if(actor.isAppeared()){
+			rtv.push(actor);
+			if(rtv.length>=maxBattleMembers) break;
+		}
+	} }
+	return rtv;
+}).
 getP;
 
 
