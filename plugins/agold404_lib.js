@@ -137,6 +137,7 @@ p.uniqueClear=function(){
 	if(!this._map) this._map=new Map();
 	this._map.clear();
 	this.length=0;
+	return this;
 };
 p.uniqueGetIdx=function(obj){
 	if(!this._map) return;
