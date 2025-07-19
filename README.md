@@ -53,6 +53,7 @@ actor/enemy ability
 - drop rate: `agold404_DropRate.js`
 - states
   - duplicated state (stacked multiple times): `agold404_Trait_duplicatedStates.js`
+- duplicated actors: `agold404_Api_duplicatedActors.js`
 
 
 ## Initialization Loading (Scene_Boot)
