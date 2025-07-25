@@ -2,7 +2,16 @@
 /*:
  * @plugindesc providing js api to duplicate an actor when added to party
  * @author agold404
- * @help 
+ * 
+ * 
+ * @param DefaultMinGeneratedId
+ * @type number
+ * @text default min generated id
+ * @desc to ensure expanding numbers of actors won't cause much issues. when NaN, use 4040 as value
+ * @default 4040
+ * 
+ * 
+ * @help .
  * 
  * 
  * This plugin can be renamed as you want.
@@ -11,6 +20,7 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Api_duplicatedActors";
 const params=PluginManager.parameters(pluginName)||{};
+params._defaultMinGeneratedId=useDefaultIfIsNaN(params.DefaultMinGeneratedId,4040);
 
 
 t=[
@@ -71,7 +81,7 @@ addBase('duplicatedActors_createNew',function f(srcActorId,variationsInfo,newId)
 	Object.assign(finalVariationsInfo,variationsInfo);
 	const dstDataobj=Object.assign(Object.assign({},srcDataobj),finalVariationsInfo);
 	dstDataobj[f.tbl[4]]=srcDataobj.id;
-	DataManager.dataarr_addDataobj($dataActors,dstDataobj,0,newId);
+	DataManager.dataarr_addDataobj($dataActors,dstDataobj,f.tbl[1]._defaultMinGeneratedId,newId);
 	newId=dstDataobj.id;
 	this._duplicatedActors_addCreatedRecords({srcActorId:srcActorId,variations:finalVariationsInfo,dstActorId:newId,});
 	return newId;
