@@ -1085,10 +1085,11 @@ addBase('dataarr_resetLength',function f(dataarr){
 addBase('dataarr_reset',function f(dataarr){
 	this.dataarr_resetLength(dataarr);
 },t).
-addBase('dataarr_addDataobj',function f(dataarr,dataobj,putToIdx){
+addBase('dataarr_addDataobj',function f(dataarr,dataobj,newIdxMin,putToIdx){
 	if(!dataobj) return;
 	const m=this.dataarr_ensureTableInited(dataarr);
-	const newId=useDefaultIfIsNaN(putToIdx,dataarr.length);
+	newIdxMin-=0; if(!(newIdxMin>=dataarr.length)) newIdxMin=dataarr.length;
+	const newId=useDefaultIfIsNaN(putToIdx,newIdxMin);
 	const oldObj=dataarr[newId];
 	if(oldObj===dataobj) return;
 	m.delete(oldObj);

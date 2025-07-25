@@ -71,7 +71,7 @@ addBase('duplicatedActors_createNew',function f(srcActorId,variationsInfo,newId)
 	Object.assign(finalVariationsInfo,variationsInfo);
 	const dstDataobj=Object.assign(Object.assign({},srcDataobj),finalVariationsInfo);
 	dstDataobj[f.tbl[4]]=srcDataobj.id;
-	DataManager.dataarr_addDataobj($dataActors,dstDataobj,newId);
+	DataManager.dataarr_addDataobj($dataActors,dstDataobj,0,newId);
 	newId=dstDataobj.id;
 	this._duplicatedActors_addCreatedRecords({srcActorId:srcActorId,variations:finalVariationsInfo,dstActorId:newId,});
 	return newId;
