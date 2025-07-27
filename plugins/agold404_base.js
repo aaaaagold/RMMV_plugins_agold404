@@ -1106,6 +1106,18 @@ addBase('dataarr_hasDataobj',function f(dataarr,dataobj){
 addBase('dataarr_getIdxOfDataobj',function f(dataarr,dataobj){
 	return this.dataarr_ensureTableInited(dataarr).get(dataobj);
 }).
+addBase('resetDataarrs',function(){
+	this.dataarr_reset($dataActors);
+	this.dataarr_reset($dataArmors);
+	this.dataarr_reset($dataWeapons);
+}).
+getP;
+// Scene_Boot.prototype.terminate_after is defined later
+new cfc(Scene_Title.prototype).
+add('commandNewGame',function f(){
+	DataManager.resetDataarrs();
+	return f.ori.apply(this,arguments);
+}).
 getP;
 //
 // DO NOT change _onLoad* which are starting with a '_'
@@ -3193,7 +3205,9 @@ getP;
 { const p=Game_System.prototype;
 new cfc(p).
 addBase('onAfterLoad_main',p.onAfterLoad).
-addBase('onAfterLoad_before',none).
+addBase('onAfterLoad_before',function f(){
+	DataManager.resetDataarrs();
+}).
 addBase('onAfterLoad_after',none).
 addBase('onAfterLoad',function f(){
 	this.onAfterLoad_before();
@@ -4550,11 +4564,18 @@ new cfc(Scene_Base.prototype).addBase('terminate_after',function f(){
 	} }
 }).addBase('terminate_before',none);
 
-new cfc(Scene_Boot.prototype).addBase('terminate_after',function f(){
+new cfc(Scene_Boot.prototype).
+addBase('terminate_after',function f(){
 	return Scene_Base.prototype.terminate_after.apply(this,arguments);
-}).addBase('terminate_before',function f(){
+}).
+addBase('terminate_before',function f(){
 	return Scene_Base.prototype.terminate_before.apply(this,arguments);
-});
+}).
+add('terminate_after',function f(){
+	DataManager.resetDataarrs();
+	return f.ori.apply(this,arguments);
+}).
+getP;
 
 // ---- ---- ---- ---- refine skill cost
 
