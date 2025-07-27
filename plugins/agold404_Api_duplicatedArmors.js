@@ -87,7 +87,7 @@ addBase('duplicatedArmors_createNew',function f(srcArmorId,variationsInfo,newId)
 	return newId;
 },t).
 addBase('duplicatedArmors_onAfterLoad',function f(){
-	DataManager.dataarr_reset($dataArmors);
+	//DataManager.dataarr_reset($dataArmors); // moved to Game_System.prototype.onAfterLoad_before in base
 	const data=$gameSystem._duplicatedArmors_getClonedCont();
 	$gameSystem._duplicatedArmors_clearCont();
 	for(let x=0,xs=data.length;x<xs;++x){
@@ -102,16 +102,6 @@ if(0){
 },t).
 add('onAfterLoad_main',function f(){
 	this.duplicatedArmors_onAfterLoad();
-	return f.ori.apply(this,arguments);
-}).
-getP;
-
-new cfc(Scene_Boot.prototype).
-addBase('duplicatedArmors_init',function f(){
-	DataManager.dataarr_ensureTableInited($dataArmors);
-}).
-add('terminate',function f(){
-	this.duplicatedArmors_init();
 	return f.ori.apply(this,arguments);
 }).
 getP;
