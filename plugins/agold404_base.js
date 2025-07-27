@@ -2717,6 +2717,20 @@ addBase('getItem_paramPlus',function f(item,paramId){
 	const params=item&&item.params;
 	return params&&params[paramId];
 }).
+addBase('paramShortNameToId',function f(shortName){
+	return (shortName in f.tbl[0])?f.tbl[0][shortName]:undefined;
+},[
+{
+"mhp":0,
+"mmp":0,
+"atk":2,
+"def":3,
+"mat":4,
+"mdf":5,
+"agi":6,
+"luk":7,
+}, // 0: mapping table for basic params names
+]).
 getP;
 
 new cfc(Game_Actor.prototype).
