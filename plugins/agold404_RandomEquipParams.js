@@ -87,9 +87,11 @@ addBase('randomEquipParams_createNew_format1',function f(item){
 	let rtv;
 	const paramVals=item.params.slice();
 	const info=item.params.randomEquipParams_format1;
-	const d=info.total[1]-info.total[0]+1;
-	const rndPt=Math.random()*d+info.total[0]; // for dbg
+	const base=getNumOrEval(info.total[0]);
+	const d=getNumOrEval(info.total[1])-base+1;
+	const rndPt=Math.random()*d+base;
 	let pt=~~rndPt;
+	const randResInfo={pt:pt};
 	const paramDsts=info.params;
 	if(pt<0){ while(pt++){
 		const sel=paramDsts.rnd1();
@@ -100,11 +102,16 @@ addBase('randomEquipParams_createNew_format1',function f(item){
 		const key=useDefaultIfIsNaN(DataManager.paramShortNameToId(sel),sel);
 		++paramVals[key];
 	} }
+	
+	const overwriteInfo={
+		params:paramVals,
+		"randomEquipParams_randRes_format1":randResInfo,
+	};
 	if(DataManager.isWeapon(item)){
-		const res=$gameSystem.duplicatedWeapons_createNew(item.id,{params:paramVals});
+		const res=$gameSystem.duplicatedWeapons_createNew(item.id,overwriteInfo);
 		rtv=$dataWeapons[res];
 	}else if(DataManager.isArmor(item)){
-		const res=$gameSystem.duplicatedArmors_createNew(item.id,{params:paramVals});
+		const res=$gameSystem.duplicatedArmors_createNew(item.id,overwriteInfo);
 		rtv=$dataArmors[res];
 	}
 	return rtv;
