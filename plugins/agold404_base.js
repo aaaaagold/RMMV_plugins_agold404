@@ -320,6 +320,10 @@ new cfc(Sprite_Character.prototype).add('renderWebGL',function f(){
 	return this.isInScreen_local()&&f.ori.apply(this,arguments);
 });
 //
+const _getNumOrEval=window.getNumOrEval=function(input){
+	return ((typeof input==='string')?EVAL.call(this,input):input)-0||0;
+};
+//
 let t;
 if(Utils.isOptionValid('test')){
 const _getUsrname=window.getUsrname=Utils.isOptionValid('test')?(()=>{
