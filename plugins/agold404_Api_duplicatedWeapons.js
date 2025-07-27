@@ -87,7 +87,7 @@ addBase('duplicatedWeapons_createNew',function f(srcWeaponId,variationsInfo,newI
 	return newId;
 },t).
 addBase('duplicatedWeapons_onAfterLoad',function f(){
-	DataManager.dataarr_reset($dataWeapons);
+	//DataManager.dataarr_reset($dataWeapons); // moved to Game_System.prototype.onAfterLoad_before in base
 	const data=$gameSystem._duplicatedWeapons_getClonedCont();
 	$gameSystem._duplicatedWeapons_clearCont();
 	for(let x=0,xs=data.length;x<xs;++x){
@@ -102,16 +102,6 @@ if(0){
 },t).
 add('onAfterLoad_main',function f(){
 	this.duplicatedWeapons_onAfterLoad();
-	return f.ori.apply(this,arguments);
-}).
-getP;
-
-new cfc(Scene_Boot.prototype).
-addBase('duplicatedWeapons_init',function f(){
-	DataManager.dataarr_ensureTableInited($dataWeapons);
-}).
-add('terminate',function f(){
-	this.duplicatedWeapons_init();
 	return f.ori.apply(this,arguments);
 }).
 getP;
