@@ -87,7 +87,7 @@ addBase('duplicatedActors_createNew',function f(srcActorId,variationsInfo,newId)
 	return newId;
 },t).
 addBase('duplicatedActors_onAfterLoad',function f(){
-	DataManager.dataarr_reset($dataActors);
+	//DataManager.dataarr_reset($dataActors); // moved to Game_System.prototype.onAfterLoad_before in base
 	const data=$gameSystem._duplicatedActors_getClonedCont();
 	$gameSystem._duplicatedActors_clearCont();
 	for(let x=0,xs=data.length;x<xs;++x){
@@ -102,16 +102,6 @@ if(0){
 },t).
 add('onAfterLoad_main',function f(){
 	this.duplicatedActors_onAfterLoad();
-	return f.ori.apply(this,arguments);
-}).
-getP;
-
-new cfc(Scene_Boot.prototype).
-addBase('duplicatedActors_init',function f(){
-	DataManager.dataarr_ensureTableInited($dataActors);
-}).
-add('terminate',function f(){
-	this.duplicatedActors_init();
 	return f.ori.apply(this,arguments);
 }).
 getP;
