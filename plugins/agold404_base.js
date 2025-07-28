@@ -1643,6 +1643,50 @@ new cfc(p).add('_createAllParts',function f(){
 (()=>{ let k,r,t;
 
 
+new cfc(DataManager).
+addBase('duplicatedDataobj_getSrc',none).
+getP;
+
+new cfc(Game_System.prototype).
+addBase('duplicatedDataobj_getSrcClonedToDstsList',function f(srcDataobj){
+}).
+getP;
+
+new cfc(Game_Party.prototype).
+addBase('duplicatedDataobj_numItems',function f(item){
+	const arr=$gameSystem&&$gameSystem.duplicatedDataobj_getSrcClonedToDstsList(item);
+	if(!arr) return 0;
+	let rtv=0;
+	for(let x=0,xs=arr.length;x<xs;++x) rtv+=this.numItems(arr[x]);
+	return rtv;
+}).
+add('numItems',function f(item){
+	return this.duplicatedDataobj_numItems.apply(this,arguments)+f.ori.apply(this,arguments);
+}).
+getP;
+
+
+new cfc(Window_EquipCommand.prototype).
+addBase('makeCommandList_optimizingEnabled',function f(){
+	return false;
+}).
+addBase('makeCommandList',function f(){
+	this.addCommand(TextManager.equip2,   'equip');
+	if(this.makeCommandList_optimizingEnabled()) this.addCommand(TextManager.optimize, 'optimize');
+	this.addCommand(TextManager.clear,    'clear');
+}).
+getP;
+
+new cfc(Window_EquipItem.prototype).
+addBase('makeItemList',function f(){
+	return f._super[f._funcName].apply(this,arguments);
+}).
+addBase('drawItemNumber_num',function f(item,x,y,width,num){
+	return f._super[f._funcName].apply(this,arguments);
+}).
+getP;
+
+
 new cfc(Game_Party.prototype).
 add('initAllItems',function f(){
 	const rtv=f.ori.apply(this,arguments);
