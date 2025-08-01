@@ -35,7 +35,7 @@ window.isTest(),
 new cfc(DataManager).
 add('duplicatedDataobj_getSrc',function f(dataobj){
 	const obj=$dataArmors[dataobj&&dataobj[f.tbl[4]]];
-	return obj&&f.ori.apply(this,arguments);
+	return obj||f.ori.apply(this,arguments);
 },t).
 getP;
 
