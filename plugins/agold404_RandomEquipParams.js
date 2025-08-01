@@ -141,34 +141,70 @@ add('initialize',function f(){
 	return rtv;
 }).
 addBase('initialize_randomEquipParams',function f(){
-	this._isLayeredWindows=f.tbl[1]._layeredEquipList;
+	//this._isLayeredWindows=f.tbl[1]._layeredEquipList;
 },t).
 addBase('randomEquipParams_isLayeredWindows',function f(){
-	return this._isLayeredWindows;
+	return this._layereditemWindow;
+}).
+add('drawItemNumber_num',function f(item,x,y,width,num){
+	if(!this.randomEquipParams_isLayeredWindows()) return f.ori.apply(this,arguments);
+	const totalNum=this.randomEquipParams_drawItemNumber_num.apply(this,arguments);
+	arguments[4]=num=totalNum;
+	return f.ori.apply(this,arguments);
+}).
+add('randomEquipParams_drawItemNumber_num',function f(item,x,y,width,num){
+	let totalNum=$gameParty.numItems(item);
+	const arr=$gameSystem.duplicatedWeapons_getSrcClonedToDstsList(item);
+	for(let x=arr.length;x--;) totalNum+=$gameParty.numItems(arr[x]);
+	return totalNum;
 }).
 add('makeItemList',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	if(!this.randomEquipParams_isLayeredWindows()) return rtv;
-	const m=this._LayereditemWindow_layerMap=this._LayereditemWindow_layerMap||new Map();
+	const lw=this.randomEquipParams_isLayeredWindows();
+	if(!lw) return rtv;
+	const m=lw._layereditemWindow_layerMap=lw._layereditemWindow_layerMap||new Map();
 	m.clear();
 	const dst=this._data;
 	const bak=dst.slice();
 	dst.length=0;
 	const added=new Set();
 	for(let x=0,xs=bak.length;x<xs;++x){
-		const srcObj=DataManager.duplicatedDataobj_getSrc(bak[x]);
-		if(srcObj){
-			if(!m.has(srcObj)) m.set(srcObj,[]);
-			m.get(srcObj).push(bak[x]);
+		const srcObj=DataManager.duplicatedDataobj_getSrc(bak[x])||bak[x];
+		if(!m.has(srcObj)){
 			dst.push(srcObj);
-		}else dst.push(bak[x]);
+			m.set(srcObj,[]);
+		}
+		m.get(srcObj).push(bak[x]);
 	}
 	return rtv;
 },t).
+add('includes',function f(item){
+	return (item!=null||this.randomEquipParams_isLayeredWindows())&&f.ori.apply(this,arguments);
+}).
+add('setActor',function f(actor){
+	const lw=this.randomEquipParams_isLayeredWindows();
+	if(lw) lw.setActor.apply(lw,arguments);
+	return f.ori.apply(this,arguments);
+}).
 getP;
 
 { const a=class Window_randomEquipParams_EquipLayeredItem extends Window_EquipItem{
 //maxCols(){ return 2; }
+setRootItem(item){
+	this._rootItem=item;
+}
+includes(item){
+	if(!this._rootItem) return false;
+	return DataManager.duplicatedDataobj_getSrc(item)===this._rootItem;
+}
+makeItemList(){
+	this._data=[];
+	const m=this._layereditemWindow_layerMap;
+	const itemList=m&&m.get(this._rootItem);
+	if(itemList) for(let x=0,xs=itemList.length;x<xs;++x) this._data.push(itemList[x]);
+	else this._data.push(this._rootItem); // no src
+	this._data.push(null);
+}
 };
 window[a.name]=a; }
 
@@ -179,8 +215,9 @@ add('createItemWindow',function f(){
 	return rtv;
 }).
 addBase('randomEquipParams_createLayeredItemWindow_condOk',function f(){
-	return this._itemWindow.randomEquipParams_isLayeredWindows();
-}).
+	return f.tbl[1]._layeredEquipList; // init cond
+	//return this._itemWindow.randomEquipParams_isLayeredWindows(); // runtime cond
+},t).
 addBase('randomEquipParams_createLayeredItemWindow_do',function f(){
 	const refwnd=this._itemWindow;
 	const refx=refwnd.x;
@@ -194,11 +231,18 @@ addBase('randomEquipParams_createLayeredItemWindow_do',function f(){
 	const y=refy;
 	
 	const wnd=this._layereditemWindow=new Window_randomEquipParams_EquipLayeredItem(x,y,w,h);
+	
+	wnd._statusWindow=this._itemWindow._statusWindow;
+	this._itemWindow._statusWindow=undefined; // don't compare actor params from here
+	wnd._helpWindow=this._itemWindow._helpWindow;
+	
 	wnd.deactivate();
 	wnd.openness=0;
 	this.addChild(wnd);
 	wnd.setHandler(    'ok',this.randomEquipParams_onLayeredItemOk.bind(this));
 	wnd.setHandler('cancel',this.randomEquipParams_onLayeredItemCancel.bind(this));
+	wnd._itemWindow=this._itemWindow;
+	this._itemWindow._layereditemWindow=wnd;
 },t).
 addBase('randomEquipParams_createLayeredItemWindow',function f(){
 	if(this.randomEquipParams_createLayeredItemWindow_condOk()) this.randomEquipParams_createLayeredItemWindow_do();
@@ -226,6 +270,7 @@ addBase('randomEquipParams_onItemOk',function f(){
 	SoundManager.playOk();
 	this._itemWindow.deactivate();
 	this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	this._layereditemWindow.setRootItem(this._itemWindow.item());
 	const refwnd=this._itemWindow;
 	const refw=refwnd.width;
 	const wnd=this._layereditemWindow;
@@ -252,11 +297,16 @@ addBase('randomEquipParams_onLayeredItemOk',function f(){
 	this._itemWindow.refresh();
 	this._slotWindow.deactivate();
 	this._layereditemWindow.activate();
+	this._layereditemWindow.reselect();
+}).
+addBase('randomEquipParams_onLayeredItemWindowClose',function f(){
+	this._statusWindow.setTempActor(null);
 }).
 addBase('randomEquipParams_onLayeredItemCancel',function f(){
 	SoundManager.playCancel();
 	this._layereditemWindow.deactivate();
 	this._layereditemWindow.close();
+	this.randomEquipParams_onLayeredItemWindowClose();
 	this._itemWindow.activate();
 }).
 getP;
