@@ -182,6 +182,7 @@ p.isScene_map    =function(){ const sc=this._scene; return sc && sc.constructor=
 SceneManager.getScConstructor=function(){ return this._scene && this._scene.constructor; };
 // { const p=Window_BattleLog.prototype,k='displayAffectedStatus'; const r=p[k]; (p[k]=function(){}).ori=r; }
 new cfc(Graphics).
+/*
 add('_updateVisibility',function f(videoVisible){
 	this._video.style.display=f.tbl[0][1-!videoVisible];
 	return f.ori.apply(this,arguments);
@@ -193,6 +194,7 @@ add('_createVideo',function f(){
 	this._updateVisibility(false);
 	return rtv;
 }).
+*/
 addBase('_upperCanvas_hide',function f(){
 	this._upperCanvas.style.display='none';
 }).
@@ -467,7 +469,26 @@ new cfc(Input).addBase('isTexting_set',function f(){
 t=[
 none,
 ];
-new cfc(TouchInput).addBase('_onTouchStart',function f(event){
+new cfc(TouchInput).
+/*
+addBase('_onMouseDown_preventDefault_condOk',function f(event){
+	const x=Graphics.pageToCanvasX(event.pageX);
+	const y=Graphics.pageToCanvasY(event.pageY);
+	return Graphics.isInsideCanvas(x,y);
+}).
+addBase('_onMouseDown_preventDefault_do',function f(event){
+	event.preventDefault();
+}).
+addBase('_onMouseDown_preventDefault',function f(event){
+	if(this._onMouseDown_preventDefault_condOk.apply(this,arguments)) this._onMouseDown_preventDefault_do.apply(this,arguments);
+}).
+add('_onMouseDown',function f(event){
+	const rtv=f.ori.apply(this,arguments);
+	this._onMouseDown_preventDefault.apply(this,arguments);
+	return rtv;
+}).
+*/
+addBase('_onTouchStart',function f(event){
 	this._touched=true;
 	let preventDefaulted=false;
 	for(let i=0;i<event.changedTouches.length;++i){
