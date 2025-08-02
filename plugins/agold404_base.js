@@ -4418,13 +4418,23 @@ new cfc(Window_ItemList.prototype).addBase('drawItemNumber',function f(item, x, 
 	return f.tbl[0];
 },[
 4,
-]).addBase('drawItem',function f(idx){
+]).
+addBase('numberMaxWidth_getSampleText',function f(){
+	if(!f.tbl[0]) f.tbl[0]=":"+'0'.repeat(this.drawItemNumber_getReservedDigitsCnt());
+	return f.tbl[0];
+},[
+undefined, // 0: reserved for text
+]).
+addBase('numberMaxWidth',function f(item,rect){
+	return this.textWidth(this.numberMaxWidth_getSampleText());
+}).
+addBase('drawItem',function f(idx){
 	this.drawItemByIndex(idx);
 }).addBase('drawItemByIndex',function f(idx){
 	const item=this._data[idx];
 	if(item) this.drawItemByItemAndRect(item,this.itemRect(idx));
 }).addBase('drawItemByItemAndRect',function f(item,rect){
-	const numberWidth=this.numberWidth();
+	const numberWidth=this.numberMaxWidth(item,rect);
 	rect.width-=this.textPadding();
 	this.changePaintOpacity(this.isEnabled(item));
 	this.drawItemName(item, rect.x, rect.y, rect.width - numberWidth);
