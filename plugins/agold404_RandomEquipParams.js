@@ -36,7 +36,7 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_RandomEquipParams";
 const params=PluginManager.parameters(pluginName)||{};
-params._layeredEquipList=!!(params.LayeredEquipList-0);
+params._layeredEquipList=!!JSON.parse(params.LayeredEquipList||"0");
 
 
 t=[
@@ -143,11 +143,11 @@ add('initialize',function f(){
 addBase('initialize_randomEquipParams',function f(){
 	//this._isLayeredWindows=f.tbl[1]._layeredEquipList;
 },t).
-addBase('randomEquipParams_isLayeredWindows',function f(){
+addBase('randomEquipParams_isUsingLayeredWindows',function f(){
 	return this._layereditemWindow;
 }).
 add('drawItemNumber_num',function f(item,x,y,width,num){
-	if(!this.randomEquipParams_isLayeredWindows()) return f.ori.apply(this,arguments);
+	if(!this.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
 	const totalNum=this.randomEquipParams_drawItemNumber_num.apply(this,arguments);
 	arguments[4]=num=totalNum;
 	return f.ori.apply(this,arguments);
@@ -160,7 +160,7 @@ add('randomEquipParams_drawItemNumber_num',function f(item,x,y,width,num){
 }).
 add('makeItemList',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	const lw=this.randomEquipParams_isLayeredWindows();
+	const lw=this.randomEquipParams_isUsingLayeredWindows();
 	if(!lw) return rtv;
 	const m=lw._layereditemWindow_layerMap=lw._layereditemWindow_layerMap||new Map();
 	m.clear();
@@ -168,7 +168,9 @@ add('makeItemList',function f(){
 	const bak=dst.slice();
 	dst.length=0;
 	const added=new Set();
+	let includeNull=false;
 	for(let x=0,xs=bak.length;x<xs;++x){
+		if(bak[x]==null){ includeNull=true; continue; }
 		const srcObj=DataManager.duplicatedDataobj_getSrc(bak[x])||bak[x];
 		if(!m.has(srcObj)){
 			dst.push(srcObj);
@@ -176,13 +178,11 @@ add('makeItemList',function f(){
 		}
 		m.get(srcObj).push(bak[x]);
 	}
+	if(includeNull) dst.push(null);
 	return rtv;
 },t).
-add('includes',function f(item){
-	return (item!=null||this.randomEquipParams_isLayeredWindows())&&f.ori.apply(this,arguments);
-}).
 add('setActor',function f(actor){
-	const lw=this.randomEquipParams_isLayeredWindows();
+	const lw=this.randomEquipParams_isUsingLayeredWindows();
 	if(lw) lw.setActor.apply(lw,arguments);
 	return f.ori.apply(this,arguments);
 }).
@@ -216,7 +216,7 @@ add('createItemWindow',function f(){
 }).
 addBase('randomEquipParams_createLayeredItemWindow_condOk',function f(){
 	return f.tbl[1]._layeredEquipList; // init cond
-	//return this._itemWindow.randomEquipParams_isLayeredWindows(); // runtime cond
+	//return this._itemWindow.randomEquipParams_isUsingLayeredWindows(); // runtime cond
 },t).
 addBase('randomEquipParams_createLayeredItemWindow_do',function f(){
 	const refwnd=this._itemWindow;
@@ -263,10 +263,17 @@ addBase('randomEquipParams_refreshActor',function f(){
 }).
 add('onItemOk',function f(){
 	if(this._onItemOk_bypass) return f.ori.apply(this,arguments);
-	if(!this._itemWindow.randomEquipParams_isLayeredWindows()) return f.ori.apply(this,arguments);
+	if(!this._itemWindow.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
 	return this.randomEquipParams_onItemOk();
 }).
+add('onItemOk_callOriginal',function f(){
+	const bak=this._onItemOk_bypass;
+	this._onItemOk_bypass=true;
+	this.onItemOk.apply(this,arguments);
+	this._onItemOk_bypass=bak;
+}).
 addBase('randomEquipParams_onItemOk',function f(){
+	if(this._itemWindow.item()==null) return this.onItemOk_callOriginal.apply(this,arguments);
 	SoundManager.playOk();
 	this._itemWindow.deactivate();
 	this.randomEquipParams_createLayeredItemWindow_ensureExsit();
@@ -287,12 +294,9 @@ addBase('randomEquipParams_onItemOk',function f(){
 }).
 addBase('randomEquipParams_onLayeredItemOk',function f(){
 	const iw=this._itemWindow;
-	const bak=this._onItemOk_bypass;
 	this.randomEquipParams_createLayeredItemWindow_ensureExsit();
 	this._itemWindow=this._layereditemWindow;
-	this._onItemOk_bypass=true;
-	this.onItemOk();
-	this._onItemOk_bypass=bak;
+	this.onItemOk_callOriginal.apply(this,arguments);
 	this._itemWindow=iw;
 	this._itemWindow.refresh();
 	this._slotWindow.deactivate();
