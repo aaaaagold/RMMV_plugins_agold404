@@ -191,11 +191,35 @@ add('setActor',function f(actor){
 }).
 add('randomEquipParams_setSlotId',function f(slotId){
 	const lw=this.randomEquipParams_isUsingLayeredWindows();
-	if(lw) lw.setSlotId.apply(lw,arguments);
+	if(lw&&lw!==this) lw.setSlotId.apply(lw,arguments);
+	return lw;
 }).
 add('setSlotId',function f(slotId){
 	this.randomEquipParams_setSlotId.apply(this,arguments);
 	return f.ori.apply(this,arguments);
+}).
+add('randomEquipParams_onNewSelect',function f(){
+	const lw=this.randomEquipParams_isUsingLayeredWindows(); if(!lw) return;
+	
+	const newIdx=this._index;
+	const newItem=this.item();
+	this._index=this._indexOld;
+	const oldItem=this.item();
+	this._index=newIdx;
+	const newNull=newItem==null;
+	if(newNull===(oldItem==null)) return;
+	if(newNull){
+		this._statusWindow=lw._statusWindow;
+		this.updateHelp();
+	}else if(this._statusWindow){
+		this._statusWindow.setTempActor(null);
+		this._statusWindow=undefined;
+	}
+}).
+add('onNewSelect',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.randomEquipParams_onNewSelect.apply(this,arguments);
+	return rtv;
 }).
 getP;
 
@@ -299,8 +323,8 @@ addBase('randomEquipParams_onItemOk',function f(){
 	const refrect=refwnd.itemRect_curr();
 	wnd.x=refrect.x<refwnd.x+(refwnd.width>>1)?refwnd.x+refwnd.width-wnd.width:refwnd.x;
 	wnd.y=refwnd.y;
-	wnd.activate();
 	wnd.select(0);
+	wnd.activate();
 	wnd.open();
 }).
 addBase('randomEquipParams_onLayeredItemOk',function f(){
