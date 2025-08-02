@@ -955,10 +955,15 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	this.downArrowVisible=this.contentsHeight()<rectBtm.y+rectBtm.height;
 	this.upArrowVisible=rectBeg.y<0;
 }).add('select',function f(idx){
+	const oldIdx=this._indexOld=this._index;
 	const rtv=f.ori.apply(this,arguments);
 	this.onSelect.apply(this,arguments);
+	if(oldIdx!==this._index) this.onNewSelect.apply(this,arguments);
 	return rtv;
-}).add('onSelect',none);
+}).
+addBase('onSelect',none).
+addBase('onNewSelect',none).
+getP;
 t[0].forEach(info=>Input.keyMapper[info[0]]=info[1]);
 t=undefined;
 //
@@ -1714,6 +1719,9 @@ addBase('makeItemList',function f(){
 	return f._super[f._funcName].apply(this,arguments);
 }).
 addBase('drawItemNumber_num',function f(item,x,y,width,num){
+	return f._super[f._funcName].apply(this,arguments);
+}).
+addBase('onNewSelect',function f(){
 	return f._super[f._funcName].apply(this,arguments);
 }).
 getP;
@@ -3957,6 +3965,17 @@ new cfc(Bitmap.prototype).add('initialize',function f(w,h){
 	this._loadListeners.length=this._loadListeners_strt=0;
 });
 }
+
+
+new cfc(Window_EquipItem.prototype).
+add('updateHelp',function f(){
+	return f.ori.apply(this,arguments);
+	if(this._lastUpdateHelpInfo_select===this._index&&this._lastUpdateHelpInfo_actor===this._actor) return;
+	this._lastUpdateHelpInfo_select=this._index;
+	this._lastUpdateHelpInfo_actor=this._actor;
+	return f.ori.apply(this,arguments);
+}).
+getP;
 
 
 { const p=Game_Action.prototype;
