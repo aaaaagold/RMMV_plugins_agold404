@@ -181,9 +181,20 @@ add('makeItemList',function f(){
 	if(includeNull) dst.push(null);
 	return rtv;
 },t).
-add('setActor',function f(actor){
+add('randomEquipParams_setActor',function f(actor){
 	const lw=this.randomEquipParams_isUsingLayeredWindows();
 	if(lw) lw.setActor.apply(lw,arguments);
+}).
+add('setActor',function f(actor){
+	this.randomEquipParams_setActor.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+add('randomEquipParams_setSlotId',function f(slotId){
+	const lw=this.randomEquipParams_isUsingLayeredWindows();
+	if(lw) lw.setSlotId.apply(lw,arguments);
+}).
+add('setSlotId',function f(slotId){
+	this.randomEquipParams_setSlotId.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
 getP;
