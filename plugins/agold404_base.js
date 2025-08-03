@@ -684,7 +684,8 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	if(!text) return 0;
 	textState.text=this.convertEscapeCharacters(text);
 	textState.height=this.calcTextHeight(textState,false);
-	if(!textState.isMeasureOnly) this.resetFontSettings();
+	textState.outOfBound_x=false;
+	if(!textState.isMeasureOnly) this.resetFontSettings(); // it should be called before calling this func. thus it is internal testing and the settings should not be changed.
 	for(const len=textState.text.length;textState.index<len;) this.processCharacter(textState);
 	return textState.x-x;
 }).addBase('processNormalCharacter',function f(textState){
@@ -693,6 +694,7 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	const w=wRaw;
 	if(!textState.isMeasureOnly) this.contents.drawText(c,textState.x,textState.y,w*2,textState.height,undefined,textState);
 	textState.x+=w;
+	if(textState.x>=this.contents.width) textState.outOfBound_x=true; // == for some chars might be widen.
 	textState.right=Math.max(textState.right,textState.x);
 	return w;
 }).addBase('measure_drawTextEx',function f(text, x, y, _3, _4, out_textState){
