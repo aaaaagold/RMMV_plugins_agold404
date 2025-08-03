@@ -3063,6 +3063,9 @@ addBase('drawItem',function f(index){
 	this.drawItemName(this._actor.getEquip(index), rect.x + 138, rect.y);
 	this.changePaintOpacity(true);
 }).
+addBase('maxItems',function(){
+	return this._actor?this._actor.equipSlotsLength():0;
+}).
 addBase('slotName',function f(index){
 	if(!this._actor) return '';
 	return $dataSystem.equipTypes[this._actor.getEquipSlot(index)];
