@@ -3807,89 +3807,119 @@ new Map([
 
 
 new cfc(Window.prototype).
+addBase('_refreshCursor_borderSize',function f(d){
+	return 4;
+}).
 addBase('_refreshCursor',function f(useThisSprite){
 	useThisSprite=useThisSprite||this._windowCursorSprite;
-	const pad = this._padding;
-	const x = this._cursorRect.x + pad - this.origin.x;
-	const y = this._cursorRect.y + pad - this.origin.y;
-	const w = this._cursorRect.width;
-	const h = this._cursorRect.height;
-	const m = 4;
-	const x2 = Math.max(x, pad);
-	const y2 = Math.max(y, pad);
-	const ox = x - x2;
-	const oy = y - y2;
-	const w2 = Math.min(w, this._width - pad - x2);
-	const h2 = Math.min(h, this._height - pad - y2);
-	if(0<w&&0<h) useThisSprite.scale.set(1);
+	const pad=this._padding;
+	// setting
+	const sx=this._cursorRect.x+pad-this.origin.x;
+	const sy=this._cursorRect.y+pad-this.origin.y;
+	const sw=this._cursorRect.width;
+	const sh=this._cursorRect.height;
+	const m=this._refreshCursor_borderSize();
+	// crop
+	const x0=Math.max(sx,pad);
+	const y0=Math.max(sy,pad);
+	const x1=Math.min(sx+sw,this._width  -pad);
+	const y1=Math.min(sy+sh,this._height -pad);
+	if(0<sw&&0<sh) useThisSprite.scale.set(1);
 	else{
 		useThisSprite.scale.set(0);
 		return;
 	}
-	//const bitmap = new Bitmap(w2, h2);
+	//const bitmap=new Bitmap(sw,sh);
 	this._refreshCursor_createBmpIfNotExists(useThisSprite);
 	
 	const edgeW=useThisSprite._cursorEdgeSizes.left + useThisSprite._cursorEdgeSizes.right;
 	const edgeH=useThisSprite._cursorEdgeSizes.top  + useThisSprite._cursorEdgeSizes.bottom;
 	const midSprite=useThisSprite._cursorSprites[0];
-	if(true||w>=edgeW){
-		const _w=Math.max(w-edgeW,0)||0;
+	if(true||sw>=edgeW){
+		const _w=Math.max(sw-edgeW,0)||0;
 		const r=_w/midSprite.bitmap.width;
 		midSprite.scale.x=r;
 		useThisSprite._cursorSprites[4].scale.x=r;
 		useThisSprite._cursorSprites[8].scale.x=r;
 		
-		//for(let i=4;--i;) useThisSprite._cursorSprites[i].x=0;
+		for(let i=4;--i;) useThisSprite._cursorSprites[i].x=0;
 		for(let i=8;i>=0;i-=4) useThisSprite._cursorSprites[i].x=useThisSprite._cursorEdgeSizes.left;
 		for(let i=8;--i>=5;) useThisSprite._cursorSprites[i].x=useThisSprite._cursorEdgeSizes.left+_w;
 	}else{
+		// TODO
 	}
-	if(true||h>=edgeH){
-		const _h=Math.max(h-edgeH,0)||0;
+	if(true||sh>=edgeH){
+		const _h=Math.max(sh-edgeH,0)||0;
 		const r=_h/midSprite.bitmap.height;
 		midSprite.scale.y=r;
 		useThisSprite._cursorSprites[2].scale.y=r;
 		useThisSprite._cursorSprites[6].scale.y=r;
 		
-		//for(let i=4,arr=[1,7,8];--i;) useThisSprite._cursorSprites[arr[i]].y=0;
-		for(let arr=[2,0,6],i=arr.length;i--;) useThisSprite._cursorSprites[arr[i]].y=useThisSprite._cursorEdgeSizes.top;
+		for(let arr=f.tbl[0],i=arr.length;i--;) useThisSprite._cursorSprites[arr[i]].y=0;
+		for(let arr=f.tbl[1],i=arr.length;i--;) useThisSprite._cursorSprites[arr[i]].y=useThisSprite._cursorEdgeSizes.top;
 		for(let i=6;--i>=3;) useThisSprite._cursorSprites[i].y=useThisSprite._cursorEdgeSizes.top+_h;
 	}else{
+		// TODO
 	}
-	useThisSprite.setFrame(0, 0, w2, h2);
-	useThisSprite.move(x,y);
-	
-	return;
-
-	useThisSprite.bitmap = bitmap;
-	//useThisSprite.setFrame(0, 0, w2, h2);
-	useThisSprite.setFrame(0, 0, 1, 1); useThisSprite.scale.set(w2,h2);
-	useThisSprite.move(x2, y2);
-
-	if (w > 0 && h > 0 && this._windowskin) {
-		const skin=this._windowskin;
-		const p=96;
-		const q=48;
-		bitmap.blt(skin, p+m, p+m, q-m*2, q-m*2, ox+m, oy+m, w-m*2, h-m*2);
-		bitmap.blt(skin, p+m, p+0, q-m*2, m, ox+m, oy+0, w-m*2, m);
-		bitmap.blt(skin, p+m, p+q-m, q-m*2, m, ox+m, oy+h-m, w-m*2, m);
-		bitmap.blt(skin, p+0, p+m, m, q-m*2, ox+0, oy+m, m, h-m*2);
-		bitmap.blt(skin, p+q-m, p+m, m, q-m*2, ox+w-m, oy+m, m, h-m*2);
-		bitmap.blt(skin, p+0, p+0, m, m, ox+0, oy+0, m, m);
-		bitmap.blt(skin, p+q-m, p+0, m, m, ox+w-m, oy+0, m, m);
-		bitmap.blt(skin, p+0, p+q-m, m, m, ox+0, oy+h-m, m, m);
-		bitmap.blt(skin, p+q-m, p+q-m, m, m, ox+w-m, oy+h-m, m, m);
+	useThisSprite.setFrame(0,0,sw,sh);
+	useThisSprite.move(sx,sy);
+	//return;
+	const fx1=sx<x0,fx2=x1<sx+sw;
+	const fy1=sy<y0,fy2=y1<sy+sh;
+	for(let i=9;i--;){
+		const sp=useThisSprite._cursorSprites[i];
+		sp._x0=sp.x;
+		sp._y0=sp.y;
 	}
-}).
+	if(fx1||fx2||fy1||fy2){
+		for(let i=9;i--;){
+			const sp=useThisSprite._cursorSprites[i];
+			const s=sp.scale;
+			const bmp=sp.bitmap;
+			const x0i=sp._x0+sx,x1i=x0i+Math.round(bmp.width*s.x);
+			const y0i=sp._y0+sy,y1i=y0i+Math.round(bmp.height*s.y);
+			//let fx=0,fw=bmp.width;
+			//let fy=0,fh=bmp.height;
+			if(x0i>=x1||x0>=x1i){
+				sp.setFrame(0,0,0,bmp.height);
+				sp.refresh_do();
+				continue;
+			}
+			if(y0i>=y1||y0>=y1i){
+				sp.setFrame(0,0,bmp.width,0);
+				sp.refresh_do();
+				continue;
+			}
+			const fx=Math.max(x0-x0i,0);
+			const fy=Math.max(y0-y0i,0);
+			const dw=(-Math.max(x1i-x1,0)-fx)/s.x;
+			const dh=(-Math.max(y1i-y1,0)-fy)/s.y;
+			const fw=bmp.width  +Math.round(dw); // seems good
+			const fh=bmp.height +Math.round(dh); // seems good
+			sp.setFrame(fx,fy,fw,fh);
+			sp.move(x0i-sx+fx,y0i-sy+fy);
+		}
+	}else{
+		for(let i=9;i--;){
+			const sp=useThisSprite._cursorSprites[i];
+			const bmp=sp.bitmap;
+			sp.setFrame(0,0,bmp.width,bmp.height);
+			sp.move(sp._x0,sp._y0);
+		}
+	}
+},[
+[1,7,8], // 0: sh>=edgeH row 0
+[2,0,6], // 1: sh>=edgeH row 1
+]).
 addBase('_refreshCursor_createBmpIfNotExists',function f(cursorSprite){
 	const skin=this._windowskin;
 	if(cursorSprite._cursorSprites||!skin) return;
 	const arr=cursorSprite._cursorSprites=[];
 	const edgeSizes=cursorSprite._cursorEdgeSizes={
-		top:4,
-		left:4,
-		right:4,
-		bottom:4,
+		top:this._refreshCursor_borderSize('u'),
+		left:this._refreshCursor_borderSize('l'),
+		right:this._refreshCursor_borderSize('r'),
+		bottom:this._refreshCursor_borderSize('d'),
 		all:[48,48], // referenced image region size
 		offset:[96,96], // referenced image region x,y
 	};
