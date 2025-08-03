@@ -287,6 +287,7 @@ addBase('randomEquipParams_createLayeredItemWindow_ensureExsit',function f(){
 		this.randomEquipParams_createLayeredItemWindow_do();
 		this.update();
 	}
+	return this._layeredItemWindow;
 }).
 add('refreshActor',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -329,14 +330,15 @@ addBase('randomEquipParams_onItemOk',function f(){
 }).
 addBase('randomEquipParams_onLayeredItemOk',function f(){
 	const iw=this._itemWindow;
-	this.randomEquipParams_createLayeredItemWindow_ensureExsit();
-	this._itemWindow=this._layeredItemWindow;
+	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	const idx=lw.index();
+	this._itemWindow=lw;
 	this.onItemOk_callOriginal.apply(this,arguments);
 	this._itemWindow=iw;
-	this._itemWindow.refresh();
+	iw.refresh();
 	this._slotWindow.deactivate();
-	this._layeredItemWindow.activate();
-	this._layeredItemWindow.reselect();
+	lw.select(idx);
+	lw.activate();
 }).
 addBase('randomEquipParams_onLayeredItemWindowClose',function f(){
 	this._statusWindow.setTempActor(null);
