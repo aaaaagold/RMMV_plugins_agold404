@@ -2013,6 +2013,30 @@ addBase('processHandling_do',function f(){
 		this.processPageup();
 	} else return true;
 }).
+addBase('processTouch_condOk',function f(){
+	return this.isOpenAndActive();
+}).
+addBase('processTouch_do',function f(){
+	let rtv=TouchInput.isTriggered();
+	if(rtv && this.isTouchedInsideFrame()){
+		this._touching=true;
+		this.onTouch(true);
+	}else if(TouchInput.isCancelled()){
+		if(this.isCancelEnabled()){
+			rtv=false;
+			this.processCancel();
+		}
+	}
+	if(this._touching){
+		if(TouchInput.isPressed()) this.onTouch(false);
+		else this._touching=false;
+	}
+	return rtv;
+}).
+addBase('processTouch',function f(){
+	if(this.processTouch_condOk.apply(this,arguments)) return this.processTouch_do.apply(this,arguments);
+	else this._touching=false;
+}).
 getP;
 
 
