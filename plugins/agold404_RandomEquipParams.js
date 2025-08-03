@@ -144,7 +144,7 @@ addBase('initialize_randomEquipParams',function f(){
 	//this._isLayeredWindows=f.tbl[1]._layeredEquipList;
 },t).
 addBase('randomEquipParams_isUsingLayeredWindows',function f(){
-	return this._layereditemWindow;
+	return this._layeredItemWindow;
 }).
 add('drawItemNumber_num',function f(item,x,y,width,num){
 	if(!this.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
@@ -162,7 +162,7 @@ add('makeItemList',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	const lw=this.randomEquipParams_isUsingLayeredWindows();
 	if(!lw) return rtv;
-	const m=lw._layereditemWindow_layerMap=lw._layereditemWindow_layerMap||new Map();
+	const m=lw._layeredItemWindow_layerMap=lw._layeredItemWindow_layerMap||new Map();
 	m.clear();
 	const dst=this._data;
 	const bak=dst.slice();
@@ -201,7 +201,7 @@ add('setSlotId',function f(slotId){
 add('randomEquipParams_onNewSelect',function f(){
 	const lw=this.randomEquipParams_isUsingLayeredWindows(); if(!lw) return;
 	
-	const newIdx=this._index;
+	const newIdx=this._index; if(!(newIdx>=0)) return; // deselect, do not interfere with others
 	const newItem=this.item();
 	this._index=this._indexOld;
 	const oldItem=this.item();
@@ -234,7 +234,7 @@ includes(item){
 }
 makeItemList(){
 	this._data=[];
-	const m=this._layereditemWindow_layerMap;
+	const m=this._layeredItemWindow_layerMap;
 	const itemList=m&&m.get(this._rootItem);
 	if(itemList) for(let x=0,xs=itemList.length;x<xs;++x) this._data.push(itemList[x]);
 	else this._data.push(this._rootItem); // no src
@@ -265,7 +265,7 @@ addBase('randomEquipParams_createLayeredItemWindow_do',function f(){
 	const x=refx;
 	const y=refy;
 	
-	const wnd=this._layereditemWindow=new Window_randomEquipParams_EquipLayeredItem(x,y,w,h);
+	const wnd=this._layeredItemWindow=new Window_randomEquipParams_EquipLayeredItem(x,y,w,h);
 	
 	wnd._statusWindow=this._itemWindow._statusWindow;
 	this._itemWindow._statusWindow=undefined; // don't compare actor params from here
@@ -277,13 +277,13 @@ addBase('randomEquipParams_createLayeredItemWindow_do',function f(){
 	wnd.setHandler(    'ok',this.randomEquipParams_onLayeredItemOk.bind(this));
 	wnd.setHandler('cancel',this.randomEquipParams_onLayeredItemCancel.bind(this));
 	wnd._itemWindow=this._itemWindow;
-	this._itemWindow._layereditemWindow=wnd;
+	this._itemWindow._layeredItemWindow=wnd;
 },t).
 addBase('randomEquipParams_createLayeredItemWindow',function f(){
 	if(this.randomEquipParams_createLayeredItemWindow_condOk()) this.randomEquipParams_createLayeredItemWindow_do();
 }).
 addBase('randomEquipParams_createLayeredItemWindow_ensureExsit',function f(){
-	if(!this._layereditemWindow){
+	if(!this._layeredItemWindow){
 		this.randomEquipParams_createLayeredItemWindow_do();
 		this.update();
 	}
@@ -294,7 +294,7 @@ add('refreshActor',function f(){
 	return rtv;
 }).
 addBase('randomEquipParams_refreshActor',function f(){
-	if(this._layereditemWindow) this._layereditemWindow.setActor(this.actor());
+	if(this._layeredItemWindow) this._layeredItemWindow.setActor(this.actor());
 }).
 add('onItemOk',function f(){
 	if(this._onItemOk_bypass) return f.ori.apply(this,arguments);
@@ -312,10 +312,10 @@ addBase('randomEquipParams_onItemOk',function f(){
 	SoundManager.playOk();
 	this._itemWindow.deactivate();
 	this.randomEquipParams_createLayeredItemWindow_ensureExsit();
-	this._layereditemWindow.setRootItem(this._itemWindow.item());
+	this._layeredItemWindow.setRootItem(this._itemWindow.item());
 	const refwnd=this._itemWindow;
 	const refw=refwnd.width;
-	const wnd=this._layereditemWindow;
+	const wnd=this._layeredItemWindow;
 	const w=refw-(refw>>2);
 	const h=refwnd.height;
 	if(wnd.width!==w) wnd.width=w;
@@ -330,21 +330,21 @@ addBase('randomEquipParams_onItemOk',function f(){
 addBase('randomEquipParams_onLayeredItemOk',function f(){
 	const iw=this._itemWindow;
 	this.randomEquipParams_createLayeredItemWindow_ensureExsit();
-	this._itemWindow=this._layereditemWindow;
+	this._itemWindow=this._layeredItemWindow;
 	this.onItemOk_callOriginal.apply(this,arguments);
 	this._itemWindow=iw;
 	this._itemWindow.refresh();
 	this._slotWindow.deactivate();
-	this._layereditemWindow.activate();
-	this._layereditemWindow.reselect();
+	this._layeredItemWindow.activate();
+	this._layeredItemWindow.reselect();
 }).
 addBase('randomEquipParams_onLayeredItemWindowClose',function f(){
 	this._statusWindow.setTempActor(null);
 }).
 addBase('randomEquipParams_onLayeredItemCancel',function f(){
 	SoundManager.playCancel();
-	this._layereditemWindow.deactivate();
-	this._layereditemWindow.close();
+	this._layeredItemWindow.deactivate();
+	this._layeredItemWindow.close();
 	this.randomEquipParams_onLayeredItemWindowClose();
 	this._itemWindow.activate();
 }).
