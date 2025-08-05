@@ -302,7 +302,7 @@ add('onItemOk',function f(){
 	if(!this._itemWindow.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
 	return this.randomEquipParams_onItemOk();
 }).
-add('onItemOk_callOriginal',function f(){
+addBase('onItemOk_callOriginal',function f(){
 	const bak=this._onItemOk_bypass;
 	this._onItemOk_bypass=true;
 	this.onItemOk.apply(this,arguments);
@@ -329,6 +329,8 @@ addBase('randomEquipParams_onItemOk',function f(){
 	wnd.open();
 }).
 addBase('randomEquipParams_onLayeredItemOk',function f(){
+	const sw=this._slotWindow;
+	const eqtype=this._actor&&this._actor.getEquipSlot(sw.index());
 	const iw=this._itemWindow;
 	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
 	const idx=lw.index();
@@ -336,7 +338,8 @@ addBase('randomEquipParams_onLayeredItemOk',function f(){
 	this.onItemOk_callOriginal.apply(this,arguments);
 	this._itemWindow=iw;
 	iw.refresh();
-	this._slotWindow.deactivate();
+	if((this._actor&&this._actor.getEquipSlot(sw.index()))!==eqtype) return this.randomEquipParams_onLayeredItemCancel();
+	sw.deactivate();
 	lw.select(idx);
 	lw.activate();
 }).
