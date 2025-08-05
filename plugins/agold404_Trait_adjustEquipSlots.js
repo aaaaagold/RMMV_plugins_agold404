@@ -212,4 +212,42 @@ addBase('_getEquipSlot',function f(slotId){
 getP;
 
 
+// UX
+new cfc(Scene_Equip.prototype).
+addBase('onItemOk_reselectSameEtypeSlot_backupInfo',function f(){
+	const actor=this._actor;
+	const sIdx=this._adjustEquipSlots_backupInfo_sIdx=this._slotWindow&&this._slotWindow.index();
+	const etype=this._adjustEquipSlots_backupInfo_lastEtype=actor&&actor.getEquipSlot(sIdx);
+	this._adjustEquipSlots_backupInfo_actorEquip=actor&&actor.getEquipSlot(sIdx);
+	this._adjustEquipSlots_backupInfo_exchangeEquip=this._itemWindow&&this._itemWindow.item();
+	const idxv=this._adjustEquipSlots_backupInfo_idxv=[]; for(let x=0,xs=actor&&actor.equipSlotsLength();x<xs;++x) if(actor&&etype===actor._getEquipSlot(x)) idxv.push(x); // prevent adjusting equipped items
+}).
+addBase('onItemOk_reselectSameEtypeSlot_doReselect',function f(){
+	if(this._adjustEquipSlots_backupInfo_actorEquip==null&&this._adjustEquipSlots_backupInfo_exchangeEquip==null) return; // both null, skip
+	if(this._adjustEquipSlots_backupInfo_actorEquip===this._adjustEquipSlots_backupInfo_exchangeEquip) return; // exactly same, skip
+	const actor=this._actor;
+	const sIdx=this._slotWindow&&this._slotWindow.index();
+	const etype=this._adjustEquipSlots_backupInfo_lastEtype;
+	const idxv=[]; for(let x=0,xs=actor&&actor.equipSlotsLength();x<xs;++x) if(actor&&etype===actor._getEquipSlot(x)) idxv.push(x); // prevent adjusting equipped items
+	const sw=this._slotWindow;
+	if(!idxv.length){
+		if(sw){
+			const len=sw.maxItems()-0;
+			if(!(sIdx<len)) sw.select(Math.max(len-1,0));
+		}
+		return;
+	}
+	const idx0=this._adjustEquipSlots_backupInfo_idxv.lower_bound(this._adjustEquipSlots_backupInfo_sIdx);
+	const selBase=idx0<idxv.length?idxv[idx0]:idxv.back;
+	sw.select(selBase);
+}).
+add('onItemOk',function f(){
+	this.onItemOk_reselectSameEtypeSlot_backupInfo();
+	const rtv=f.ori.apply(this,arguments);
+	this.onItemOk_reselectSameEtypeSlot_doReselect();
+	return rtv;
+},undefined,true).
+getP;
+
+
 })();
