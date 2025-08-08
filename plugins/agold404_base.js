@@ -1705,6 +1705,51 @@ add('numItems',function f(item){
 getP;
 
 
+new cfc(Scene_Equip.prototype).
+addBase('changeUiState_focusOnSlotWnd',function f(){
+	this._state=f.tbl[0];
+	if(!(this._slotWindow.index()>=0)) this._slotWindow.select(0);
+	this._slotWindow.activate();
+	this._itemWindow.deselect();
+},[
+'focusOnSlotWnd',
+]).
+addBase('commandEquip',function f(){
+	this.changeUiState_focusOnSlotWnd();
+}).
+addBase('changeUiState_focusOnCmdWnd',function f(){
+	this._state=f.tbl[0];
+	this._slotWindow.deselect();
+	this._commandWindow.activate();
+},[
+'focusOnCmdWnd',
+]).
+addBase('onSlotCancel',function f(){
+	this.changeUiState_focusOnCmdWnd();
+}).
+addBase('changeUiState_focusOnItemWnd',function f(){
+	this._state=f.tbl[0];
+	this._itemWindow.activate();
+	this._itemWindow.select(0);
+},[
+'focusOnItemWnd',
+]).
+addBase('onSlotOk',function f(){
+	this.changeUiState_focusOnItemWnd();
+}).
+addBase('onItemCancel',function f(){
+	this.changeUiState_focusOnSlotWnd();
+}).
+addBase('onItemOk',function f(){
+	SoundManager.playEquip();
+	this.actor().changeEquip(this._slotWindow.index(), this._itemWindow.item());
+	this.changeUiState_focusOnSlotWnd();
+	this._slotWindow.refresh();
+	this._itemWindow.refresh();
+	this._statusWindow.refresh();
+}).
+getP;
+
 new cfc(Window_EquipCommand.prototype).
 addBase('makeCommandList_optimizingEnabled',function f(){
 	return false;
