@@ -3290,7 +3290,7 @@ getP;
 new cfc(Game_Party.prototype).
 addBase('_actorsTbl_getCont',function f(){
 	const actors=this._actors; if(!actors){ return new Map(); }
-	let rtv=actors._actorIdCntTbl; if(!rtv) rtv=actors._actorIdCntTbl=new Map();
+	let rtv=actors._actorIdCntTbl; if(!rtv){ rtv=actors._actorIdCntTbl=new Map(); for(let x=actors.length;x--;) rtv.set(actors[x],(rtv.get(actors[x])|0)+1); }
 	return rtv;
 }).
 addBase('_actorsTbl_add',function f(actorId){
@@ -3304,7 +3304,8 @@ addBase('_actorsTbl_del',function f(actorId){
 	const oldVal=(cont.get(actorId)|0);
 	if(!oldVal) return oldVal;
 	const newVal=oldVal-1;
-	cont.set(actorId,newVal-1);
+	if(!newVal) cont.delete(actorId);
+	else cont.set(actorId,newVal);
 	return newVal;
 }).
 addBase('_actorsTbl_cnt',function f(actorId){
