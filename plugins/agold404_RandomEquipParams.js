@@ -155,12 +155,15 @@ add('updateHelp',function f(){
 	this._statusWindow=swori;
 	return rtv;
 }).
+/*
 add('drawItemNumber_num',function f(item,x,y,width,num){
+	return f.ori.apply(this,arguments); // gameParty.numItems already counts all
 	if(!this.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
 	const totalNum=this.randomEquipParams_drawItemNumber_num.apply(this,arguments);
 	arguments[4]=num=totalNum;
 	return f.ori.apply(this,arguments);
 }).
+*/
 add('randomEquipParams_drawItemNumber_num',function f(item,x,y,width,num){
 	let totalNum=$gameParty.numItems(item);
 	const arr=$gameSystem.duplicatedWeapons_getSrcClonedToDstsList(item);
