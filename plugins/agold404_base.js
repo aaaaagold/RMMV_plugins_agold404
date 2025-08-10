@@ -907,7 +907,7 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	if(!(this.index()>=0)) return;
 	const rect=this.itemRect_curr(); // origin: scrolled origin
 	this.itemRect_scrollRectInView(rect);
-	this.refresh();
+	//this.refresh(); // this will call `makeItemList`
 	this.updateCursor();
 }).addBase('scrollDist',function f(){
 	return f.tbl[0];
@@ -1705,6 +1705,37 @@ add('numItems',function f(item){
 getP;
 
 
+new cfc(Window_Selectable.prototype).
+addBase('makeItemList',function f(){
+	if(this.makeItemList_condOk()){
+		this.makeItemList_before.apply(this,arguments);
+		this.makeItemList_do.apply(this,arguments);
+		this.makeItemList_after.apply(this,arguments);
+	}
+}).
+addBase('makeItemList_condOk',function f(){
+	return true;
+}).
+addBase('makeItemList_before',none).
+addBase('makeItemList_do',none).
+addBase('makeItemList_after',function f(){
+	this.onNewSelect(this._indexOld=undefined);
+}).
+getP;
+
+for(let cv=[Window_ShopBuy,Window_SkillList,Window_ItemList],x=cv.length;x--;){
+const p=cv[x].prototype;
+new cfc(p).
+addBase('makeItemList_do',p.makeItemList).
+add('makeItemList_do',function f(){
+	Window_Selectable.prototype[f._funcName].apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+getP;
+delete p.makeItemList;
+}
+
+
 new cfc(Scene_Equip.prototype).
 addBase('changeUiState_focusOnSlotWnd',function f(){
 	this._state=f.tbl[0];
@@ -1729,8 +1760,22 @@ addBase('onSlotCancel',function f(){
 }).
 addBase('changeUiState_focusOnItemWnd',function f(){
 	this._state=f.tbl[0];
-	this._itemWindow.activate();
-	this._itemWindow.select(0);
+	const iw=this._itemWindow;
+	{
+		iw.activate();
+		const M=iw.maxItems();
+		let currIdx=iw.index();
+		if(!(currIdx>=0)) iw.select(currIdx=0);
+		else if(!(currIdx<M)) iw.select(currIdx=M-1);
+	}
+	const sw=this._slotWindow;
+	{
+		sw.deactivate();
+	}
+	const cw=this._commandWindow;
+	{
+		cw.deactivate();
+	}
 },[
 'focusOnItemWnd',
 ]).
