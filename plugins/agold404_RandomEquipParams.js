@@ -146,6 +146,15 @@ addBase('initialize_randomEquipParams',function f(){
 addBase('randomEquipParams_isUsingLayeredWindows',function f(){
 	return this._layeredItemWindow;
 }).
+add('updateHelp',function f(){
+	const lw=this.randomEquipParams_isUsingLayeredWindows();
+	const iw=this._itemWindow;
+	const swori=this._statusWindow;
+	if(this.item()==null) this._statusWindow=swori||(lw&&lw._statusWindow);
+	const rtv=f.ori.apply(this,arguments);
+	this._statusWindow=swori;
+	return rtv;
+}).
 add('drawItemNumber_num',function f(item,x,y,width,num){
 	if(!this.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
 	const totalNum=this.randomEquipParams_drawItemNumber_num.apply(this,arguments);
@@ -158,7 +167,7 @@ add('randomEquipParams_drawItemNumber_num',function f(item,x,y,width,num){
 	for(let x=arr.length;x--;) totalNum+=$gameParty.numItems(arr[x]);
 	return totalNum;
 }).
-add('makeItemList',function f(){
+add('makeItemList_do',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	const lw=this.randomEquipParams_isUsingLayeredWindows();
 	if(!lw) return rtv;
@@ -207,7 +216,7 @@ add('randomEquipParams_onNewSelect',function f(){
 	const oldItem=this.item();
 	this._index=newIdx;
 	const newNull=newItem==null;
-	if(newNull===(oldItem==null)) return;
+	if(this._indexOld!=null&&newNull===(oldItem==null)) return;
 	if(newNull){
 		this._statusWindow=lw._statusWindow;
 		this.updateHelp();
@@ -305,11 +314,42 @@ add('onItemOk',function f(){
 addBase('onItemOk_callOriginal',function f(){
 	const bak=this._onItemOk_bypass;
 	this._onItemOk_bypass=true;
-	this.onItemOk.apply(this,arguments);
+	const rtv=this.onItemOk.apply(this,arguments);
 	this._onItemOk_bypass=bak;
+	return rtv;
+}).
+add('changeUiState_focusOnSlotWnd',function f(){
+	if(this._onItemOk_bypass) return;
+	const rtv=f.ori.apply(this,arguments);
+	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	lw.deactivate();
+	lw.close();
+	this.randomEquipParams_onLayeredItemWindowClose();
+	return rtv;
+}).
+add('changeUiState_focusOnCmdWnd',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	lw.deactivate();
+	lw.close();
+	this.randomEquipParams_onLayeredItemWindowClose();
+	return rtv;
+}).
+add('changeUiState_focusOnItemWnd',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	lw.deactivate();
+	lw.close();
+	this.randomEquipParams_onLayeredItemWindowClose();
+	return rtv;
 }).
 addBase('randomEquipParams_onItemOk',function f(){
-	if(this._itemWindow.item()==null) return this.onItemOk_callOriginal.apply(this,arguments);
+	if(this._itemWindow.item()==null){
+		const rtv=this.onItemOk_callOriginal.apply(this,arguments);
+		this.changeUiState_focusOnItemWnd();
+		this._statusWindow.refresh();
+		return rtv;
+	}
 	SoundManager.playOk();
 	this._itemWindow.deactivate();
 	this.randomEquipParams_createLayeredItemWindow_ensureExsit();
@@ -324,10 +364,24 @@ addBase('randomEquipParams_onItemOk',function f(){
 	const refrect=refwnd.itemRect_curr();
 	wnd.x=refrect.x<refwnd.x+(refwnd.width>>1)?refwnd.x+refwnd.width-wnd.width:refwnd.x;
 	wnd.y=refwnd.y;
-	wnd.select(0);
-	wnd.activate();
-	wnd.open();
+	this.changeUiState_focusOnLayeredItemWnd();
 }).
+addBase('changeUiState_focusOnLayeredItemWnd',function f(bypassRefresh){
+	this._state=f.tbl[0];
+	this._commandWindow.deactivate();
+	this._slotWindow.deactivate();
+	this._itemWindow.deactivate();
+	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	if(!bypassRefresh) lw.refresh();
+	const M=lw.maxItems();
+	let currIdx=lw.index();
+	if(!(currIdx>=0)) lw.select(currIdx=0);
+	else if(!(currIdx<M)) lw.select(currIdx=M-1);
+	lw.activate();
+	lw.open();
+},[
+'focusOnLayeredItemWnd',
+]).
 addBase('randomEquipParams_onLayeredItemOk',function f(){
 	const sw=this._slotWindow;
 	const eqtype=this._actor&&this._actor.getEquipSlot(sw.index());
@@ -339,19 +393,15 @@ addBase('randomEquipParams_onLayeredItemOk',function f(){
 	this._itemWindow=iw;
 	iw.refresh();
 	if((this._actor&&this._actor.getEquipSlot(sw.index()))!==eqtype) return this.randomEquipParams_onLayeredItemCancel();
-	sw.deactivate();
 	lw.select(idx);
-	lw.activate();
+	this.changeUiState_focusOnLayeredItemWnd(true);
 }).
 addBase('randomEquipParams_onLayeredItemWindowClose',function f(){
-	this._statusWindow.setTempActor(null);
+	if(this._itemWindow.item()!=null) this._statusWindow.setTempActor(null);
 }).
 addBase('randomEquipParams_onLayeredItemCancel',function f(){
 	SoundManager.playCancel();
-	this._layeredItemWindow.deactivate();
-	this._layeredItemWindow.close();
-	this.randomEquipParams_onLayeredItemWindowClose();
-	this._itemWindow.activate();
+	this.changeUiState_focusOnItemWnd();
 }).
 getP;
 
