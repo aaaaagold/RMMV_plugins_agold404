@@ -903,6 +903,7 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	if(top<0) scy+=top;
 	if(scy===this._scrollY) return;
 	this._scrollY=scy;
+	this.refresh(); // scrolled, refresh
 }).addBase('ensureCursorVisible',function f(){
 	if(!(this.index()>=0)) return;
 	const rect=this.itemRect_curr(); // origin: scrolled origin
