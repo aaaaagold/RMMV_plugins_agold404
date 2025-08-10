@@ -7808,12 +7808,40 @@ getP;
 
 (()=>{ let k,r,t;
 
+
 new cfc(SceneManager).add('run',function f(){
 	setTimeout(exposeToTopFrame,f.tbl[0]);
 	return f.ori.apply(this,arguments);
 },[
 1024,
 ]);
+
+
+new cfc(Graphics).
+addBase('showLatencyMeter',function f(){
+	// ref: Graphics._switchFPSMeter
+	this.showFps();
+	this._fpsMeter.showDuration();
+	this._fpsMeterToggled=true;
+}).
+getP;
+
+new cfc(Scene_Boot.prototype).
+add('terminate_showDebugInfo_condOk',function f(){
+	return window.isTest();
+}).
+add('terminate_showDebugInfo_do',function f(){
+	Graphics.showLatencyMeter();
+}).
+add('terminate_showDebugInfo',function f(){
+	if(this.terminate_showDebugInfo_condOk.apply(this,arguments)) this.terminate_showDebugInfo_do.apply(this,arguments);
+}).
+add('terminate',function f(){
+	this.terminate_showDebugInfo.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+getP;
+
 
 })();
 
