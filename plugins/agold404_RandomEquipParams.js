@@ -261,6 +261,11 @@ add('createItemWindow',function f(){
 	this.randomEquipParams_createLayeredItemWindow();
 	return rtv;
 }).
+addBase('randomEquipParams_isUsingLayeredWindows',function f(){
+	const iw=this._itemWindow;
+	const func=iw&&iw.randomEquipParams_isUsingLayeredWindows;
+	return func&&func.constructor===Function&&func.apply(iw,arguments);
+}).
 addBase('randomEquipParams_createLayeredItemWindow_condOk',function f(){
 	return f.tbl[1]._layeredEquipList; // init cond
 	//return this._itemWindow.randomEquipParams_isUsingLayeredWindows(); // runtime cond
@@ -309,9 +314,9 @@ add('refreshActor',function f(){
 addBase('randomEquipParams_refreshActor',function f(){
 	if(this._layeredItemWindow) this._layeredItemWindow.setActor(this.actor());
 }).
-add('onItemOk',function f(){
+addRoof('onItemOk',function f(){
 	if(this._onItemOk_bypass) return f.ori.apply(this,arguments);
-	if(!this._itemWindow.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
+	if(!this.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
 	return this.randomEquipParams_onItemOk();
 }).
 addBase('onItemOk_callOriginal',function f(){
@@ -324,7 +329,7 @@ addBase('onItemOk_callOriginal',function f(){
 add('changeUiState_focusOnSlotWnd',function f(){
 	if(this._onItemOk_bypass) return;
 	const rtv=f.ori.apply(this,arguments);
-	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	const lw=this.randomEquipParams_isUsingLayeredWindows(); if(!lw) return rtv;
 	lw.deactivate();
 	lw.close();
 	this.randomEquipParams_onLayeredItemWindowClose();
@@ -332,7 +337,7 @@ add('changeUiState_focusOnSlotWnd',function f(){
 }).
 add('changeUiState_focusOnCmdWnd',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	const lw=this.randomEquipParams_isUsingLayeredWindows(); if(!lw) return rtv;
 	lw.deactivate();
 	lw.close();
 	this.randomEquipParams_onLayeredItemWindowClose();
@@ -340,14 +345,16 @@ add('changeUiState_focusOnCmdWnd',function f(){
 }).
 add('changeUiState_focusOnItemWnd',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	const lw=this.randomEquipParams_createLayeredItemWindow_ensureExsit();
+	const lw=this.randomEquipParams_isUsingLayeredWindows(); if(!lw) return rtv;
 	lw.deactivate();
 	lw.close();
 	this.randomEquipParams_onLayeredItemWindowClose();
 	return rtv;
 }).
 addBase('randomEquipParams_onItemOk',function f(){
-	if(this._itemWindow.item()==null){
+	// 
+	const wnd=this.randomEquipParams_isUsingLayeredWindows();
+	if(!wnd||this._itemWindow.item()==null){
 		const rtv=this.onItemOk_callOriginal.apply(this,arguments);
 		this.changeUiState_focusOnItemWnd();
 		this._statusWindow.refresh();
@@ -355,11 +362,9 @@ addBase('randomEquipParams_onItemOk',function f(){
 	}
 	SoundManager.playOk();
 	this._itemWindow.deactivate();
-	this.randomEquipParams_createLayeredItemWindow_ensureExsit();
 	this._layeredItemWindow.setRootItem(this._itemWindow.item());
 	const refwnd=this._itemWindow;
 	const refw=refwnd.width;
-	const wnd=this._layeredItemWindow;
 	const w=refw-(refw>>2);
 	const h=refwnd.height;
 	if(wnd.width!==w) wnd.width=w;
@@ -370,7 +375,7 @@ addBase('randomEquipParams_onItemOk',function f(){
 	this.changeUiState_focusOnLayeredItemWnd();
 }).
 addBase('changeUiState_focusOnLayeredItemWnd',function f(bypassRefresh){
-	this._state=f.tbl[0];
+	this.setUiState(f.tbl[0]);
 	this._commandWindow.deactivate();
 	this._slotWindow.deactivate();
 	this._itemWindow.deactivate();
@@ -397,6 +402,7 @@ addBase('randomEquipParams_onLayeredItemOk',function f(){
 	iw.refresh();
 	if((this._actor&&this._actor.getEquipSlot(sw.index()))!==eqtype) return this.randomEquipParams_onLayeredItemCancel();
 	lw.select(idx);
+	lw.refresh(); // list might be changed
 	this.changeUiState_focusOnLayeredItemWnd(true);
 }).
 addBase('randomEquipParams_onLayeredItemWindowClose',function f(){
@@ -405,6 +411,21 @@ addBase('randomEquipParams_onLayeredItemWindowClose',function f(){
 addBase('randomEquipParams_onLayeredItemCancel',function f(){
 	SoundManager.playCancel();
 	this.changeUiState_focusOnItemWnd();
+}).
+addBase('update_focusWndFromTouch_do_isPreventingTouchingOthers',function f(){
+	const lw=this.randomEquipParams_isUsingLayeredWindows();
+	return lw&&(lw.isClosing()||lw.isOpening()||(lw.isOpen()&&lw.containsPoint_global(TouchInput)));
+}).
+addBase('update_focusWndFromTouch_do_touchWindows',function f(){
+	const lw=this.randomEquipParams_isUsingLayeredWindows(); if(!lw) return;
+	if(!lw.isOpen()||!lw.containsPoint_global(TouchInput)) return;
+	this.changeUiState_focusOnLayeredItemWnd();
+}).
+add('update_focusWndFromTouch_do',function f(){
+	if(this.update_focusWndFromTouch_do_isPreventingTouchingOthers.apply(this,arguments)){
+		return this.update_focusWndFromTouch_do_touchWindows.apply(this,arguments);
+	}
+	return f.ori.apply(this,arguments);
 }).
 getP;
 
