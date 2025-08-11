@@ -1738,11 +1738,19 @@ delete p.makeItemList;
 
 
 new cfc(Scene_Equip.prototype).
+addBase('setUiState',function f(val){
+	return this._uiState=val;
+}).
+addBase('getUiState',function f(){
+	return this._uiState;
+}).
 addBase('changeUiState_focusOnSlotWnd',function f(){
-	this._state=f.tbl[0];
+	this.setUiState(f.tbl[0]);
 	if(!(this._slotWindow.index()>=0)) this._slotWindow.select(0);
-	this._slotWindow.activate();
+	this._commandWindow.deactivate();
 	this._itemWindow.deselect();
+	this._itemWindow.deactivate();
+	this._slotWindow.activate();
 },[
 'focusOnSlotWnd',
 ]).
@@ -1750,8 +1758,12 @@ addBase('commandEquip',function f(){
 	this.changeUiState_focusOnSlotWnd();
 }).
 addBase('changeUiState_focusOnCmdWnd',function f(){
-	this._state=f.tbl[0];
+	this.setUiState(f.tbl[0]);
+	this._slotWindow.activate(); // for updating help window => updating status window
 	this._slotWindow.deselect();
+	this._slotWindow.deactivate();
+	this._itemWindow.deactivate(); // prevent updating help window again => prevent updating status window
+	this._itemWindow.deselect();
 	this._commandWindow.activate();
 },[
 'focusOnCmdWnd',
@@ -1760,15 +1772,7 @@ addBase('onSlotCancel',function f(){
 	this.changeUiState_focusOnCmdWnd();
 }).
 addBase('changeUiState_focusOnItemWnd',function f(){
-	this._state=f.tbl[0];
-	const iw=this._itemWindow;
-	{
-		iw.activate();
-		const M=iw.maxItems();
-		let currIdx=iw.index();
-		if(!(currIdx>=0)) iw.select(currIdx=0);
-		else if(!(currIdx<M)) iw.select(currIdx=M-1);
-	}
+	this.setUiState(f.tbl[0]);
 	const sw=this._slotWindow;
 	{
 		sw.deactivate();
@@ -1776,6 +1780,15 @@ addBase('changeUiState_focusOnItemWnd',function f(){
 	const cw=this._commandWindow;
 	{
 		cw.deactivate();
+	}
+	const iw=this._itemWindow;
+	{
+		iw.activate();
+		const M=iw.maxItems();
+		let currIdx=iw.index();
+		if(!(currIdx>=0)) iw.select(currIdx=0);
+		else if(!(currIdx<M)) iw.select(currIdx=M-1);
+		iw.activate();
 	}
 },[
 'focusOnItemWnd',
@@ -1793,6 +1806,38 @@ addBase('onItemOk',function f(){
 	this._slotWindow.refresh();
 	this._itemWindow.refresh();
 	this._statusWindow.refresh();
+}).
+add('start',function f(){
+	this.changeUiState_focusOnCmdWnd();
+	return f.ori.apply(this,arguments);
+}).
+add('update_focusWndFromTouch_condOk',function f(){
+	return TouchInput.isTriggered();
+}).
+add('update_focusWndFromTouch_do',function f(){
+	const cw=this._commandWindow;
+	{ const wnd=cw; if(wnd.isOpen()&&wnd.containsPoint_global(TouchInput)){
+		this.changeUiState_focusOnCmdWnd();
+		return;
+	} }
+	const sw=this._slotWindow;
+	{ const wnd=sw; if(wnd.isOpen()&&wnd.containsPoint_global(TouchInput)){
+		this.changeUiState_focusOnSlotWnd();
+		return;
+	} }
+	const iw=this._itemWindow;
+	{ const wnd=iw; if(sw.index()>=0&&wnd.isOpen()&&wnd.containsPoint_global(TouchInput)){
+		this.changeUiState_focusOnItemWnd();
+		return;
+	} }
+}).
+add('update_focusWndFromTouch',function f(){
+	if(this.update_focusWndFromTouch_condOk()) this.update_focusWndFromTouch_do();
+}).
+add('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.update_focusWndFromTouch();
+	return rtv;
 }).
 getP;
 
