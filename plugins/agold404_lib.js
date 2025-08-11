@@ -10,11 +10,12 @@
 const _DateNow=Date.now();
 
 {
-const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri,moduleName)=>{
+const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri,moduleName,is_asRoof)=>{
 	const pre=p.__proto__&&p.__proto__.constructor.prototype;
-	if(is_putDeepest && p[k] && p[k].ori && !(pre&&pre[k]===p[k])){
+	if((is_putDeepest||(!is_asRoof&&p[k]&&p[k]._isRoof)) && p[k] && p[k].ori && !(pre&&pre[k]===p[k])){
 		let fp=p[k],fc=p[k].ori,fs=new Set();
 		do{
+			if((is_asRoof||!is_putDeepest)&&!(fc&&fc._isRoof)) break; // if is asRoof and next is not roof, break ; if not put to deepest and next not roof, break
 			if(fs.has(fc)) throw new Error('f.ori repeated');
 			fs.add(fc);
 			if(fc.ori && !(pre&&pre[k]===fc)){
@@ -36,6 +37,7 @@ const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri,moduleName)=>{
 	f._funcName=k;
 	f._moduleName=moduleName;
 	f._super=pre;
+	f._isRoof=is_asRoof;
 	return p;
 };
 const a=function cfc(p){
@@ -44,12 +46,16 @@ const a=function cfc(p){
 }
 const p=a.prototype;
 p.constructor=a;
-p.add=function(key,f,t,d,u,m){
-	cf(this._p,key,f,t,d,u,m);
+p.add=function(key,f,t,d,u,m,r){
+	cf(this._p,key,f,t,d,u,m,r);
 	return this;
 };
-p.addBase=function(key,f,t){
-	cf(this._p,key,f,t,true,true);
+p.addBase=function(key,f,t,m){
+	cf(this._p,key,f,t,true,true,m);
+	return this;
+};
+p.addRoof=function(key,f,t,m){
+	cf(this._p,key,f,t,false,false,m,true);
 	return this;
 };
 p.getP=function(){ return this._p; };
