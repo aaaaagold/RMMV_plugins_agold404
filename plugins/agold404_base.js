@@ -2766,6 +2766,7 @@ addBase('apply',function f(target){
 	const result=target.result();
 	this.subject().clearResult();
 	result.clear();
+	this.apply_onBeforeApplying.apply(this,arguments);
 	
 	result.used=this.testApply(target);
 	if(!result.used) this.apply_onNotApplied.apply(this,arguments);
@@ -2786,6 +2787,7 @@ addBase('apply_calRnd_missed',function f(target){
 addBase('apply_calRnd_evaded',function f(target){
 	return Math.random()<this.itemEva(target);
 }).
+addBase('apply_onBeforeApplying',none).
 addBase('apply_onNotApplied',none).
 addBase('apply_onMiss',none).
 addBase('apply_onEvaded',none).
