@@ -43,6 +43,7 @@ message window
 - name field in Window_Message: `agold404_NameField.js`
 - popup message: `agold404_PopupMsg.js`
 - number board: `agold404_NumBoard.js`
+- make styled text (e.g. item name, skill name): `agold404_MakeStyledText.js`
 
 item / skill effects
 - effect from JavaScript: `agold404_ItemEffectJavascript.js`
