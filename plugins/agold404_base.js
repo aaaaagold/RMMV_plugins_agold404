@@ -1684,7 +1684,7 @@ new cfc(p).add('_createAllParts',function f(){
 
 
 new cfc(DataManager).
-addBase('duplicatedDataobj_getSrc',none).
+addBase('duplicatedDataobj_getSrc',filterArg0).
 getP;
 
 new cfc(Game_System.prototype).
@@ -1799,9 +1799,18 @@ addBase('onSlotOk',function f(){
 addBase('onItemCancel',function f(){
 	this.changeUiState_focusOnSlotWnd();
 }).
+addBase('getSelectedSlotId',function f(){
+	return this._slotWindow.index();
+}).
 addBase('onItemOk',function f(){
+	const slotId=this.getSelectedSlotId();
+	const actor=this.actor();
+	if(!actor.isEquipChangeOk(slotId)){
+		SoundManager.playBuzzer();
+		return;
+	}
 	SoundManager.playEquip();
-	this.actor().changeEquip(this._slotWindow.index(), this._itemWindow.item());
+	actor.changeEquip(slotId, this._itemWindow.item());
 	this.changeUiState_focusOnSlotWnd();
 	this._slotWindow.refresh();
 	this._itemWindow.refresh();
@@ -1849,6 +1858,16 @@ addBase('makeCommandList',function f(){
 	this.addCommand(TextManager.equip2,   'equip');
 	if(this.makeCommandList_optimizingEnabled()) this.addCommand(TextManager.optimize, 'optimize');
 	this.addCommand(TextManager.clear,    'clear');
+}).
+getP;
+
+new cfc(Window_EquipSlot.prototype).
+addBase('processOk',function f(){
+	// always ok. block equipment change when okItemOk.
+	this.playOkSound();
+	this.updateInputData();
+	this.deactivate();
+	this.callOkHandler();
 }).
 getP;
 
