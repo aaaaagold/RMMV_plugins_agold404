@@ -136,6 +136,10 @@ some Game_Event -only plugins
 - adjust worn equips params: `agold404_Trait_adjustEquipsParams.js`
 - random params: `agold404_RandomEquipParams.js`
 
+### equip lock
+
+- self-locked: `agold404_SelfLockedEquipment.js`
+
 
 ## Save/Load (Scene_Save, Scene_Load)
 
