@@ -1585,7 +1585,7 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 	}
 	{
 		const arr=[];
-		arr.push('AudioManager','BattleManager','ConfigManager','DataManager','ImageManager','SceneManager','PluginManager',);
+		arr.push('AudioManager','BattleManager','ConfigManager','DataManager','ImageManager','SceneManager','SoundManager','PluginManager',);
 		arr.push('Input','TouchInput',);
 		arr.push('Graphics','PIXI','Sprite','Bitmap','WebAudio',);
 		arr.push('Game_BattlerBase','Game_Battler','Game_Enemy','Game_Actor','Game_Action',);
