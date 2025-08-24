@@ -2,9 +2,18 @@
 /*:
  * @plugindesc set max stack for each item/weapon/armor
  * @author agold404
+ * 
+ * 
  * @param DefaultMaxStack
  * @text default maxStack
  * @desc if the string you filled cannot be parsed to a number by "-0", nothing will happen.
+ * 
+ * 
+ * @param GlobalAdd
+ * @type number
+ * @text global max stack num. added
+ * @desc add max stack num to all items
+ * @default 0
  * 
  * 
  * @help set max stack for each item/weapon/armor
@@ -29,6 +38,8 @@
 
 {
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_MaxStack";
+const params=PluginManager.parameters(pluginName)||{};
+params._globalAdd=useDefaultIfIsNaN(params.GlobalAdd-0,0);
 const paramKey_defaultMaxStack='DefaultMaxStack';
 
 const gbb=Game_BattlerBase,kw='maxStack';
@@ -45,6 +56,11 @@ t=[
 "_"+kw,
 kw,
 kwt,
+[
+	undefined,
+	params,
+	window.isTest(),
+], // 0-3: [/,params]
 ], // 0: maxStack
 [
 [], // 1-0: value cache
@@ -66,7 +82,7 @@ new cfc(Scene_Boot.prototype).add('modItem1',function f(dataobj,i,arr){
 new cfc(Game_Party.prototype).add('maxItems',function f(dataobj){
 	if(dataobj && (f.tbl[0] in dataobj)) return dataobj[f.tbl[0]];
 	const res=this.getDefaultMaxStack();
-	return isNaN(res)?f.ori.apply(this,arguments):res;
+	return (isNaN(res)?f.ori.apply(this,arguments):res)+f.tbl[3][1]._globalAdd;
 },t[0]).addBase('getDefaultMaxStack',function f(){
 	if(!f.tbl[0].length) f.tbl[0].push(PluginManager.parameters(f.tbl[1])[f.tbl[2]]-0);
 	return f.tbl[0][0];
