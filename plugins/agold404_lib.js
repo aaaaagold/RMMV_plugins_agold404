@@ -146,7 +146,7 @@ p.uniqueClear=function(){
 	return this;
 };
 p.uniqueGetIdx=function(obj){
-	if(!this._map) return;
+	if(!this.uniqueHas(obj)) return -1;
 	const idx=this._map.get(obj)-0;
 	return idx>=0?idx:-1;
 };
