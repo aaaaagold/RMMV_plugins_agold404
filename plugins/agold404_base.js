@@ -2268,6 +2268,9 @@ new cfc(Window_Selectable.prototype).
 addBase('hitTest_condOk',function(x,y){
 	return this.isContentsArea(x,y);
 }).
+addBase('hitTest_toCurrIdxIfCursorAll',function(idx){
+	return this._cursorAll&&idx>=0?this.index():idx;
+}).
 addBase('hitTest_do',function(x,y){
 	const cx=x-this.padding;
 	const cy=y-this.padding;
@@ -2276,7 +2279,7 @@ addBase('hitTest_do',function(x,y){
 	const idxEnd=this.maxItems();
 	for(var i=0;i<=this.maxPageItems();i++){
 		const idx=topIndex+i; if(idx>=idxEnd) break;
-		if(this.itemRect(idx).contains(cx,cy)) return idx;
+		if(this.itemRect(idx).contains(cx,cy)) return this.hitTest_toCurrIdxIfCursorAll(idx);
 	}
 	return -1;
 }).
