@@ -35,7 +35,7 @@
  * @default true
  * 
  * @param SkillPointEvalText
- * @type boolean
+ * @type text
  * @text skill point infos
  * @desc Showing skill points info with eval()
  * @default "SP: "+a.skillTreePoint_get()
@@ -248,6 +248,7 @@ arr=>arr&&arr.length||0,
 	}
 	return {id:id,cond:cond,consume:consume,connect:connect,condFailMsg:condFailMsg,};
 }).add('skillTree_getPrevSkillIdx',function f(idx){
+	return; // deprecated: lines are not to be linked automatically
 	const arrv=this._skillTree; if(!arrv) return;
 	if(!this._prevSkills) this._prevSkills=[];
 	if(this._prevSkills._data!==this._data){
@@ -489,6 +490,7 @@ new cfc(Scene_Skill.prototype).add('initialize',function f(){
 	wnd.setHandler('ok',this.itemActionWindow_ok.bind(this));
 	wnd.setHandler('learn',this.itemActionWindow_learn.bind(this));
 	wnd.setHandler('cancel',this.itemActionWindow_cancel.bind(this));
+	this._itemWindow._itemActionWindow=wnd;
 	this._itemWindow.addChild(wnd);
 }).addBase('create_tuneParams',function f(){
 	this._skillTypeWindow._skillTree_skillTreeAtFirst=this._skillTree_skillTreeAtFirst;
@@ -499,7 +501,7 @@ new cfc(Scene_Skill.prototype).add('initialize',function f(){
 }).add('itemActionWindow_makeCommandList',function f(){
 	for(let x=0,arr=f.tbl[1],xs=arr.length;x!==xs;++x){
 		if(!this._skillTree_bothUseAndLearn){
-			if(this._scene._skillTypeWindow.currentExt()<0){
+			if(this._scene._skillTypeWindow.currentExt()==="ext-技能樹"){
 				if(arr[x][1]==='ok') continue;
 			}else{
 				if(arr[x][1]==='learn') continue;
@@ -528,7 +530,7 @@ new Set([
 	if(!ignoreIsTree && !w.isTree()) return false;
 	if(idx===undefined) idx=w.index();
 	const prevIdx=w.skillTree_getPrevSkillIdx(idx);
-	const item=w.item(idx);
+	const item=w.item(idx); if(!item) return false;
 	const cond=w._skillTree_learnMeta[idx].cond;
 	let condOk=true;
 	const a=w._actor;
@@ -573,6 +575,7 @@ new Set([
 	newLoc.y=rect.y+rect.height;
 	const dy=newLoc.y+iaw.height-iw.contentsHeight(); if(0<dy) newLoc.y=rect.y-iaw.height;
 	iaw.position.set(newLoc.x+iw._padding,newLoc.y+iw._padding);
+	iaw.refresh(); // a new item was selected. action list should be re-gen.ed
 }).add('onActorCancel',function f(){
 	this._actorWindow.deactivate();
 	this._actorWindow.hide();
@@ -597,6 +600,7 @@ params, // 1: plugin params
 ]).addBase('drawSkillPoint',function f(){
 	const a=this._actor,actor=a;
 	if(!this.drawSkillPoint_condOk(a)) return -1;
+	this.resetFontSettings();
 	this.drawText(
 		eval(f.tbl[1]._skillPointEvalText),
 		f.tbl[1]._skillPointTextX,
