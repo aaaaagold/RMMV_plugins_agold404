@@ -1709,17 +1709,17 @@ getP;
 new cfc(Window_Selectable.prototype).
 addBase('makeItemList',function f(){
 	if(this.makeItemList_condOk()){
-		this.makeItemList_before.apply(this,arguments);
+		this.makeItemList_doBefore.apply(this,arguments);
 		this.makeItemList_do.apply(this,arguments);
-		this.makeItemList_after.apply(this,arguments);
+		this.makeItemList_doAfter.apply(this,arguments);
 	}
 }).
 addBase('makeItemList_condOk',function f(){
 	return true;
 }).
-addBase('makeItemList_before',none).
+addBase('makeItemList_doBefore',none).
 addBase('makeItemList_do',none).
-addBase('makeItemList_after',function f(){
+addBase('makeItemList_doAfter',function f(){
 	this.onNewSelect(this._indexOld=undefined);
 }).
 getP;
@@ -1735,6 +1735,44 @@ add('makeItemList_do',function f(){
 getP;
 delete p.makeItemList;
 }
+
+
+new cfc(Window_SkillList.prototype).
+addBase('setActor_condOk',function(actor){
+	return this._actor!==actor;
+}).
+addBase('setActor_doBefore',none).
+addBase('setActor_do',function(actor){
+	this._actor=actor;
+	this.refresh();
+	this.resetScroll();
+}).
+addBase('setActor_doAfter',none).
+addBase('setActor',function(actor){
+	if(this.setActor_condOk.apply(this,arguments)){
+		this.setActor_doBefore.apply(this,arguments);
+		this.setActor_do.apply(this,arguments);
+		this.setActor_doAfter.apply(this,arguments);
+	}
+}).
+addBase('setStypeId_condOk',function(stypeId){
+	return this._stypeId!==stypeId;
+}).
+addBase('setStypeId_doBefore',none).
+addBase('setStypeId_do',function(stypeId){
+	this._stypeId=stypeId;
+	this.refresh();
+	this.resetScroll();
+}).
+addBase('setStypeId_doAfter',none).
+addBase('setStypeId',function(stypeId){
+	if(this.setStypeId_condOk.apply(this,arguments)){
+		this.setStypeId_doBefore.apply(this,arguments);
+		this.setStypeId_do.apply(this,arguments);
+		this.setStypeId_doAfter.apply(this,arguments);
+	}
+}).
+getP;
 
 
 new cfc(Scene_Equip.prototype).
