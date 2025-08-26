@@ -5804,7 +5804,11 @@ new cfc(p).addBase('render',function f(stage){
 	this.frameCount+=SceneManager._updateSceneCnt|0; SceneManager._updateSceneCnt=0|0;
 },[
 function(f){ f.call(this); },
-]).addBase('_createRenderer',function(){
+]).
+addBase('getSceneFrameCnt',function f(){
+	return this.frameCount+(SceneManager._updateSceneCnt|0);
+}).
+addBase('_createRenderer',function(){
 	const log=window.console.log; window.console.log=none;
 	
 	const width=this._width , height=this._height;
@@ -6499,6 +6503,7 @@ function(event){
 [
 ['backgroundColor','rgba(0,0,0,0.25)'],
 ['overflow-y','scroll'],
+['user-select','all'], // all: select all ; text: normally select ; 
 ], // 0: css
 ]).addBase('_updateErrorPrinter_setShow',function f(isShow){
 	if(isShow!==undefined) this._errorShowed=!!isShow;
