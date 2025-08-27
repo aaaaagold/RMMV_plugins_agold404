@@ -87,10 +87,13 @@ addBase('update_textarea',function f(){
 	const g0=this.toGlobal(p0);
 	const g1=this.toGlobal(p1);
 	const css=ta.style;
-	css.left=g0.x+'px';
-	css.top=g0.y+'px';
-	css.width=(g1.x-g0.x)+'px';
-	css.height=(g1.y-g0.y)+'px';
+	const C=Graphics._canvas;
+	css.left=g0.x*100/C.width+'%';
+	css.top=g0.y*100/C.height+'%';
+	css.width=(g1.x-g0.x)*100/C.width+'%';
+	css.height=(g1.y-g0.y)*100/C.height+'%';
+	css.fontSize=this.standardFontSize()*ta.parentNode.offsetWidth/C.width+'px';
+	//if(this.contents) css.fontFamily=this.contents.fontFace; // will be GameFont
 }).
 getP;
 window[a.name]=a;
