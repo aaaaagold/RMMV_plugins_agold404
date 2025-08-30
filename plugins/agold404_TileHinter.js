@@ -31,6 +31,10 @@
  * 
  * @help hint what type the tile is with a specified color
  * 
+ * use
+ * `$gameSystem.tileHinter_setIsEnabled( true or false here );`
+ * to toggle if this functionality is available
+ * 
  * 
  * This plugin can be renamed as you want.
  */
@@ -51,6 +55,16 @@ window.isTest(), // 2: isTest
 [32,32], // 4: 1 hint's width , height
 [16,1], // 5: bmp's width cnt , height cnt
 ];
+
+
+new cfc(Game_System.prototype).
+addBase('tileHinter_setIsEnabled',function f(val){
+	return this._tileHinter_isDisabled=(!val)|1;
+}).
+addBase('tileHinter_getIsEnabled',function f(){
+	return !this._tileHinter_isDisabled;
+}).
+getP;
 
 
 new cfc(SceneManager).
@@ -107,6 +121,7 @@ addBase('tileHinter_update',function f(){
 	const isBtnPressed=Input.isPressed(f.tbl[3]);
 	if(isBtnPressed&&!spRoot._tileHinter_isBtnPressed) spRoot.visible=this._tileHinter_isShowing=!this._tileHinter_isShowing;
 	spRoot._tileHinter_isBtnPressed=isBtnPressed;
+	if($gameSystem&&!$gameSystem.tileHinter_getIsEnabled()) spRoot.visible=this._tileHinter_isShowing=false;
 	if(!spRoot.visible) return;
 	// last return before frameCount
 	if(spRoot._fc===Graphics.frameCount) return; // skip
