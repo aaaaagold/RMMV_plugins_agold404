@@ -1317,6 +1317,15 @@ addBase('_onLoad_before_troop',function f(obj,name,src,msg){
 }).addBase('onLoad_after_troop',function f(obj,name,src,msg){
 	// dummy
 }).
+addBase('_onLoad_before_animation',function f(obj,name,src,msg){
+	return this.onLoad_before_animation.apply(this,arguments);
+}).addBase('_onLoad_after_animation',function f(obj,name,src,msg){
+	return this.onLoad_after_animation.apply(this,arguments);
+}).addBase('onLoad_before_animation',function f(obj,name,src,msg){
+	// dummy
+}).addBase('onLoad_after_animation',function f(obj,name,src,msg){
+	// dummy
+}).
 addBase('_onLoad_before_tileset',function f(obj,name,src,msg){
 	return this.onLoad_before_tileset.apply(this,arguments);
 }).addBase('_onLoad_after_tileset',function f(obj,name,src,msg){
@@ -1351,6 +1360,7 @@ p.onLoad_before.tbl=new Map([
 	['$dataSkills',	p._onLoad_before_skill],
 	['$dataEnemies',	p._onLoad_before_enemy],
 	['$dataTroops',	p._onLoad_before_troop],
+	['$dataAnimations',	p._onLoad_before_animation],
 	['$dataTilesets',	p._onLoad_before_tileset],
 	['$dataCommonEvents',	p._onLoad_before_commonEvent],
 	['$dataSystem',	p._onLoad_before_system],
@@ -1360,6 +1370,7 @@ p.onLoad_after.tbl=new Map([
 	['$dataSkills',	p._onLoad_after_skill],
 	['$dataEnemies',	p._onLoad_after_enemy],
 	['$dataTroops',	p._onLoad_after_troop],
+	['$dataAnimations',	p._onLoad_after_animation],
 	['$dataTilesets',	p._onLoad_after_tileset],
 	['$dataCommonEvents',	p._onLoad_after_commonEvent],
 	['$dataSystem',	p._onLoad_after_system],
@@ -4003,6 +4014,67 @@ new Map([
 // ---- ---- ---- ---- performance
 
 (()=>{ let k,r,t;
+
+
+new cfc(DataManager).
+addRoof('onLoad_after_animation',function f(obj,name,src,msg){
+	const rtv=f.ori.apply(this,arguments);
+	this.onLoad_trimUnusedAnimationFrames.apply(this,arguments);
+	return rtv;
+}).
+addBase('onLoad_trimUnusedAnimationFrames',function f(obj,name,src,msg){
+	obj.forEach(this.onLoad_trimUnusedAnimationFrames1,this);
+}).
+addBase('onLoad_trimUnusedAnimationFrames1',function f(dataobj,idx,a){
+	const frames=dataobj&&dataobj.frames; if(!frames) return;
+	let maxAnimationCellsCnt=0;
+	for(let x=0,xs=frames.length;x<xs;++x){
+		const frame=frames[x];
+		const ende=frame.length;
+		// trim !(cell[0]>=0)
+		let i=0;
+		for(let j=0;j<ende;++j){
+			if(!(frame[j][0]>=0)) continue;
+			frame[i++]=frame[j];
+		}
+		frame.length=i;
+		if(!(maxAnimationCellsCnt>=i)) maxAnimationCellsCnt=i;
+	}
+	dataobj._maxAnimationCellsCnt=maxAnimationCellsCnt;
+	if(!(this._maxAnimationCellsCnt>=maxAnimationCellsCnt)) this._maxAnimationCellsCnt=maxAnimationCellsCnt;
+}).
+getP;
+
+new cfc(Sprite_Animation.prototype).
+addBase('initCellsCnt',function f(){
+	// not used
+	return DataManager._maxAnimationCellsCnt;
+}).
+addBase('createCellSprites',function f(cellsCnt){
+	const arr=this._cellSprites||(this._cellSprites=[]);
+	cellsCnt|=0;
+	for(let xs=cellsCnt,x=this._lastUpdatedCellIdxEnd=arr.length;x<xs;++x){
+		const sp=new Sprite();
+		sp.visible=false;
+		sp.anchor.set(0.5);
+		arr.push(sp);
+		this.addChild(sp);
+	}
+}).
+add('setup',function f(target,ani,mir,dly,opt){
+	this.createCellSprites(ani._maxAnimationCellsCnt);
+	return f.ori.apply(this,arguments);
+}).
+addBase('updateAllCellSprites',function f(frame){
+	const newIdxEnd=frame.length;
+	for(let spv=this._cellSprites,x=Math.max(newIdxEnd,this._lastUpdatedCellIdxEnd);x--;){
+		const sp=spv[x];
+		if(x<newIdxEnd) this.updateCellSprite(sp, frame[x]);
+		else sp.visible=false;
+	}
+	this._lastUpdatedCellIdxEnd=newIdxEnd;
+}).
+getP;
 
 
 new cfc(Window.prototype).
