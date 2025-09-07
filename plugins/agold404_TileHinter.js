@@ -42,7 +42,7 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_TileHinter";
 const params=PluginManager.parameters(pluginName)||{};
-params._hintGlobalAlpha=params.HintGlobalAlpha-0; if(isNaN(params._hintGlobalAlpha)) params._hintGlobalAlpha=0.5;
+params._hintGlobalAlpha=useDefaultIfIsNaN(params.HintGlobalAlpha-0,0.5);
 params._hintSwitchBtn=params.HintSwitchBtn-0||0;
 params._hintColorBase=params.HintColorBase||'rgba(255,255,0,0.5)';
 params._hintColorPassage=params.HintColorPassage||'rgba(0,255,0,0.5)';
