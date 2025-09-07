@@ -669,6 +669,72 @@ function(f){ if(!f()) this.push(f); },
 		}
 	}
 });
+// refine Window tone
+new cfc(Window.prototype).
+addBase('_refreshBack',function f(){
+	const m=this._margin;
+	const w=this._width-m*2;
+	const h=this._height-m*2;
+	const bitmap=new Bitmap(w,h);
+
+	this._windowBackSprite.bitmap=bitmap;
+	this._windowBackSprite.setFrame(0,0,w,h);
+	this._windowBackSprite.move(m,m);
+
+	if(w>0&&h>0&&this._windowskin){
+		const p=96;
+		bitmap.blt(this._windowskin,0,0,p,p,0,0,w,h);
+		for(let y=0;y<h;y+=p){
+			for(let x=0;x<w;x+=p){
+				bitmap.blt(this._windowskin,0,p,p,p,x,y,p,p);
+			}
+		}
+		this._refreshBack_adjustBmpTone(bitmap);
+	}
+}).
+addBase('_refreshBack_adjustBmpTone',function f(bitmap){
+	const tone=this._colorTone;
+	bitmap.adjustTone(tone[0],tone[1],tone[2]);
+}).
+getP;
+new cfc(Window_Base.prototype).
+add('initialize',function f(x,y,w,h){
+	const rtv=f.ori.apply(this,arguments);
+	this.selfTone_init.apply(this,arguments);
+	return rtv;
+}).
+addBase('selfTone_init',function f(x,y,w,h,opt){
+	this.selfTone_set(opt&&opt.colorTone);
+}).
+addBase('selfTone_set',function f(toneColorTriple){
+	const tone=toneColorTriple;
+	if(!this._colorTone_self||!this._colorTone_self.equals(tone)){
+		this._colorTone_self=tone&&[tone[0],tone[1],tone[2]];
+		this._refreshBack();
+	}
+	return this._colorTone_self;
+}).
+addBase('_selfTone_get',function f(){
+	return this._colorTone_self||f.tbl[0];
+},[0,0,0,0]).
+addBase('selfTone_get',function f(){
+	return this._selfTone_get().slice();
+}).
+addBase('_refreshBack_adjustBmpTone',function f(bitmap){
+	let r=0,g=0,b=0;
+	{ const tone=this._colorTone; if(tone){
+		r+=tone[0];
+		g+=tone[1];
+		b+=tone[2];
+	} }
+	{ const tone=this._selfTone_get(); if(tone){
+		r+=tone[0];
+		g+=tone[1];
+		b+=tone[2];
+	} }
+	bitmap.adjustTone(r,g,b);
+}).
+getP;
 // refine Window_Base
 new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	const tone=$gameSystem&&$gameSystem.windowTone()||f.tbl[0];
