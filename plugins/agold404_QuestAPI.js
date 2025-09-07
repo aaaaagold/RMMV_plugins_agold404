@@ -16,6 +16,8 @@
  * use `$gamePlayer.questAPI_delQuestByIdx( idx );` to delete an ongoing quest.
  * use `$gamePlayer.questAPI_isQuestCompletedByIdx( idx );` to investigate if a quest can be completed.
  * 
+ * for quest info, please refer to agold404_QuestAPI_exampleQuest.js
+ * 
  * 
  * This plugin can be renamed as you want.
  */
