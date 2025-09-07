@@ -7925,7 +7925,7 @@ new cfc(Window_Base.prototype).addBase('convertEscapeCharacters',function f(text
 	for(let oldText;oldText!==text;) text=(oldText=text).replace(f.tbl[0],func);
 	return text.replace(f.tbl[1],"$1"+TextManager.currencyUnit);
 },[
-/(?<![\\])((\\\\)*)\\([^\\])\[(-?(0x[A-Fa-f0-9]+|\d+))\]/g, // 0: re \X[n]
+/(?<![\\])((\\\\)*)\\([^\[\\]+)\[(-?(0x[A-Fa-f0-9]+|\d+))\]/g, // 0: re \X[n]
 /(?<![\\])((\\\\)*)\\G(?![A-Z])/g, // 1: re \G
 ]).addBase('convertEscapeCharacters_defaultPreprocess',function f(){
 	const code=arguments[3];
@@ -7933,6 +7933,15 @@ new cfc(Window_Base.prototype).addBase('convertEscapeCharacters',function f(text
 	return func?arguments[1]+func(this,arguments):arguments[0];
 },[
 {
+IN:(self,argv)=>{
+	return $dataItems[argv[4]]&&$dataItems[argv[4]].name;
+},
+WN:(self,argv)=>{
+	return $dataWeapons[argv[4]]&&$dataItems[argv[4]].name;
+},
+AN:(self,argv)=>{
+	return $dataArmors[argv[4]]&&$dataItems[argv[4]].name;
+},
 V:(self,argv)=>{
 	return $gameVariables.value(parseInt(argv[4]));
 }, // vars
