@@ -7937,10 +7937,22 @@ IN:(self,argv)=>{
 	return $dataItems[argv[4]]&&$dataItems[argv[4]].name;
 },
 WN:(self,argv)=>{
-	return $dataWeapons[argv[4]]&&$dataItems[argv[4]].name;
+	return $dataWeapons[argv[4]]&&$dataWeapons[argv[4]].name;
 },
 AN:(self,argv)=>{
-	return $dataArmors[argv[4]]&&$dataItems[argv[4]].name;
+	return $dataArmors[argv[4]]&&$dataArmors[argv[4]].name;
+},
+INV:(self,argv)=>{
+	const dataobj=$dataItems[$gameVariables.value(argv[4]-0)];
+	return dataobj&&dataobj.name;
+},
+WNV:(self,argv)=>{
+	const dataobj=$dataWeapons[$gameVariables.value(argv[4]-0)];
+	return dataobj&&dataobj.name;
+},
+ANV:(self,argv)=>{
+	const dataobj=$dataArmors[$gameVariables.value(argv[4]-0)];
+	return dataobj&&dataobj.name;
 },
 V:(self,argv)=>{
 	return $gameVariables.value(parseInt(argv[4]));
