@@ -38,15 +38,19 @@ new cfc(Window_Base.prototype).add('processEscapeCharacter',function f(code,text
 	const strt=textState.index+1;
 	const strPos=getCStyleStringStartAndEndFromString(textState.text,strt);
 	if(strPos.start!==strt) return console.warn(code,f.tbl[1][0]);
-	const tailPos=strPos.end-1;
-	if(tailPos>=this.textPosition_tailPos_getLastPos()) throw new Error(f.tbl[1][1]);
-	this.textPosition_tailPos_push(tailPos);
-	textState.index=strPos.start+1;
+	//const tailPos=strPos.end-1;
+	//if(tailPos>=this.textPosition_tailPos_getLastPos()) throw new Error(f.tbl[1][1]);
+	//this.textPosition_tailPos_push(tailPos);
+	//textState.index=strPos.start+1;
+	const txt=JSON.parse(textState.text.slice(strPos.start,strPos.end));
 	const func=f.tbl[0][code];
-	if(func) return func.call(this,this.duplicateTextState(textState,{
-		text:textState.text.slice(strPos.start+1,strPos.end-1),
+	if(func) func.call(this,this.duplicateTextState(textState,{
+		text:txt,
 		index:0,
 	}),textState);
+	textState.index=0;
+	this.drawTextEx(txt,undefined,undefined,undefined,undefined,textState);
+	textState.index=strPos.end;
 },[
 {
 TXTLEFT:function(tmpState,textState){
@@ -89,6 +93,7 @@ TXTDPOS:function(tmpState,textState){
 	this.processCharacter_textPosition_consumeTailPos(textState);
 	return textState.index<textState.text.length&&f.ori.apply(this,arguments);
 }).addBase('processCharacter_textPosition_consumeTailPos',function f(textState){
+	return; // deprecated
 	while(this.textPosition_tailPos_getLastPos()===textState.index){
 		++textState.index;
 		this.textPosition_tailPos_pop();
