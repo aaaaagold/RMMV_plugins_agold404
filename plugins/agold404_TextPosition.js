@@ -48,8 +48,10 @@ new cfc(Window_Base.prototype).add('processEscapeCharacter',function f(code,text
 		text:txt,
 		index:0,
 	}),textState);
+	const oriTxt=textState.text;
 	textState.index=0;
 	this.drawTextEx(txt,undefined,undefined,undefined,undefined,textState);
+	textState.text=oriTxt;
 	textState.index=strPos.end;
 },[
 {
