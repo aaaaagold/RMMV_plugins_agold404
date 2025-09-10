@@ -751,10 +751,26 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	textState.text=this.convertEscapeCharacters(text);
 	textState.height=this.calcTextHeight(textState,false);
 	textState.outOfBound_x=false;
-	if(!textState.isMeasureOnly) this.resetFontSettings(); // it should be called before calling this func. thus it is internal testing and the settings should not be changed.
+	const fontSettings=textState.isMeasureOnly&&this.cloneFontSettings();
+	if(!textState.isMeasureOnly) this.resetFontSettings(); // other plugins use this. // it should be called before calling this func. thus it is internal testing and the settings should not be changed.
 	for(const len=textState.text.length;textState.index<len;) this.processCharacter(textState);
+	if(textState.isMeasureOnly) this.applyFontSettings(fontSettings);
 	return textState.x-x;
-}).addBase('processNormalCharacter',function f(textState){
+}).
+addBase('cloneFontSettings',function f(){
+	return ({
+		fontFace:this.contents&&this.contents.fontFace,
+		fontSize:this.contents&&this.contents.fontSize,
+		textColor:this.contents&&this.contents.textColor,
+	});
+}).
+addBase('applyFontSettings',function f(fontSettings){
+	if(!fontSettings||!this.contents) return -1;
+	this.contents.fontFace=fontSettings.fontFace;
+	this.contents.fontSize=fontSettings.fontSize;
+	this.contents.textColor=fontSettings.textColor;
+}).
+addBase('processNormalCharacter',function f(textState){
 	const c=textState.text[textState.index++];
 	let wRaw=this.textWidth(c);
 	const w=wRaw;
@@ -1082,33 +1098,54 @@ new cfc(Window_Base.prototype).addBase('obtainEscapeCode',function f(textState){
 new cfc(Window_Base).addBase('getEscapeCodePattern',function f(){
 	return f.tbl[0];
 },[
-/^[\$\.\|\^!><\{\}\\;]|^[A-Z]+/i, // 0: pattern
+/^[\$\.\|\^!><\{\}\\;]|^[A-Z]+/i, // 0: pattern // to use \n as new line, write \n\;
 ]);
 // ==== escapeCode - wnd base ==== 
-new cfc(Window_Base.prototype).addBase('processEscapeCharacter',function(code,textState){
+new cfc(Window_Base.prototype).
+addBase('processEscapeCharacter',function(code,textState){
 	const func=Window_Base.escapeFunction_get(code);
 	if(func instanceof Function) return func.apply(this,arguments);
-});
-new cfc(Window_Base).addBase('escapeFunction_set',function f(code,func){
+}).
+getP;
+new cfc(Window_Base).
+addBase('escapeFunction_set',function f(code,func){
 	if(!(func instanceof Function)||!this.getEscapeCodePattern().exec(code)) return console.warn('invalid code'),this;
 	f.tbl[0][code]=func;
 	return this;
 },t=[
 {}, // 0: escape functions [code] => (code,textState){ ... } // see below 'Window_Base.escapeFunction_set' for the content
-]).addBase('escapeFunction_getCont',function f(){
+]).
+addBase('escapeFunction_getCont',function f(){
 	return f.tbl[0];
-},t).addBase('escapeFunction_get',function f(code){
+},t).
+addBase('escapeFunction_get',function f(code){
 	return f.tbl[0][code];
-},t);
-Window_Base.escapeFunction_set('C',function f(code,textState){
+},t).
+getP;
+Window_Base.
+escapeFunction_set('n',function f(code,textState){
+	return this.processNewLine(textState);
+}).
+escapeFunction_set('f',function f(code,textState){
+	return this.processNewPage(textState);
+}).
+escapeFunction_set('\\',function f(code,textState){
+	--textState.index;
+	return this.processNormalCharacter(textState);
+}).
+escapeFunction_set('C',function f(code,textState){
 	return this.changeTextColor(this.textColor(this.obtainEscapeParam(textState)));
-}).escapeFunction_set('I',function f(code,textState){
+}).
+escapeFunction_set('I',function f(code,textState){
 	return this.processDrawIcon(this.obtainEscapeParam(textState),textState);
-}).escapeFunction_set('{',function f(code,textState){
+}).
+escapeFunction_set('{',function f(code,textState){
 	return this.makeFontBigger();
-}).escapeFunction_set('}',function f(code,textState){
+}).
+escapeFunction_set('}',function f(code,textState){
 	return this.makeFontSmaller();
-}).escapeFunction_set(';',none);
+}).
+escapeFunction_set(';',none);
 // ==== escapeCode - wnd msg ====
 new cfc(Window_Message.prototype).addBase('processEscapeCharacter',function(code,textState){
 	const func=Window_Message.escapeFunction_get(code);
