@@ -50,6 +50,12 @@ new cfc(Decrypter).addBase('checkImgIgnore',function(url){
 c=>c.toString(16).padStart(2,'0'), // 0: map
 ]);
 
+new cfc(Game_Variables.prototype).
+addBase('value',function f(variableId){
+	return this._data[variableId]==null?0:this._data[variableId];
+}).
+getP;
+
 new cfc(Game_Event.prototype).add('start',function f(triggerer){
 	const oriTriggerer=this._triggerer; this._triggerer=triggerer;
 	f.ori.apply(this,arguments);
@@ -787,7 +793,12 @@ addBase('processNormalCharacter',function f(textState){
 }).add('drawText',function f(text,x,y,maxWidth,align,opt){
 	if(opt&&opt.isMeasureOnly) return;
 	return f.ori.apply(this,arguments);
-});
+}).
+addBase('processDrawIcon',function(iconIndex,textState){
+	if(!textState.isMeasureOnly) this.drawIcon(iconIndex,textState.x+2,textState.y+2);
+	textState.x+=Window_Base._iconWidth+4;
+}).
+getP;
 //
 new cfc(Window_Base.prototype).addBase('lineHeight',function f(){
 	return 3+~~(this.standardFontSize()*1.25); // 3 is a experienced value
@@ -1106,6 +1117,30 @@ addBase('processEscapeCharacter',function(code,textState){
 	const func=Window_Base.escapeFunction_get(code);
 	if(func instanceof Function) return func.apply(this,arguments);
 }).
+addBase('obtainEscapeParam',function f(textState){
+	const m=textState.text.slice(textState.index).match(f.tbl[0]);
+	if(!m) return '';
+	textState.index+=m[0].length;
+	return isNaN(m[1])?m[1]:m[1]-0;
+},[
+/^\[([^\]\n]+)\]/,
+]).
+addBase('processSubtext',function f(subtext,textState){
+	const oriTxt=textState.text;
+	const oriIdx=textState.index;
+	textState.index=0;
+	this.drawTextEx(subtext+'',undefined,undefined,undefined,undefined,textState);
+	textState.index=oriIdx;
+	textState.text=oriTxt;
+}).
+addBase('processEscapeCharacter_dataobjName',function f(item,textState){
+	if(!item) return;
+	return this.processSubtext(item.name,textState);
+}).
+addBase('processEscapeCharacter_dataobjIcon',function f(item,textState){
+	if(!item) return;
+	this.processDrawIcon(item.iconIndex,textState);
+}).
 getP;
 new cfc(Window_Base).
 addBase('escapeFunction_set',function f(code,func){
@@ -1123,10 +1158,107 @@ addBase('escapeFunction_get',function f(code){
 },t).
 getP;
 Window_Base.
+escapeFunction_set('SKNV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataSkills[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('INV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataItems[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('WNV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataWeapons[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('ANV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataArmors[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('STNV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataStates[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('SKIV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataSkills[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('IIV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataItems[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('WIV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataWeapons[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('AIV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataArmors[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('STIV',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataStates[$gameVariables.value(param)],textState);
+}).
+escapeFunction_set('SKN',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataSkills[param],textState);
+}).
+escapeFunction_set('IN',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataItems[param],textState);
+}).
+escapeFunction_set('WN',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataWeapons[param],textState);
+}).
+escapeFunction_set('AN',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataArmors[param],textState);
+}).
+escapeFunction_set('STN',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjName($dataStates[param],textState);
+}).
+escapeFunction_set('SKI',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataSkills[param],textState);
+}).
+escapeFunction_set('II',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataItems[param],textState);
+}).
+escapeFunction_set('WI',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataWeapons[param],textState);
+}).
+escapeFunction_set('AI',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataArmors[param],textState);
+}).
+escapeFunction_set('STI',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processEscapeCharacter_dataobjIcon($dataStates[param],textState);
+}).
+escapeFunction_set('V',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processSubtext($gameVariables.value(param),textState);
+}).
+escapeFunction_set('P',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processSubtext(this.partyMemberName(param),textState);
+}).
+escapeFunction_set('N',function f(code,textState){
+	const param=this.obtainEscapeParam(textState);
+	return this.processSubtext(this.actorName(param),textState);
+}).
+escapeFunction_set('G',function f(code,textState){
+	return this.processSubtext(TextManager.currencyUnit,textState);
+}).
 escapeFunction_set('n',function f(code,textState){
+	--textState.index;
 	return this.processNewLine(textState);
 }).
 escapeFunction_set('f',function f(code,textState){
+	--textState.index;
 	return this.processNewPage(textState);
 }).
 escapeFunction_set('\\',function f(code,textState){
@@ -7970,6 +8102,7 @@ new cfc(Window_Base.prototype).addBase('convertEscapeCharacters',function f(text
 	return func?arguments[1]+func(this,arguments):arguments[0];
 },[
 {
+/*
 IN:(self,argv)=>{
 	return $dataItems[argv[4]]&&$dataItems[argv[4]].name;
 },
@@ -8000,6 +8133,7 @@ N:(self,argv)=>{
 P:(self,argv)=>{
 	return self.partyMemberName(parseInt(argv[4]));
 }, // party member name
+*/
 }, // 0: func tbl
 ]).addBase('processCharacter',function f(textState){
 	const chr=textState.text[textState.index];
