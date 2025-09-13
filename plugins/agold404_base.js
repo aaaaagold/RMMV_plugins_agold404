@@ -864,7 +864,11 @@ addBase('drawActorP_common',function(valColor,gaugeColor1,gaugeColor2,valRate,tx
 	this.drawText(txt,x,y,this.drawActorP_defaultTxtWidth.apply(this,arguments));
 	this.drawCurrentAndMax(valCurr,valMax,x,y,width,valColor,normalColor);
 }).
+addBase('isActorHpHidden',function f(actor){
+	return false;
+}).
 addBase('drawActorHp',function(actor,x,y,width){
+	if(this.isActorHpHidden(actor)) return;
 	return this.drawActorP_common(
 		this.hpColor(actor),
 		this.hpGaugeColor1(),this.hpGaugeColor2(),
@@ -872,7 +876,11 @@ addBase('drawActorHp',function(actor,x,y,width){
 		actor,x,y,width
 	);
 }).
+addBase('isActorMpHidden',function f(actor){
+	return false;
+}).
 addBase('drawActorMp',function(actor,x,y,width){
+	if(this.isActorMpHidden(actor)) return;
 	return this.drawActorP_common(
 		this.mpColor(actor),
 		this.mpGaugeColor1(),this.mpGaugeColor2(),
@@ -880,7 +888,26 @@ addBase('drawActorMp',function(actor,x,y,width){
 		actor,x,y,width,
 	);
 }).
+addBase('isActorTpHidden',function f(actor){
+	return false;
+}).
+addBase('drawActorTp',function(actor,x,y,width){
+	if(this.isActorTpHidden(actor)) return;
+	return this.drawActorP_common(
+		this.tpColor(actor),
+		this.tpGaugeColor1(),this.tpGaugeColor2(),
+		actor.tpRate(),TextManager.tpA,actor.tp,actor.mtp,
+		actor,x,y,width,
+	);
+}).
 getP;
+Object.defineProperties(Game_BattlerBase.prototype,{
+	mtp:{
+		get:function(){
+			return this.maxTp();
+		},configurable:true,
+	},
+});
 //
 new cfc(Window_Help.prototype).addBase('setText',function f(text,forceUpdate,out_textState){
 	if(this.setText_condOk(text,forceUpdate)) return this.setText_doUpdate(text,out_textState);
