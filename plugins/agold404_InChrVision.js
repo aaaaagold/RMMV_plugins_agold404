@@ -41,6 +41,11 @@
  * <onNondetectedEval />
  * specify what to do (by eval() ) if changing from detecting a target to not detecting a target
  * 
+ * <blockedByEventEval>
+ * evt=>true
+ * </blockedByEventEval>
+ * specify a function for judging if an event blocks the vision.
+ * 
  * selfSwitch=A,B,C,D,...
  * specify what self-switches will be turned on when detecting a target
  * 
@@ -127,6 +132,7 @@ new cfc(Game_Character.prototype).addBase('inVision_getAll',function f(){
 		if(line==="<shapeDraw>") x=this._inVision_parseFromRaw_shapeDraw(rtv,lines,x+1);
 		else if(line==="<shapeEval>") x=this._inVision_parseFromRaw_shapeEval(rtv,lines,x+1);
 		else if(line==="<targetsEval>") x=this._inVision_parseFromRaw_targetsEval(rtv,lines,x+1);
+		else if(line==="<blockedByEventEval>") x=this._inVision_parseFromRaw_blockedByEventEval(rtv,lines,x+1);
 		else if(line==="<detectedEval>") x=this._inVision_parseFromRaw_detectedEval(rtv,lines,x+1);
 		else if(line==="<nondetectedEval>") x=this._inVision_parseFromRaw_nondetectedEval(rtv,lines,x+1);
 		else if(line==="<onDetectedEval>") x=this._inVision_parseFromRaw_onDetectedEval(rtv,lines,x+1);
@@ -195,6 +201,11 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 }).addBase('_inVision_parseFromRaw_targetsEval',function f(rtv,lines,strt){
 	const ende=this._inVision_parseFromRaw_common(rtv,lines,strt,"targetsEval");
 	rtv["<targetsEval>"]=rtv["<targetsEval>"].join('\n');
+	return ende;
+}).
+addBase('_inVision_parseFromRaw_blockedByEventEval',function f(rtv,lines,strt){
+	const ende=this._inVision_parseFromRaw_common(rtv,lines,strt,"blockedByEventEval");
+	rtv["<blockedByEventEval>"]=rtv["<blockedByEventEval>"].join('\n');
 	return ende;
 }).addBase('_inVision_parseFromRaw_detectedEval',function f(rtv,lines,strt){
 	const ende=this._inVision_parseFromRaw_common(rtv,lines,strt,"detectedEval");
@@ -283,7 +294,11 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 				for(let x=x1;x!==x0;x-=dx1){
 					const Y=(x-x0)/dx*dy+y1;
 					const j0=Math.floor(Y),j1=Math.ceil(Y);
-					for(let y=j0;y<=j1;++y) if(blockedRs.uniqueHas($gameMap.regionId($gameMap.roundX(x),$gameMap.roundY(y)))){ blocked=true; break; }
+					const roundX=$gameMap.roundX(x);
+					for(let y=j0;y<=j1;++y){
+						const roundY=$gameMap.roundY(y);
+						if(blockedRs.uniqueHas($gameMap.regionId(roundX,roundY))||this._inVision_isBlockedByEventsAt(inChrVision,roundX,roundY)){ blocked=true; break; }
+					}
 					if(blocked) break;
 				}
 			}
@@ -291,7 +306,11 @@ new Set(["<shapeDraw>","<shapeEval>","<targetsEval>","<detectedEval>",]), // 0: 
 				for(let y=y1;y!==y0;y-=dy1){
 					const X=(y-y0)/dy*dx+x1;
 					const i0=Math.floor(X),i1=Math.ceil(X);
-					for(let x=i0;x<=i1;++x) if(blockedRs.uniqueHas($gameMap.regionId($gameMap.roundX(x),$gameMap.roundY(y)))){ blocked=true; break; }
+					const roundY=$gameMap.roundY(y);
+					for(let x=i0;x<=i1;++x){
+						const roundX=$gameMap.roundX(x);
+						if(blockedRs.uniqueHas($gameMap.regionId(roundX,roundY))||this._inVision_isBlockedByEventsAt(inChrVision,roundX,roundY)){ blocked=true; break; }
+					}
 					if(blocked) break;
 				}
 			}
@@ -333,7 +352,12 @@ arr=>{
 	}
 	return rtv;
 }, // to chr objs
-]).addBase('_inVision_doDetectedEval',function f(detecteds,s){
+]).
+addBase('_inVision_isBlockedByEventsAt',function f(inChrVision,x,y){
+	if(!inChrVision['<blockedByEventEval>']) return false;
+	return $gameMap.eventsXyNt(x,y).some(EVAL.call(this,inChrVision['<blockedByEventEval>']));
+}).
+addBase('_inVision_doDetectedEval',function f(detecteds,s){
 	eval(s);
 }).addBase('_inVision_getBlockedRs',function f(inChrVision){
 	return inChrVision.blockedR&&inChrVision.blockedR.match(f.tbl[0]).map(Number)||[];
