@@ -19,6 +19,9 @@
  * <RandomTotalPointsOnSomeParams>
  * {
  *  "total":[min,max],
+ *  "ratio":{
+ *    "atk":5
+ *  },
  *  "params":["atk","def", ... etc. ]
  * }
  * </RandomTotalPointsOnSomeParams>
@@ -67,6 +70,7 @@ addBase('randomEquipParams_format1_evalSetting',function f(dataobj,i,arr){
 	}
 	if(obj.total&&obj.params){
 		if(!dataobj.params) dataobj.params=[];
+		if(!obj.ratio) obj.ratio={};
 		dataobj.params.randomEquipParams_format1=obj;
 	}
 },t).
@@ -101,14 +105,17 @@ addBase('randomEquipParams_createNew_format1',function f(item){
 	let pt=~~rndPt;
 	const randResInfo={pt:pt};
 	const paramDsts=info.params;
+	const ratio=info.ratio;
 	if(pt<0){ while(pt++){
 		const sel=paramDsts.rnd1();
 		const key=useDefaultIfIsNaN(DataManager.paramShortNameToId(sel),sel);
-		--paramVals[key];
+		const ratio1=(sel in ratio)?ratio[sel]:1;
+		paramVals[key]-=ratio1;
 	} }else{ while(pt--){
 		const sel=paramDsts.rnd1();
 		const key=useDefaultIfIsNaN(DataManager.paramShortNameToId(sel),sel);
-		++paramVals[key];
+		const ratio1=(sel in ratio)?ratio[sel]:1;
+		paramVals[key]+=ratio1;
 	} }
 	
 	const overwriteInfo={
