@@ -13,10 +13,29 @@
  *  ...
  * ]>
  * 
+ * or use
+ * <skillTreeEval> 
+ * [
+ *   [
+ *     {
+ *       "skillId":skillId,
+ *       "cond":undefined,
+ *       "learningCallback":callbackFunc,
+ *       "connection_lines":0,
+ *       "prerequisite":undefined, // if not fulfill, the skill is hidden.
+ *     }, // col
+ *       // next col
+ *   ], // row
+ *     // next row
+ * ]
+ * </skillTreeEval>
+ * which is `eval()`-ed at the game start
+ * 
  * cond: text for condition evaluate using eval()
  * use 'a' or 'actor' to represent the current actor.
  * 
  * callback: text for callback evaluate using eval() after the skill is learnt
+ * or a number to indicate how many points will be consumed
  * 
  * connection_lines: the lines drew
  *   8
@@ -26,6 +45,36 @@
  *   8
  * 4  16
  *   2
+ * drawn at the right side of the skill
+ * 
+ * 
+ * 
+ * @param UnlearnableSkillReplace
+ * @type number
+ * @text replace unlearnable skills to another skill
+ * @desc use -1 to use original setting ; use 0 to use the sub-parameters setting
+ * @default 0
+ * 
+ * @param UnlearnableSkillReplaceIcon
+ * @parent UnlearnableSkillReplace
+ * @type number
+ * @text hidden skill icon index replacement
+ * @desc use -1 to use the original icons
+ * @default 16
+ * 
+ * @param UnlearnableSkillReplaceName
+ * @parent UnlearnableSkillReplace
+ * @type text
+ * @text hidden skill name replacement
+ * @desc use empty string to show original name
+ * @default ????
+ * 
+ * @param UnlearnableSkillReplaceDescription
+ * @parent UnlearnableSkillReplace
+ * @type text
+ * @text hidden skill description replacement
+ * @desc use empty string to show original name
+ * @default ????????
  * 
  * 
  * @param ShowSkillPoint
@@ -78,7 +127,11 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_SkillTree";
 const params=PluginManager._parameters[pluginName]||{};
-params._showSkillPoint=JSON.parse(params.ShowSkillPoint);
+params._unlearnableSkillReplace=useDefaultIfIsNaN(params.UnlearnableSkillReplace-0,0);
+params._unlearnableSkillReplaceIcon=useDefaultIfIsNaN(params.UnlearnableSkillReplaceIcon-0,16);
+params._unlearnableSkillReplaceName=params.UnlearnableSkillReplaceName; if(params._unlearnableSkillReplaceName===undefined) params._unlearnableSkillReplaceName="????";
+params._unlearnableSkillReplaceDescription=params.UnlearnableSkillReplaceDescription; if(params._unlearnableSkillReplaceDescription===undefined) params._unlearnableSkillReplaceDescription="????????";
+params._showSkillPoint=JSON.parse(params.ShowSkillPoint||"true");
 params._skillPointEvalText=params.SkillPointEvalText||"''";
 params._skillPointTextX=params.SkillPointTextX-0||0;
 params._skillPointTextY=params.SkillPointTextY-0||0;
@@ -92,10 +145,46 @@ const itemAct_learn="學習";
 const itemAct_cancel="取消";
 
 
-new cfc(Scene_Boot.prototype).add('start_before',function f(){
+const gbb=Game_BattlerBase;
+const kwps=['/skillTreeEval',];
+const kwpts=kwps.map(kw=>[kw,'TRAIT_'+kw]);
+kwpts._key2content={};
+kwpts.forEach((info,i,a)=>{
+	if(info[0][0]==='/'){
+		// is xml style
+		const pure=info[0].slice(1);
+		info[1]=info[1].slice(0,info[1].length-info[0].length)+pure;
+		info._xmlMark=["<"+pure+">","<"+info[0]+">"];
+		info[0]=pure;
+	}
+	gbb.addEnum(info[1]);
+	info.push(gbb[info[1]]); // [2]
+	if(info._xmlMark){
+		const immKey=info[1]+'-immutable'; // i.e. always being evaluated to the same result
+		gbb.addEnum(immKey);
+		info.push([gbb[immKey],immKey]);
+	}else info.push(undefined);
+	a._key2content[info[0]]=info;
+});
+
+
+t=[
+undefined,
+params,
+window.isTest(),
+kwpts, // 3: keyNames: [ [note,TRAIT_*,dataCode,[immDataCode,immTRAIT_*]] , ... ]
+/[\t\n\r ]+/g,
+arr=>arr&&arr.length||0, // 5: makeItemList_tree max width
+(a,b)=>a.dataId-b.dataId, // 6: cmp3 for traits
+];
+
+
+new cfc(Scene_Boot.prototype).
+add('start_before',function f(){
 	this.start_before_skillTree();
 	return f.ori.apply(this,arguments);
-}).add('start_before_skillTree',function f(actrIdx,classIdx){
+}).
+add('start_before_skillTree',function f(actrIdx,classIdx){
 	let idx;
 	
 	idx=actrIdx;
@@ -106,10 +195,66 @@ new cfc(Scene_Boot.prototype).add('start_before',function f(){
 	if(idx===undefined) $dataClasses.forEach(f.tbl[0],this);
 	else if($dataClasses[idx]) f.tbl[0].call(this,$dataClasses[idx]);
 },[
-dataobj=>{ const meta=dataobj&&dataobj.meta; if(!meta) return;
+function(dataobj){ const meta=dataobj&&dataobj.meta; if(!meta) return;
 	dataobj.skillTree=meta.skillTree?JSON.parse(meta.skillTree):[];
+	this.skillTree_convertArrayToObjectXy(dataobj.skillTree);
 },
-]);
+]).
+add('modTrait1',function f(dataobj,i,arr){
+	const rtv=f.ori.apply(this,arguments);
+	this.skillTree_evalSetting.apply(this,arguments);
+	return rtv;
+}).
+addBase('skillTree_evalSetting',function f(dataobj,i,arr){
+	const meta=dataobj&&dataobj.meta; if(!meta) return;
+	const traits=dataobj.traits||(dataobj.traits=[]);
+	
+	for(let arr=f.tbl[3],x=arr.length;x--;){
+		const dataCode=arr[x][2];
+		const immInfo=arr[x][3];
+		const xmlMark=arr[x]._xmlMark;
+		if(xmlMark){
+			const codes=window.getXmlLikeStyleContent(dataobj.note,xmlMark);
+			for(let ci=0,cs=codes.length,tmp;ci<cs;++ci){
+				const lines=codes[ci];
+				const trait={code:dataCode,dataId:0,value:EVAL.call(this,lines.join('\n')),};
+				if(trait.value){
+					this.skillTree_convertArrayToObjectXy(trait.value);
+					traits.push(trait);
+				}
+			}
+			continue;
+		}
+		const noteKey=arr[x][0];
+	}
+	
+	return;
+},t).
+addBase('skillTree_convertArrayToObjectXy',function f(m){
+	if(m) for(let y=m.length;y--;) if(m[y]) for(let x=m[y].length;x--;) m[y][x]=this.skillTree_convertArrayToObject1(m[y][x]);
+}).
+addBase('skillTree_convertArrayToObject1',function f(info){
+	const rtv={};
+	if(!isNaN(info)){
+		rtv.skillId=info;
+		return rtv;
+	}
+	rtv.skillId=info[0];
+	rtv.cond=info[1];
+	rtv.learningCallback=info[2];
+	rtv.connection=info[3];
+	rtv.prerequisite=info[4];
+	Object.assign(rtv,info);
+	return rtv;
+}).
+getP;
+
+new cfc(Game_BattlerBase.prototype).
+addBase('skillTree_getTraits',function f(){
+	return this.traits(f.tbl[3]._key2content.skillTreeEval[2]).sort(f.tbl[6]);
+},t).
+getP;
+
 
 new cfc(Scene_ItemBase.prototype).add('create_tunePositions',function f(){
 	this._isInitingItemActionWindow=false;
@@ -155,7 +300,7 @@ function(prefixItem){ this.addCommand.apply(this,prefixItem); }, // 1: forEach p
 ]);
 { const p=Window_SkillList.prototype;
 const pp=p.__proto__;
-let t=[pp];
+let ttt=[pp];
 new cfc(p).add('isTree',function f(){
 	return this._stypeId==="ext-技能樹";
 }).add('initialize',function f(){
@@ -172,7 +317,7 @@ new cfc(p).add('isTree',function f(){
 }):(function f(){
 	if(this.isTree() && this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconWidth);
 	return f.ori.apply(this,arguments);
-})),t,true).add('itemHeight',(p.itemHeight===pp.itemHeight?(function f(){
+})),ttt,true).add('itemHeight',(p.itemHeight===pp.itemHeight?(function f(){
 	if(this.isTree()){
 		if(this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconHeight);
 		return this.lineHeight()<<1;
@@ -184,23 +329,60 @@ new cfc(p).add('isTree',function f(){
 		return this.lineHeight()<<1;
 	}
 	return f.ori.apply(this,arguments);
-})),t,true).add('includes',function f(){
+})),ttt,true).add('includes',function f(){
 	return this.isTree() || f.ori.apply(this,arguments);
 }).add('drawItem',function f(){
 	return this.isTree()?this.drawItem_tree.apply(this,arguments):f.ori.apply(this,arguments);
 }).add('drawItem_tree',function f(index){
-	const skill = this._data[index];
+	const skill=this._data[index];
 	if(skill){
 		const costHeight = this.costHeight();
 		const rect=this.itemRect(index);
 		rect.width-=this.textPadding();
 		this.changePaintOpacity(!this._actor||this._actor.hasSkill(skill.id));
-		this.drawItemName(skill, rect.x, rect.y, rect.width);
+		
+		this.drawItemName(this.skillTree_getHiddenSkillReplacement(index), rect.x, rect.y, rect.width);
+		
 		if(!this.isSimpleTreeMode()) this.drawSkillCost(skill, rect.x, rect.y + costHeight, rect.width);
 		this.changePaintOpacity(true);
 	}
 	return skill;
-},undefined,true,false).add('costHeight',function f(){
+},undefined,true,false).
+addBase('skillTree_isHidden',function f(idx){
+	if(!this.isTree()) return false;
+	const info=this._skillTree_learnMeta[idx]; if(!info||!$dataSkills[info.id]) return true;
+	const prerequisite=info.prerequisite;
+	let condOk=true;
+	const w=this;
+	const a=w._actor; if(!a) return true;
+	if(a.hasSkill(info.id)) return false;
+	const self=a;
+	const actor=a;
+	if(prerequisite instanceof Array){
+		return prerequisite.some(f.tbl[0],a);
+	}else{
+		return prerequisite!==undefined&&eval(prerequisite);
+	}
+},[
+function(skillId){ return !this.hasSkill(skillId); }, // 0: some pre-skills not learnt
+]).
+addBase('skillTree_getHiddenSkillReplacement',function f(idx){
+	const skill=this.skillTree_item_bypassHiddenSkillReplacement(idx);
+	if(!skill||!this.skillTree_isHidden(idx)) return skill;
+	let rtv=$dataSkills[f.tbl[1]._unlearnableSkillReplace]; if(rtv) return rtv;
+	const sc=SceneManager._scene||{};
+	let m=sc._skillTree_hiddenSkillReplacements; if(!m) m=sc._skillTree_hiddenSkillReplacements=new Map();
+	rtv=m.get(skill);
+	if(!rtv){
+		rtv=Object.assign({},skill);
+		if(f.tbl[1]._unlearnableSkillReplaceIcon!==-1) rtv.iconIndex=f.tbl[1]._unlearnableSkillReplaceIcon;
+		if(f.tbl[1]._unlearnableSkillReplaceName) rtv.name=f.tbl[1]._unlearnableSkillReplaceName;
+		if(f.tbl[1]._unlearnableSkillReplaceDescription) rtv.description=f.tbl[1]._unlearnableSkillReplaceDescription;
+		m.set(skill,rtv);
+	}
+	return rtv;
+},t).
+add('costHeight',function f(){
 	return this.lineHeight();
 },undefined,true,false).add('makeItemList',function f(){
 	this._maxCols=undefined;
@@ -215,10 +397,14 @@ new cfc(p).add('isTree',function f(){
 		if(arrv.length) arrv.push(undefined);
 		arrv.concat_inplace(classObj.skillTree);
 	}
+	for(let arr=this._actor.skillTree_getTraits(),x=arr.length;x--;){
+		if(arrv.length) arrv.push(undefined);
+		arrv.concat_inplace(arr[x].value);
+	}
 	this._skillTree_learnMeta=[];
 	if(!arrv||!arrv.length) return rtv;
 	const ys=arrv.length;
-	const xs=Math.max.apply(null,arrv.map(f.tbl[0]));
+	const xs=Math.max.apply(null,arrv.map(f.tbl[5]));
 	this._maxCols=xs;
 	for(let y=0;y!==ys;++y){
 		for(let x=0;x!==xs;++x){
@@ -228,9 +414,7 @@ new cfc(p).add('isTree',function f(){
 		}
 	}
 	return rtv;
-},[
-arr=>arr&&arr.length||0,
-]).add('maxCols',function f(){
+},t).add('maxCols',function f(){
 	return this._maxCols===undefined?f.tbl[0]:this._maxCols;
 },[
 4,
@@ -239,14 +423,29 @@ arr=>arr&&arr.length||0,
 	if(!arrv) return;
 	const info=arrv[y]&&arrv[y][x];
 	let id=info,cond,consume,connect,condFailMsg;
+	let prerequisite;
 	if(info instanceof Array){
 		id=info[0];
 		cond=(info[1] instanceof Array)?info[1][0]:info[1];
 		consume=info[2];
 		connect=(typeof info[3]==='string')?EVAL.call(this,info[3]):info[3];
 		condFailMsg=(info[1] instanceof Array)?info[1][1]:info[4];
+	}else if(info&&isNaN(info)){
+		id=info.skillId;
+		cond=(info.cond instanceof Array)?info.cond[0]:info.cond;
+		consume=info.learningCallback;
+		connect=(typeof info.connection==='string')?EVAL.call(this,info.connection):info.connection;
+		condFailMsg=(info.cond instanceof Array)?info.cond[1]:info.condFailMsg;
+		prerequisite=info.prerequisite;
 	}
-	return {id:id,cond:cond,consume:consume,connect:connect,condFailMsg:condFailMsg,};
+	return ({
+		id:id,
+		cond:cond,
+		consume:consume,
+		connect:connect,
+		condFailMsg:condFailMsg,
+		prerequisite:prerequisite,
+	});
 }).add('skillTree_getPrevSkillIdx',function f(idx){
 	return; // deprecated: lines are not to be linked automatically
 	const arrv=this._skillTree; if(!arrv) return;
@@ -284,7 +483,7 @@ arr=>arr&&arr.length||0,
 		ctx.lineWidth=linkWidth;
 		ctx.strokeStyle=linkColor;
 	for(let idx=this._data.length;idx-->0;){
-		const item=this.item(idx);
+		const item=this.skillTree_item_bypassHiddenSkillReplacement(idx);
 		const info=this._skillTree_learnMeta[idx]; if(!info||!info.connect) continue;
 		const infoU=this._skillTree_learnMeta[idx-maxCols];
 		const infoD=this._skillTree_learnMeta[idx+maxCols];
@@ -379,7 +578,7 @@ if(0){
 		}
 	}
 if(0)	for(let idx=this._data.length;idx--;){
-		const item=this.item(idx); if(!item) continue;
+		const item=this.skillTree_item_bypassHiddenSkillReplacement(idx); if(!item) continue;
 		const prevIdx=this.skillTree_getPrevSkillIdx(idx);
 		if(!(prevIdx>=0)) continue;
 		const rect=this.itemRect(idx);
@@ -408,7 +607,7 @@ if(0)	for(let idx=this._data.length;idx--;){
 	const rtv=f.ori.apply(this,arguments);
 	this.update_switchSimpleTreeMode();
 	return rtv;
-})),t,true).addBase('update_switchSimpleTreeMode',function f(){
+})),ttt,true).addBase('update_switchSimpleTreeMode',function f(){
 	if(!this.isTree()||!Input.isTriggered('control')) return;
 	this._isSimpleTreeMode^=1;
 	this.updateCursor();
@@ -422,7 +621,19 @@ if(0)	for(let idx=this._data.length;idx--;){
 	const rtv=f.ori.apply(this,arguments);
 	this.refreshItemNameWindow();
 	return rtv;
-})),t).addBase('refreshItemNameWindow',function f(){
+})),ttt).
+addRoof('item',function f(idx){
+	if(this._skillTree_isBypassHiddenSkillReplacement) return f.ori.apply(this,arguments);
+	return this.skillTree_getHiddenSkillReplacement(this.index());
+}).
+addBase('skillTree_item_bypassHiddenSkillReplacement',function f(idx){
+	const bak=this._skillTree_isBypassHiddenSkillReplacement;
+	this._skillTree_isBypassHiddenSkillReplacement=true;
+	const rtv=this.item.apply(this,arguments);
+	this._skillTree_isBypassHiddenSkillReplacement=bak;
+	return rtv;
+}).
+addBase('refreshItemNameWindow',function f(){
 	const wnd=this._itemNameWindow,item=this.item(); if(!wnd) return;
 	if(this.isSimpleTreeMode() && this.isTree() && item){
 		wnd.show();
@@ -477,7 +688,7 @@ new cfc(Scene_Skill.prototype).add('initialize',function f(){
 	this.create_addLink();
 	return rtv;
 }).addBase('create_itemNameWindow',function f(){
-	const wnd=this._itemActionWindow=new Window_Help(2);
+	const wnd=this._itemNameWindow=new Window_Help(2);
 	wnd.hide();
 	this._itemWindow.addChild(wnd);
 	this._itemWindow._itemNameWindow=wnd;
@@ -518,47 +729,69 @@ new Set([
 [itemAct_learn,"learn","itemActionWindow_canLearn"],
 [itemAct_cancel,"cancel"],
 ], // 1: cmds
-]).add('itemActionWindow_hasSkill',function f(item,isIncludingTraits){
+]).
+addBase('itemActionWindow_hasSkill',function f(item,isIncludingTraits){
 	const w=this._itemWindow;
-	return w._actor && (w._actor._skills.uniqueHas(item&&item.id) || (isIncludingTraits&&w._actor.hasSkill(item&&item.id)));
-}).add('itemActionWindow_canUse',function f(idx){
+	return w._actor && (w._actor.hasSkill_self(item&&item.id) || (isIncludingTraits&&w._actor.hasSkill_trait(item&&item.id)));
+}).
+addBase('itemActionWindow_canUse',function f(idx){
 	const w=this._itemWindow;
-	const item=w.item(idx);
+	const item=w.skillTree_item_bypassHiddenSkillReplacement(idx);
 	return this.itemActionWindow_hasSkill(item) && w._actor.canUse(item);
-}).add('itemActionWindow_canLearn',function f(idx,ignoreIsTree){
+}).
+addBase('itemActionWindow_canLearn',function f(idx,ignoreIsTree){
+	if(!this.itemActionWindow_canShow.apply(this,arguments)) return false;
 	const w=this._itemWindow;
 	if(!ignoreIsTree && !w.isTree()) return false;
 	if(idx===undefined) idx=w.index();
 	const prevIdx=w.skillTree_getPrevSkillIdx(idx);
-	const item=w.item(idx); if(!item) return false;
+	const item=w.skillTree_item_bypassHiddenSkillReplacement(idx); if(!item) return false;
 	const cond=w._skillTree_learnMeta[idx].cond;
 	let condOk=true;
-	const a=w._actor;
+	const a=w._actor; if(!a) return false;
+	if(a.hasSkill(item.id)) return false;
 	const self=a;
 	const actor=a;
 	{ const w=undefined; {
 		const res=eval(cond&&(cond instanceof Array)?cond[0]:cond); // "condJs" or ["condJs","condFailMsg"]
 		condOk=res;
 	} }
-	return item && w._actor && (
+	return w._actor && (
 		condOk ||
-		(condOk==null&&( prevIdx===undefined || !w.item(prevIdx) || this.itemActionWindow_hasSkill(w.item(prevIdx)) ))
+		(condOk==null&&(
+			prevIdx===undefined || 
+			!w.skillTree_item_bypassHiddenSkillReplacement(prevIdx) || 
+			this.itemActionWindow_hasSkill(w.skillTree_item_bypassHiddenSkillReplacement(prevIdx)) 
+		))
 	) && !this.itemActionWindow_hasSkill(item);
-}).add('itemActionWindow_ok',function f(){
-	this.actor().setLastMenuSkill(this.item());
+}).
+addBase('itemActionWindow_canShow',function f(idx,ignoreIsTree){
+	const w=this._itemWindow;
+	if(!ignoreIsTree && !w.isTree()) return false;
+	if(idx===undefined) idx=w.index();
+	return !w.skillTree_isHidden(idx);
+}).
+addBase('itemActionWindow_ok',function f(){
+	this.actor().setLastMenuSkill(this.skillTree_item_bypassHiddenSkillReplacement());
 	this.determineItem();
-}).add('itemActionWindow_learn',function f(idx){
+}).
+addBase('itemActionWindow_learn',function f(idx){
 	const w=this._itemWindow;
 	if(idx===undefined) idx=w.index();
-	const item=w.item(idx);
+	const item=w.skillTree_item_bypassHiddenSkillReplacement(idx);
 	const a=w._actor;
 	const self=a;
 	const actor=a;
 	if(item && a){
 		a.learnSkill(item.id);
 		const consume=w._skillTree_learnMeta[idx].consume;
-		if(consume){ eval(consume); }
+		if(isNaN(consume)){
+			eval(consume);
+		}else{
+			a.skillTreePoint_gain(-consume);
+		}
 		this.refreshInfoWindows();
+		this._itemActionWindow.refresh();
 	}
 	this._itemActionWindow.activate();
 }).add('itemActionWindow_cancel',function f(){
@@ -594,10 +827,8 @@ new cfc(Window_SkillStatus.prototype).add('refresh_hasActor',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	if(f.tbl[1]._showSkillPoint) this.drawSkillPoint();
 	return rtv;
-},t=[
-undefined,
-params, // 1: plugin params
-]).addBase('drawSkillPoint',function f(){
+},t).
+addBase('drawSkillPoint',function f(){
 	const a=this._actor,actor=a;
 	if(!this.drawSkillPoint_condOk(a)) return -1;
 	this.resetFontSettings();
@@ -637,12 +868,15 @@ addBase('skillTree_itemSpacingY',function f(){
 getP;
 
 
-new cfc(Game_Actor.prototype).addBase('skillTreePoint_get',function f(){
+new cfc(Game_Actor.prototype).
+addBase('skillTreePoint_get',function f(){
 	return this._skillTreePoint-0||0;
-}).addBase('skillTreePoint_set',function f(val){
+}).
+addBase('skillTreePoint_set',function f(val){
 	return this._skillTreePoint=val;
-}).addBase('skillTreePoint_gain',function f(val){
-	const rtv=this.skillTreePoint_get()+val;
+}).
+addBase('skillTreePoint_gain',function f(val){
+	const rtv=this.skillTreePoint_get()+(val-0||0);
 	this.skillTreePoint_set(rtv);
 	return rtv;
 });
