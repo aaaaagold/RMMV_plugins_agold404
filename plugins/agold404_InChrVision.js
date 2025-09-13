@@ -44,7 +44,7 @@
  * selfSwitch=A,B,C,D,...
  * specify what self-switches will be turned on when detecting a target
  * 
- * blockR=id,id,id
+ * blockedR=id,id,id
  * specify what ids in R region blocks the vision
  * 
  * showHint=(any)
@@ -54,7 +54,7 @@
  * 
  * showHintCond=(cond)
  * specify wheather to vision hint with cond
- * anything besides an empty string indicates to decided by the above option ( showHint= )
+ * an empty string indicates to decided by the above option ( showHint=? )
  * needs agold404_CopyEvent.js
  * 
  * 
