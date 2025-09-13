@@ -3666,6 +3666,47 @@ addBase('refresh',function f(){
 getP;
 
 new cfc(Game_Actor.prototype).
+addBase('isLearnedSkill',function f(skillId){
+	const skills=this._skills; if(!skills) return false;
+	let cntTbl=skills._cntTbl; // skills will do `.sort()`
+	if(!cntTbl){
+		cntTbl=skills._cntTbl=new Map();
+		for(let x=skills.length;x--;) cntTbl.set(skills[x],(cntTbl.get(skills[x])|0)+1);
+	}
+	return cntTbl.has(skillId);
+}).
+addBase('learnSkill_condOk',function f(skillId){
+	return !this.isLearnedSkill(skillId);
+}).
+addBase('learnSkill_do',function f(skillId){
+	this.isLearnedSkill(skillId); // build tbl
+	{ const cntTbl=this._skills._cntTbl;
+	cntTbl.set(skillId,(cntTbl.get(skillId)|0)+1);
+	}
+	this._skills.push(skillId);
+	this._skills.sort(cmpFunc_num);
+}).
+addBase('learnSkill',function f(skillId){
+	if(this.learnSkill_condOk.apply(this,arguments)) this.learnSkill_do.apply(this,arguments);
+}).
+addBase('forgetSkill_condOk',function f(skillId){
+	return this.isLearnedSkill(skillId);
+}).
+addBase('forgetSkill_do',function f(skillId){
+	this.isLearnedSkill(skillId); // build tbl
+	const index=this._skills.indexOf(skillId);
+	if(index>=0){
+		{ const cntTbl=this._skills._cntTbl;
+		const newVal=(cntTbl.get(skillId)|0)-1;
+		if(newVal) cntTbl.set(skillId,newVal);
+		else cntTbl.delete(skillId);
+		}
+		this._skills.splice(index,1);
+	}
+}).
+addBase('forgetSkill',function f(skillId){
+	if(this.forgetSkill_condOk.apply(this,arguments)) this.forgetSkill_do.apply(this,arguments);
+}).
 addBase('_skillIds_selfLearned',function f(){
 	return this._skills||f.tbl[0];
 },[
@@ -3682,6 +3723,15 @@ addBase('skills',function f(){
 	skillIds.uniquePushContainer(this._skillIds_selfLearned());
 	skillIds.uniquePushContainer(this.skillIds_addedByTraits());
 	return skillIds.map(DataManager.arrMapFunc_idToDataobj_skill);
+}).
+addBase('hasSkill_self',function f(skillId){
+	return this.isLearnedSkill(skillId);
+}).
+addBase('hasSkill_trait',function f(skillId){
+	return this.skillIds_addedByTraits().uniqueHas(skillId);
+}).
+addBase('hasSkill',function f(skillId){
+	return this.hasSkill_self(skillId)||this.hasSkill_trait(skillId);
 }).
 getP;
 
@@ -7999,6 +8049,9 @@ addBase('onRestrict',function f(){
 	Game_BattlerBase.prototype.onRestrict.call(this);
 	this.clearActions();
 	this.removeStatesByRestriction();
+}).
+addBase('hasSkill_trait',function f(skillId){
+	return this.traitsHasId(Game_BattlerBase.TRAIT_SKILL_ADD,skillId);
 }).
 getP;
 
