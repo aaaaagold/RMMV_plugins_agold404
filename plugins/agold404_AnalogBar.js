@@ -23,42 +23,84 @@ a.ori=Window_Base;
 window[a.name]=a;
 const p=a.prototype=Object.create(a.ori.prototype);
 p.constructor=a;
-makeDummyWindowProto(p);
+makeDummyWindowProto(p); // disable _updateContents
 new cfc(p).add('contentsWidth',function(){
 	return this.width;
 }).add('contentsHeight',function(){
 	return this.height;
-});
+}). // remove padding
+add('initialize',function f(x,y,w,h){
+	const rtv=f.ori.apply(this,arguments);
+	this.initBars.apply(this,arguments);
+	return rtv;
+}).
+addBase('initBars',function f(x,y,w,h){
+	w|=0;
+	h|=0;
+	if(!(0<w&&0<h)){
+		// 0-size bar
+		this._barBackSprite=new Sprite();
+		this._barFrontSprite=new Sprite();
+		return;
+	}
+	this.addChild(
+		this._barBackSprite=new Sprite(new Bitmap(w,h)),
+	);
+	this.addChild(
+		this._barFrontSprite=new Sprite(new Bitmap(w,h)),
+	);
+	this._barBackSprite.anchor.set(1,0.5);
+	this._barFrontSprite.anchor.set(0,0.5);
+	this._barFrontSprite.x=(this._barBackSprite.x=w>>1)-w;
+}).
+addBase('setRatio',function f(r){
+	let cut=this.width*r;
+	this._barFrontSprite.setFrame(0,0,cut,this.height);
+	cut|=0;
+	this._barBackSprite.setFrame(cut,0,this.width-cut,this.height);
+}).
+getP;
 }
 
 { const p=SceneManager;
 r=Window_Base; (t=function f(){
 	if(!this.contents || this._lastFc===Graphics.frameCount) return;
 	this._lastFc=Graphics.frameCount;
-	const curr=(this.getRatio()-0).clamp(0,1)||0;
+	let curr=(this.getRatio()-0).clamp(0,1)||0;
 	if(this._lastValue===curr) return;
 	this._lastValue=curr;
+	
+	
+	if(!this._barFilled){
+		this._barFilled=true;
+		
 	this.contents.clear();
-	if(this._color01[2]) this.contents.fillRect(0, 0, this.width, this.height, this._color01[2]);
-	{
-		const context=this.contents._context;
+		
+	if(this._color01[2]) this._barBackSprite.bitmap.fillRect(0,0,this.width,this.height,this._color01[2]);
+		
+		const context=this._barFrontSprite.bitmap._context;
 		const grad=this._lastCtx===context?this._lastGrad:context.createLinearGradient(0, 0, this.width, this.height);
 		grad.addColorStop(0, this._color01[0]);
 		grad.addColorStop(1, this._color01[1]);
 		context.save();
 		context.fillStyle=grad;
-		context.fillRect(0,0, this.width*curr, this.height);
+		context.fillRect(0,0, this.width, this.height);
 		context.restore();
-		this.contents._setDirty();
+		this._barFrontSprite.bitmap._setDirty();
 		this._lastCtx=context;
 		this._lastGrad=grad;
 	}
+	
+	
+	this.setRatio(curr);
 }).ori=r.prototype.update;
 new cfc(p).add('add類比條',function f(id,afterThis,x,y,width,height,func_ratioGetter,color01,rot){
 	const sp=new Window_類比條(x,y,width,height);
 	makeDummyWindowProto(sp);
 	sp.children.map(f.tbl[0]);
-	{ const cc=sp._windowContentsSprite; cc.y=cc.x=0; f.tbl[1](cc); cc.visible=true; }
+	sp._barBackSprite.visible=true;
+	sp._barFrontSprite.visible=true;
+	//{ const cc=sp._windowContentsSprite; cc.y=cc.x=0; f.tbl[1](cc); cc.visible=true; }
 	sp.update=f.tbl[2];
 	sp.getRatio=func_ratioGetter;
 	sp._color01=color01;
