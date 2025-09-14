@@ -132,8 +132,15 @@ new cfc(p).add('initMembers',function f(){
 	this._windowHeight=undefined;
 	this._scrollTxtY_max=undefined;
 	return rtv;
-}).add('update',function f(){
-	Window_Base.prototype.update.call(this);
+}).
+addBase('processSubtext',function f(subtext,textState){
+	return Window_Base.prototype.processSubtext.apply(this,arguments);
+}).
+addBase('getPrevTextInfoStack',function f(textState){
+	return Window_Base.prototype.getPrevTextInfoStack.apply(this,arguments);
+}).
+addBase('update',function f(){
+	Window_Base.prototype.update.apply(this,this,arguments);
 	this.redrawtxt();
 	this.processInputs();
 }).add('_update_calcHeights',function f(arr){
