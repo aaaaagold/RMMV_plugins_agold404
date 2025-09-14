@@ -372,7 +372,7 @@ addBase('randomEquipParams_onItemOk',function f(){
 	this._layeredItemWindow.setRootItem(this._itemWindow.item());
 	const refwnd=this._itemWindow;
 	const refw=refwnd.width;
-	const w=refw-(refw>>2);
+	const w=refw-(refw>>3);
 	const h=refwnd.height;
 	if(wnd.width!==w) wnd.width=w;
 	if(wnd.height!==h) wnd.height=h;
