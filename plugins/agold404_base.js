@@ -758,6 +758,7 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	textState.height=this.calcTextHeight(textState,false);
 	textState.outOfBound_x=false;
 	const fontSettings=textState.isMeasureOnly&&this.cloneFontSettings();
+	const dbg_text=textState.text;
 	if(!textState.isMeasureOnly) this.resetFontSettings(); // other plugins use this. // it should be called before calling this func. thus it is internal testing and the settings should not be changed.
 	for(const len=textState.text.length;textState.index<len;) this.processCharacter(textState);
 	if(textState.isMeasureOnly) this.applyFontSettings(fontSettings);
@@ -783,7 +784,7 @@ addBase('processNormalCharacter',function f(textState){
 	if(!textState.isMeasureOnly) this.contents.drawText(c,textState.x,textState.y,w*2,textState.height,undefined,textState);
 	textState.x+=w;
 	if(textState.x>=this.contents.width) textState.outOfBound_x=true; // == for some chars might be widen.
-	textState.right=Math.max(textState.right,textState.x);
+	textState.right=Math.max(useDefaultIfIsNaN(textState.right,textState.x),textState.x);
 	return w;
 }).addBase('measure_drawTextEx',function f(text, x, y, _3, _4, out_textState){
 	// reserved for auto-line-break or something automatically changed by window size
@@ -1160,6 +1161,12 @@ addBase('processSubtext',function f(subtext,textState){
 	textState.index=oriIdx;
 	textState.text=oriTxt;
 }).
+addBase('setPrevTextInfoStack',function f(textState,stk){
+	textState.prevTextInfoStack=stk;
+}).
+addBase('getPrevTextInfoStack',function f(textState){
+	return; // not using it.
+}).
 addBase('processEscapeCharacter_dataobjName',function f(item,textState){
 	if(!item) return;
 	return this.processSubtext(item.name,textState);
@@ -1310,7 +1317,41 @@ new cfc(Window_Message.prototype).addBase('processEscapeCharacter',function(code
 	const func=Window_Message.escapeFunction_get(code);
 	if(func instanceof Function) return func.apply(this,arguments);
 	return Window_Base.prototype.processEscapeCharacter.apply(this,arguments);
-});
+}).
+addBase('getPrevTextInfoStack',function f(textState){
+	let rtv=textState.prevTextInfoStack; if(!rtv) rtv=textState.prevTextInfoStack=[];
+	return rtv;
+}).
+addBase('popPrevTextInfoStack',function f(textState){
+	const stk=this.getPrevTextInfoStack(textState);
+	const back=stk.pop();
+	if(back){
+		textState.text=back.text;
+		textState.index=back.index;
+	}else{
+		textState.index=textState.text.length;
+	}
+	return back;
+}).
+addBase('processSubtext',function f(subtext,textState){
+	if(textState.isMeasureOnly) return Window_Base.prototype.processSubtext.apply(this,arguments);
+	this.getPrevTextInfoStack(textState).push({
+		text:textState.text,
+		index:textState.index,
+	});
+	textState.index=0;
+	textState.text=subtext;
+}).
+addBase('isEndOfText',function f(textState){
+	return !(textState.index<textState.text.length);
+}).
+add('isEndOfText',function f(textState){
+	do{
+		if(!f.ori.apply(this,arguments)) return false;
+	}while(this.popPrevTextInfoStack(textState));
+	return f.ori.apply(this,arguments);
+}).
+getP;
 new cfc(Window_Message).addBase('getEscapeCodePattern',function f(){
 	return Window_Base[f._funcName]();
 }).addBase('escapeFunction_set',function f(code,func){
@@ -5140,8 +5181,10 @@ new cfc(Bitmap.prototype).addBase('mirror_h',function f(forceRegen){
 });
 
 
-new cfc(Window_Base.prototype).addBase('duplicateTextState',(textState,assignProperties)=>{
-	return Object.assign({},textState,assignProperties);
+new cfc(Window_Base.prototype).addBase('duplicateTextState',function(textState,assignProperties){
+	const rtv=Object.assign({},textState,assignProperties);
+	const stk=this.getPrevTextInfoStack(rtv); if(stk&&stk===this.getPrevTextInfoStack(textState)) this.setPrevTextInfoStack(rtv,stk.slice());
+	return rtv;
 });
 
 
