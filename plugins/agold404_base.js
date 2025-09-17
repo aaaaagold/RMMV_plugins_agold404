@@ -759,7 +759,10 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	textState.outOfBound_x=false;
 	const fontSettings=textState.isMeasureOnly&&this.cloneFontSettings();
 	const dbg_text=textState.text;
-	if(!textState.isMeasureOnly) this.resetFontSettings(); // other plugins use this. // it should be called before calling this func. thus it is internal testing and the settings should not be changed.
+	if(!textState.isMeasureOnly){
+		if(textState.fontSettings) this.applyFontSettings(textState.fontSettings);
+		else this.resetFontSettings(); // other plugins use this. // it should be called before calling this func. thus it is internal testing and the settings should not be changed.
+	}
 	for(const len=textState.text.length;textState.index<len;) this.processCharacter(textState);
 	if(textState.isMeasureOnly) this.applyFontSettings(fontSettings);
 	return textState.x-x;
@@ -1156,8 +1159,12 @@ addBase('obtainEscapeParam',function f(textState){
 addBase('processSubtext',function f(subtext,textState){
 	const oriTxt=textState.text;
 	const oriIdx=textState.index;
+	const oriFontSettings=textState.fontSettings;
 	textState.index=0;
+	const fontSettings=textState.fontSettings=this.cloneFontSettings();
 	this.drawTextEx(subtext+'',undefined,undefined,undefined,undefined,textState);
+	this.applyFontSettings(fontSettings);
+	textState.fontSettings=oriFontSettings;
 	textState.index=oriIdx;
 	textState.text=oriTxt;
 }).
@@ -1328,6 +1335,7 @@ addBase('popPrevTextInfoStack',function f(textState){
 	if(back){
 		textState.text=back.text;
 		textState.index=back.index;
+		this.applyFontSettings(back.fontSettings);
 	}else{
 		textState.index=textState.text.length;
 	}
@@ -1338,9 +1346,10 @@ addBase('processSubtext',function f(subtext,textState){
 	this.getPrevTextInfoStack(textState).push({
 		text:textState.text,
 		index:textState.index,
+		fontSettings:this.cloneFontSettings(),
 	});
 	textState.index=0;
-	textState.text=subtext;
+	textState.text=subtext+'';
 }).
 addBase('isEndOfText',function f(textState){
 	return !(textState.index<textState.text.length);
