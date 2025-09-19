@@ -852,56 +852,95 @@ new cfc(Window_Base.prototype).addBase('lineHeight',function f(){
 },['']);
 //
 new cfc(Window_Base.prototype).
+addBase('drawGauge_defaultAlign',function f(){
+	return f.tbl[0];
+},[
+'btm', // top
+]).
+addBase('drawGauge_defaultHeight',function f(){
+	return f.tbl[0];
+},[
+6,
+]).
+addBase('drawGauge_defaultPadding',function f(){
+	return f.tbl[0];
+},[
+2,
+]).
+addBase('drawGauge_getGaugeY',function f(y,height,align,padding){
+	return this[f.tbl[0][align]||f.tbl[0]._default].apply(this,arguments);
+},[
+{
+btm:'drawGauge_getGaugeY_btm',
+top:'drawGauge_getGaugeY_top',
+_default:'drawGauge_getGaugeY_btm',
+}, // 0: mapping
+]).
+addBase('drawGauge_getGaugeY_btm',function f(y,height,align,padding){
+	return y+this.lineHeight()-padding-height;
+}).
+addBase('drawGauge_getGaugeY_top',function f(y,height,align,padding){
+	return y+padding;
+}).
+addBase('drawGauge',function(x,y,width,height,rate,color1,color2,align,padding){
+	align=align||this.drawGauge_defaultAlign();
+	height-=0; if(isNaN(height)) height=this.drawGauge_defaultHeight();
+	padding-=0; if(isNaN(padding)) padding=this.drawGauge_defaultPadding();
+	const fillW=Math.floor(width*rate);
+	const gaugeY=this.drawGauge_getGaugeY(y,height,align,padding);
+	this.contents.fillRect(x,gaugeY,width,height,this.gaugeBackColor());
+	this.contents.gradientFillRect(x,gaugeY,fillW,height,color1,color2);
+}).
 addBase('drawActorP_defaultWidth',function(valColor,gaugeColor1,gaugeColor2,valRate,txt,valCurr,valMax,actor,x,y,width,sysColor,normalColor){
 	return 186;
 }).
 addBase('drawActorP_defaultTxtWidth',function(valColor,gaugeColor1,gaugeColor2,valRate,txt,valCurr,valMax,actor,x,y,width,sysColor,normalColor){
 	return 44;
 }).
-addBase('drawActorP_common',function(valColor,gaugeColor1,gaugeColor2,valRate,txt,valCurr,valMax,actor,x,y,width,sysColor,normalColor){
+addBase('drawActorP_common',function(valColor,gaugeColor1,gaugeColor2,valRate,txt,valCurr,valMax,actor,x,y,width,height,align,sysColor,normalColor){
 	if(width===undefined) width=this.drawActorP_defaultWidth.apply(this,arguments);
 	if(sysColor===undefined) sysColor=this.systemColor();
 	if(normalColor===undefined) normalColor=this.normalColor();
 	if(1<valRate) valRate=1;
-	this.drawGauge(x,y,width,valRate,gaugeColor1,gaugeColor2);
+	this.drawGauge(x,y,width,height,valRate,gaugeColor1,gaugeColor2,align);
 	this.changeTextColor(sysColor);
 	this.drawText(txt,x,y,this.drawActorP_defaultTxtWidth.apply(this,arguments));
-	this.drawCurrentAndMax(valCurr,valMax,x,y,width,valColor,normalColor);
+	this.drawCurrentAndMax(valCurr,valMax,x,y,width-1,valColor,normalColor);
 }).
 addBase('isActorHpHidden',function f(actor){
 	return false;
 }).
-addBase('drawActorHp',function(actor,x,y,width){
+addBase('drawActorHp',function(actor,x,y,width,height,align){
 	if(this.isActorHpHidden(actor)) return;
 	return this.drawActorP_common(
 		this.hpColor(actor),
 		this.hpGaugeColor1(),this.hpGaugeColor2(),
 		actor.hpRate(),TextManager.hpA,actor.hp,actor.mhp,
-		actor,x,y,width
+		actor,x,y,width,height,align,
 	);
 }).
 addBase('isActorMpHidden',function f(actor){
 	return false;
 }).
-addBase('drawActorMp',function(actor,x,y,width){
+addBase('drawActorMp',function(actor,x,y,width,height,align){
 	if(this.isActorMpHidden(actor)) return;
 	return this.drawActorP_common(
 		this.mpColor(actor),
 		this.mpGaugeColor1(),this.mpGaugeColor2(),
 		actor.mpRate(),TextManager.mpA,actor.mp,actor.mmp,
-		actor,x,y,width,
+		actor,x,y,width,height,align,
 	);
 }).
 addBase('isActorTpHidden',function f(actor){
 	return false;
 }).
-addBase('drawActorTp',function(actor,x,y,width){
+addBase('drawActorTp',function(actor,x,y,width,height,align){
 	if(this.isActorTpHidden(actor)) return;
 	return this.drawActorP_common(
 		this.tpColor(actor),
 		this.tpGaugeColor1(),this.tpGaugeColor2(),
 		actor.tpRate(),TextManager.tpA,actor.tp,actor.mtp,
-		actor,x,y,width,
+		actor,x,y,width,height,align,
 	);
 }).
 getP;
