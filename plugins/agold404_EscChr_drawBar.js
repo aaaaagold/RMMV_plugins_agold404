@@ -8,7 +8,7 @@
  * 
  * properties in above JSON format should have:
  *   width // use 0 if not given
- *   height // use 0 if not given
+ *   height // use lineHeight()-4 if not given
  *   gaugeColor1
  *   gaugeColor2 // color left-to-right = gaugeColor1 .. gaugeColor2 in linear
  *   barRate // 0 to 1, clamped
@@ -20,6 +20,7 @@
  *   gaugeBackColor // if not given, default value is used // see `Window_Base.prototype.gaugeBackColor`
  *   sepChr // default '/' // text = valCurr / valMax
  *   sepXRatio // 0 to 1, clamped , default = 0.5
+ *   align // 'btm' or 'top'. default 'btm'
  * 
  * 
  * This plugin can be renamed as you want.
@@ -53,8 +54,8 @@ new cfc(Window_Base.prototype).
 addBase('drawBarFromSetting',function f(setting,textState){
 	if(!setting) return;
 	const w=setting.width-0||0;
-	const h=useDefaultIfIsNaN(setting.height-0,6); // default height is 6 in `Window_Base.prototype.drawGauge`
-	if(!(0<w&&0<h)) return; // 0-size bar
+	const h=useDefaultIfIsNaN(setting.height-0,this.lineHeight()-4);
+	if(!(0<w)) return; // 0-size bar
 	const gc1=setting.gaugeColor1;
 	const gc2=setting.gaugeColor2;
 	const barRate=(setting.barRate-0).clamp(0,1)||0;
@@ -66,12 +67,13 @@ addBase('drawBarFromSetting',function f(setting,textState){
 	const gbgc=setting.gaugeBackColor||this.gaugeBackColor();
 	const sepChr=('sepChr' in setting)?setting.sepChr:'/';
 	const sepXRatio=useDefaultIfIsNaN(setting.sepXRatio,0.5);
+	const align=setting.align; // default value handled by lower-level API
 	
 	this.drawActorP_common(
 		this.contents.textColor,
 		gc1,gc2,
 		barRate,"",valCurr,valMax,
-		undefined,x,y,w,
+		undefined,x,y,w,h,align,
 	);
 	
 	textState.x+=w;
