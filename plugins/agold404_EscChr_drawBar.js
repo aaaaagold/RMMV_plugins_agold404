@@ -43,11 +43,11 @@ Window_Base.
 escapeFunction_set('BAR',function f(code,textState){
 	if(textState.text[textState.index]!==":") return;
 	const idxRange=getCStyleStringStartAndEndFromString(textState.text,textState.index+1);
-	const setting=EVAL.call(this,"("+textState.text.slice(idxRange.start+1,idxRange.end-1)+")")||{};
+	const setting=EVAL.call(this,"("+JSON.parse(textState.text.slice(idxRange.start,idxRange.end))+")")||{};
 	
-	this.drawBarFromSetting(setting,textState);
+	const rtv=this.drawBarFromSetting(setting,textState);
 	textState.index=idxRange.end;
-	console.log(code,textState.index,setting,);
+	return rtv;
 },t).
 escapeFunction_set;
 new cfc(Window_Base.prototype).
@@ -77,6 +77,7 @@ addBase('drawBarFromSetting',function f(setting,textState){
 	);
 	
 	textState.x+=w;
+	return "\\BAR:"+JSON.stringify(JSON.stringify(setting));
 }).
 getP;
 
