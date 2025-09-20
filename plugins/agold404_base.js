@@ -1195,6 +1195,12 @@ addBase('obtainEscapeParam',function f(textState){
 },[
 /^\[([^\]\n]+)\]/,
 ]).
+addBase('changeFontSize',function f(fontSizeNum){
+	let rtv;
+	if(isNaN(fontSizeNum)) rtv=this.contents.fontSize=this.standardFontSize();
+	else rtv=this.contents.fontSize=fontSizeNum;
+	return rtv;
+}).
 addBase('processSubtext',function f(subtext,textState){
 	const oriTxt=textState.text;
 	const oriIdx=textState.index;
@@ -1238,6 +1244,14 @@ addBase('escapeFunction_get',function f(code){
 },t).
 getP;
 Window_Base.
+escapeFunction_set('TXTFONTSIZE',function f(code,textState){
+	if(textState.text[textState.index]!==":") return window.isTest()&&console.warn("expected a ':' immediately after '\\TXTFONTSIZE'");
+	const strt=textState.index+1;
+	const strPos=getCStyleStringStartAndEndFromString(textState.text,strt);
+	if(!(strPos.start>=strt)) return window.isTest()&&console.warn("expected a c-style string after '\\TXTFONTSIZE:'");
+	textState.index=strPos.end;
+	return this.changeFontSize(EVAL.call(this,JSON.parse(textState.text.slice(strPos.start,strPos.end))));
+}).
 escapeFunction_set('SKNV',function f(code,textState){
 	const param=this.obtainEscapeParam(textState);
 	return this.processEscapeCharacter_dataobjName($dataSkills[$gameVariables.value(param)],textState);
