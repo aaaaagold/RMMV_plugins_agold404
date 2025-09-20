@@ -384,10 +384,80 @@ function(x){ this.push(x); },
 	return this._flashbackText_getWindow().isClosed();
 });
 
-new cfc(Window_Message.prototype).add('startMessage',function f(){
-	if($gameTemp && $gameMessage) $gameTemp.flashbackText_add($gameMessage.allText(),$gameMessage.faceName(),$gameMessage.faceIndex(),$gameMessage._nameField);
+
+new cfc(Window_Message.prototype).
+addBase('flashbackText_addPrinted',function f(){
+	const textState=this._textState;
+	if(textState && $gameTemp && $gameMessage) $gameTemp.flashbackText_add(textState.printed||f.tbl[0],$gameMessage.faceName(),$gameMessage.faceIndex(),$gameMessage._nameField);
+},[
+"", // 0: default printed
+]).
+add('onEndOfText',function f(){
+	this.flashbackText_addPrinted();
 	return f.ori.apply(this,arguments);
-},t);
+}).
+addRoof('processNormalCharacter',function f(textState){
+	if(!textState.isMeasureOnly){
+		const c=textState.text[textState.index];
+		if(!textState.printed) textState.printed=c;
+		else textState.printed+=c;
+	}
+	return f.ori.apply(this,arguments);
+}).
+addRoof('processNewLine',function f(textState){
+	if(!textState.isMeasureOnly){
+		if(!textState.printed) textState.printed='\n';
+		else textState.printed+='\n';
+	}
+	return f.ori.apply(this,arguments);
+}).
+addRoof('processNewPage',function f(textState){
+	if(!textState.isMeasureOnly){
+		if(!textState.printed) textState.printed='\f';
+		else textState.printed+='\f';
+	}
+	return f.ori.apply(this,arguments);
+}).
+addRoof('processEscapeCharacter',function f(code,textState){
+	const rtv=f.ori.apply(this,arguments);
+	if(rtv&&!textState.isMeasureOnly){
+		if(!textState.printed) textState.printed=rtv;
+		else textState.printed+=rtv;
+	}
+	return rtv;
+}).
+addBase('flashbackText_processSubtext',function f(subtext,textState,reason){
+	if(!textState||textState.isMeasureOnly) return;
+	textState.printed=undefined;
+}).
+addRoof('processSubtext',function f(subtext,textState,reason){
+	const rtv=f.ori.apply(this,arguments);
+	this.flashbackText_processSubtext.apply(this,arguments);
+	return rtv;
+}).
+addRoof('cloneTextInfo',function f(textState,reason){
+	const rtv=f.ori.apply(this,arguments);
+	rtv.printed=textState.printed;
+	rtv.reason=reason;
+	return rtv;
+}).
+addBase('flashbackText_setTextInfo',function f(textState,textInfo){
+	if(!textInfo) return;
+	const reason=textInfo.reason;
+	const prefix=reason&&reason.prefix||"";
+	const suffix=reason&&reason.suffix||"";
+	const arrange=reason&&reason.arrange||f.tbl[0];
+	if(textState.printed) textState.printed=(textInfo.printed?textInfo.printed+f.tbl[1]:"")+(prefix+arrange(textState.printed)+suffix);
+	else textState.printed=textInfo.printed&&textInfo.printed+f.tbl[1];
+},[
+filterArg0,
+"\\;", // 1: separator to prevent unwanted concatenate since the end of `textInfo.printed` might be escaped.
+]).
+addRoof('setTextInfo',function f(textState,textInfo){
+	this.flashbackText_setTextInfo.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+getP;
 
 if(!enableShortcutScenes.size) return;
 const key='r',keyName='openFlashback';
