@@ -14,31 +14,37 @@
  * @param ItemDefaultValues
  * @text default vaules
  * 
- * @param ItemDefaultValueDisplay
+ * @param ItemDefaultValueDisplayBlockTitle
  * @parent ItemPropertyStringsRoot
  * @type text
  * @text default title for display
- * @default display
+ * @default ==== Item Title ====
  * 
- * @param ItemDefaultValueMaterialsTitle
+ * @param ItemDefaultValueDisplayBlockHide
+ * @parent ItemDefaultValues
+ * @type boolean
+ * @text true to hide display block by default
+ * @default false
+ * 
+ * @param ItemDefaultValueMaterialsBlockTitle
  * @parent ItemDefaultValues
  * @type text
  * @text default title for materials
- * @default materials
+ * @default ==== materials ====
  * 
- * @param ItemDefaultValueMaterialsHide
+ * @param ItemDefaultValueMaterialsBlockHide
  * @parent ItemDefaultValues
  * @type boolean
  * @text true to hide materials block by default
  * @default false
  * 
- * @param ItemDefaultValueGainsTitle
+ * @param ItemDefaultValueGainsBlockTitle
  * @parent ItemDefaultValues
  * @type text
  * @text default title for gains
- * @default gains
+ * @default ==== gains ====
  * 
- * @param ItemDefaultValueGainsHide
+ * @param ItemDefaultValueGainsBlockHide
  * @parent ItemDefaultValues
  * @type boolean
  * @text true to hide gains block by default
@@ -60,6 +66,12 @@
  * @text a string used as the property string of item displayed name
  * @default display
  * 
+ * @param ItemPropertyStringDisplayBlockTitle
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item displayed name
+ * @default display_block_title
+ * 
  * @param ItemPropertyStringDescription
  * @parent ItemPropertyStringsRoot
  * @type text
@@ -78,17 +90,17 @@
  * @text a string used as the property string of item materials
  * @default materials
  * 
- * @param ItemPropertyStringMaterialsTitle
+ * @param ItemPropertyStringMaterialsBlockTitle
  * @parent ItemPropertyStringsRoot
  * @type text
  * @text a string used as the property string of item materials_title
- * @default materials_title
+ * @default materials_block_title
  * 
- * @param ItemPropertyStringMaterialsHide
+ * @param ItemPropertyStringMaterialsBlockHide
  * @parent ItemPropertyStringsRoot
  * @type text
  * @text a string used as the property string of item materials_hide
- * @default materials_hide
+ * @default materials_block_hide
  * 
  * @param ItemPropertyStringGains
  * @parent ItemPropertyStringsRoot
@@ -96,17 +108,17 @@
  * @text a string used as the property string of item gains
  * @default gains
  * 
- * @param ItemPropertyStringGainsTitle
+ * @param ItemPropertyStringGainsBlockTitle
  * @parent ItemPropertyStringsRoot
  * @type text
  * @text a string used as the property string of item gains_title
- * @default gains_title
+ * @default gains_block_title
  * 
- * @param ItemPropertyStringGainsHide
+ * @param ItemPropertyStringGainsBlockHide
  * @parent ItemPropertyStringsRoot
  * @type text
  * @text a string used as the property string of item gains_hide
- * @default gains_hide
+ * @default gains_block_hide
  * 
  * @param ItemPropertyStringTail
  * @parent ItemPropertyStringsRoot
@@ -148,16 +160,25 @@
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Ui_synthesis";
 const params=PluginManager.parameters(pluginName)||{};
 params._templatePath=params.TemplatePath;
+params._itemDefaultValueDisplayBlockTitle=useDefaultIfIsNone(params.ItemDefaultValueDisplayBlockTitle,"==== Item Title ====");
+params._itemDefaultValueDisplayBlockHide=JSON.parse(params.ItemDefaultValueDisplayBlockHide||"false");
+params._itemDefaultValueMaterialsBlockTitle=useDefaultIfIsNone(params.ItemDefaultValueMaterialsBlockTitle,"==== materials ====");
+params._itemDefaultValueMaterialsBlockHide=JSON.parse(params.ItemDefaultValueMaterialsBlockHide||"false");
+params._itemDefaultValueGainsBlockTitle=useDefaultIfIsNone(params.ItemDefaultValueGainsBlockTitle,"==== gains ====");
+params._itemDefaultValueGainsBlockHide=JSON.parse(params.ItemDefaultValueGainsBlockHide||"false");
+
 params._itemPropertyStringKey=useDefaultIfIsNone(params.ItemPropertyStringKey,"key");
 params._itemPropertyStringDisplay=useDefaultIfIsNone(params.ItemPropertyStringDisplay,"display");
+params._itemPropertyStringDisplayBlockTitle=useDefaultIfIsNone(params.ItemPropertyStringDisplayBlockTitle,"display_block_title");
+params._itemPropertyStringDisplayBlockHide=useDefaultIfIsNone(params.ItemPropertyStringDisplayBlockHide,"display_block_hide");
 params._itemPropertyStringDescription=useDefaultIfIsNone(params.ItemPropertyStringDescription,"description");
 params._itemPropertyStringHead=useDefaultIfIsNone(params.ItemPropertyStringHead,"head");
 params._itemPropertyStringMaterials=useDefaultIfIsNone(params.ItemPropertyStringMaterials,"materials");
-params._itemPropertyStringMaterialsTitle=useDefaultIfIsNone(params.ItemPropertyStringMaterialsTitle,"materials_title");
-params._itemPropertyStringMaterialsHide=useDefaultIfIsNone(params.ItemPropertyStringMaterialsHide,"materials_hide");
+params._itemPropertyStringMaterialsBlockTitle=useDefaultIfIsNone(params.ItemPropertyStringMaterialsBlockTitle,"materials_block_title");
+params._itemPropertyStringMaterialsBlockHide=useDefaultIfIsNone(params.ItemPropertyStringMaterialsBlockHide,"materials_block_hide");
 params._itemPropertyStringGains=useDefaultIfIsNone(params.ItemPropertyStringGains,"gains");
-params._itemPropertyStringGainsTitle=useDefaultIfIsNone(params.ItemPropertyStringGainsTitle,"gains_title");
-params._itemPropertyStringGainsHide=useDefaultIfIsNone(params.ItemPropertyStringGainsHide,"gains_hide");
+params._itemPropertyStringGainsBlockTitle=useDefaultIfIsNone(params.ItemPropertyStringGainsBlockTitle,"gains_block_title");
+params._itemPropertyStringGainsBlockHide=useDefaultIfIsNone(params.ItemPropertyStringGainsBlockHide,"gains_block_hide");
 params._itemPropertyStringTail=useDefaultIfIsNone(params.ItemPropertyStringTail,"tail");
 
 t=[
@@ -171,9 +192,14 @@ new Set([
 function(info){ return info&&(this._itemPropertyStringKey in info); }, // 3-1: filter out infos without key
 ], // 3: init
 [
-['_itemPropertyStringMaterialsHide' , '_itemPropertyStringMaterials' , '_itemPropertyStringMaterialsTitle' , ], // 4-0: material
-['_itemPropertyStringGainsHide'     , '_itemPropertyStringGains'     , '_itemPropertyStringGainsTitle'     , ], // 4-1: gain
+['_itemPropertyStringMaterials' , '_itemPropertyStringMaterialsBlockHide' , '_itemDefaultValueMaterialsBlockHide' , '_itemPropertyStringMaterialsBlockTitle' , '_itemDefaultValueMaterialsBlockTitle' , ], // 4-0: material
+['_itemPropertyStringGains'     , '_itemPropertyStringGainsBlockHide'     , '_itemDefaultValueGainsBlockHide'     , '_itemPropertyStringGainsBlockTitle'     , '_itemDefaultValueGainsBlockTitle'     , ], // 4-1: gain
 ], // 4: material && gain
+({
+_defaultTextColor:"#FFFFFF",
+insufficientTextColor:"#FF0000",
+iconPadding:2,
+}), // 5: board displaying settings
 ];
 
 
@@ -546,7 +572,7 @@ addBase('createWindow_itemListWindow_okHandler',function f(){
 	const info=self.getCurrentInfo(); if(!info) return;
 	for(let keys=f.tbl[4],z=keys&&keys.length,cw2=self.contentsWidth()>>1;z--;){
 		const coef=1-(z<<1);
-		for(let i=0,arr=info[f.tbl[1][keys[z][1]]],xs=arr&&arr.length;i<xs;++i){
+		for(let i=0,arr=info[f.tbl[1][keys[z][0]]],xs=arr&&arr.length;i<xs;++i){
 			const info=arr[i];
 			if('g'===info[0]) $gameParty.gainGold(coef*info[1]);
 			else if('j'===info[0]) EVAL.call(this,info[1]);
@@ -580,13 +606,13 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 	let x=x0,y=0,res={};
 	if(info[f.tbl[5].head]){ this.drawTextEx(info[f.tbl[5].head],x,y,undefined,undefined,res); y=res.y+lh; }
 	if(!info[f.tbl[5].hideNameInRequirement]){
-		this.drawTextEx("\\TXTCENTER:\""+f.tbl[5].display+"\"",x,y,undefined,undefined,res); y=res.y+lh;
+		this.drawTextEx("\\TXTCENTER:"+JSON.stringify(f.tbl[5].display),x,y,undefined,undefined,res); y=res.y+lh;
 		this.drawTextEx(info[f.tbl[5].display],x,y,undefined,undefined,res); y=res.y+lh;
 	}
 	for(let z=0,keys=f.tbl[6],cw2=this.contentsWidth()>>1;z<keys.length;++z){
 		x=x0;
 		y+=lh;
-		this.drawTextEx("\\TXTCENTER:\""+f.tbl[5][keys[z]]+"\"",x,y,undefined,undefined,res); y=res.y+lh;
+		this.drawTextEx("\\TXTCENTER:"+JSON.stringify(f.tbl[5][keys[z]]),x,y,undefined,undefined,res); y=res.y+lh;
 		if(info[f.tbl[5].hideGain]&&'gain'===keys[z]){
 			this.drawTextEx(f.tbl[4][6],x,y,undefined,undefined,res); y=res.y+lh;
 			continue;
@@ -668,6 +694,112 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 	}
 	if(info[f.tbl[5].tail]){ this.drawTextEx(info[f.tbl[5].tail],x,y,undefined,undefined,res); y=res.y+lh; }
 },ttt).
+addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
+	// this._requirementsWindow.refreshHelp=this.createWindow_requirementsWindow_refreshHelp;
+	this.createContents();
+	const lh=this.lineHeight(),x0=this.textPadding();
+	let x=x0,y=0,res={};
+	if(info[f.tbl[1]._itemPropertyStringHead]){ this.drawTextEx(info[f.tbl[1]._itemPropertyStringHead],x,y,undefined,undefined,res); y=res.y+lh; }
+	if(!useDefaultIfIsNaN(info[f.tbl[1]._itemPropertyStringDisplayBlockHide],f.tbl[1]._itemDefaultValueDisplayBlockHide)){
+		this.drawTextEx(
+			"\\TXTCENTER:"+JSON.stringify(useDefaultIfIsNone(info[f.tbl[1]._itemPropertyStringDisplayBlockTitle],f.tbl[1]._itemDefaultValueDisplayBlockTitle)),
+			x,y,undefined,undefined,res,
+		); y=res.y+lh;
+		this.drawTextEx(info[f.tbl[1]._itemPropertyStringDisplay],x,y,undefined,undefined,res); y=res.y+lh;
+	}
+	const allColors=[
+		("\\TXTCOLOR:"+JSON.stringify(JSON.stringify(f.tbl[5]._defaultTextColor))),
+		("\\TXTCOLOR:"+JSON.stringify(JSON.stringify(f.tbl[5].insufficientTextColor))),
+	];
+	for(let z=0,keys=f.tbl[4],cw2=this.contentsWidth()>>1;z<keys.length;++z){
+		const isHidden=useDefaultIfIsNaN(info[f.tbl[1][keys[z][1]]],f.tbl[1][keys[z][2]]); if(isHidden) continue;
+		const isGain='_itemPropertyStringGains'===keys[z][0];
+		x=x0;
+		y+=lh;
+		this.drawTextEx(
+			"\\TXTCENTER:"+JSON.stringify(useDefaultIfIsNone(info[f.tbl[1][keys[z][3]]],f.tbl[1][keys[z][4]])),
+			x,y,undefined,undefined,res,
+		); y=res.y+lh;
+		for(let i=0,arr=info[f.tbl[1][keys[z][0]]],xs=arr&&arr.length;i<xs;++i){
+			const info=arr[i];
+			if('g'===info[0]){
+				const usingGoldIcon=this.usingGoldIcon&&this.usingGoldIcon(TextManager.currencyUnit);
+				const beRed=!isGain&&!($gameParty.gold()>=info[1]-0);
+				const signedNumInfo1='_itemPropertyStringGains'===keys[z][0]?(info[2]<0?info[2]:"+"+info[2]):(info[1]<0?"+"+info[1]:'-'+info[1]); // cost
+				const s=allColors[beRed|0]+
+					$gameParty.gold()+"\\G"+' / '+signedNumInfo1+" \\G"+
+					allColors[0]+
+					"";
+				if(x>=cw2){
+					// detect auto newLine
+					if(usingGoldIcon) x+=Window_Base._iconWidth+f.tbl[5].iconPadding;
+					const mockRes=Object.assign({},res);
+					this._is_戰鬥介面選單文字消失=true;
+					this.drawTextEx(' ',x,y,undefined,undefined,mockRes);
+					const standardY=mockRes.y;
+					Object.assign(mockRes,res);
+					this.drawTextEx(s,x,y,undefined,undefined,mockRes);
+					const resY=mockRes.y;
+					this._is_戰鬥介面選單文字消失=false;
+					if(standardY!==resY){
+						x=x0;
+						y=res.y+lh;
+					}else if(usingGoldIcon) x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
+				}
+				if(usingGoldIcon){
+					this.drawIcon(Yanfly.Icon.Gold, x, y);
+					x+=Window_Base._iconWidth+f.tbl[5].iconPadding;
+				}
+				this.drawTextEx(s,x,y,undefined,undefined,res);
+				if(usingGoldIcon){
+					x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
+				}
+			}else if('j'===info[0]){
+				if(info[2]){
+					const beRed=!isGain&&!useDefaultIfIsNone(EVAL.call(this,info[2]),true);
+					this.drawTextEx(('\\TXTCOLOR"'+f.tbl[12][beRed|0]+'"')+info[2],x,y,undefined,undefined,res);
+				}
+			}else{
+				const item=DataManager.getItemCont(info[0])[info[1]];
+				const beRed=!(isGain||$gameParty.numItems(item)>=info[2]-0);
+				const signedNumInfo2=isGain?(info[2]<0?info[2]:"+"+info[2]):(info[2]<0?"+"+(-info[2]):'-'+info[2]); // cost
+				const s=allColors[0]+item.name+' '+allColors[beRed|0]+$gameParty.numItems(item)+'/'+signedNumInfo2+allColors[beRed|0][0];
+				if(x>=cw2){
+					// detect auto newLine
+					if(item.iconIndex) x+=Window_Base._iconWidth+f.tbl[5].iconPadding;
+					const mockRes=Object.assign({},res);
+					this._is_戰鬥介面選單文字消失=true;
+					this.drawTextEx(' ',x,y,undefined,undefined,mockRes);
+					const standardY=mockRes.y;
+					Object.assign(mockRes,res);
+					this.drawTextEx(s,x,y,undefined,undefined,mockRes);
+					const resY=mockRes.y;
+					this._is_戰鬥介面選單文字消失=false;
+					if(standardY!==resY){
+						x=x0;
+						y=res.y+lh;
+					}else if(item.iconIndex) x-=Window_Base._iconWidth+f.tbl[7][0];
+				}
+				if(item.iconIndex){
+					this.drawIcon(item.iconIndex,x,y);
+					x+=Window_Base._iconWidth+f.tbl[7][0];
+				}
+				this.drawTextEx(s,x,y,undefined,undefined,res);
+				if(item.iconIndex){
+					x-=Window_Base._iconWidth+f.tbl[7][0];
+				}
+			}
+			if(res.x<cw2){
+				x=cw2;
+				y=res.y;
+			}else{
+				x=x0;
+				y=res.y+lh;
+			}
+		}
+	}
+	if(info[f.tbl[5].tail]){ this.drawTextEx(info[f.tbl[5].tail],x,y,undefined,undefined,res); y=res.y+lh; }
+},t).
 addBase('createWindow_descriptionsWindow',function f(){
 	const sp=this._descriptionsWindow=new Window_Help();
 	const fsz0=sp.standardFontSize(),fsz=(fsz0>>1)+(fsz0>>3),LH0=(fsz*3),LH125=LH0>>1; sp.changeFontSize(fsz); sp.standardFontSize=()=>fsz; sp.lineHeight=()=>LH125;
