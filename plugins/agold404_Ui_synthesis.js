@@ -15,7 +15,7 @@
  * @text default vaules
  * 
  * @param ItemDefaultValueDisplayBlockTitle
- * @parent ItemPropertyStringsRoot
+ * @parent ItemDefaultValues
  * @type text
  * @text default title for display
  * @default ==== Item Title ====
@@ -49,6 +49,13 @@
  * @type boolean
  * @text true to hide gains block by default
  * @default false
+ * 
+ * @param ItemDefaultValueSuccessMsgPrefix
+ * @parent ItemDefaultValues
+ * @type text
+ * @text default prefix for synthesis success msg.
+ * @desc need PopupMsg.js
+ * @default success: 
  * 
  * 
  * @param ItemPropertyStringsRoot
@@ -126,6 +133,12 @@
  * @text a string used as the property string of item tail
  * @default tail
  * 
+ * @param ItemPropertyStringSuccessMsgPrefix
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string prefix used when synthesis succeed.
+ * @default success_msg_prefix
+ * 
  * 
  * @help an UI for synthesis
  * 
@@ -143,7 +156,7 @@
  * }
  * 
  * layout of a material or gain =
- * [ type , id_or_other_information , count ]
+ * [ type , id_or_other_information , count , javascript_eval_cond ]
  *  type:
  *    "i" or "w" or "a" for item, weapon, armor. or,
  *    "g" for golds. or,
@@ -151,7 +164,15 @@
  *  id_or_other_information:
  *    id of item, weapon, armor when type is "i" , "w" , "a", corresponding. or,
  *    golds' number when type is "g"
- *    javascript when type is "j"
+ *    text shown for this item when type is "j"
+ *  count:
+ *    amount of items when type is "i" , "w" , "a". or,
+ *    text of javascript code to be executed when synthesizing this item when type is "j"
+ *  javascript_eval_cond:
+ *    a condition that determined by eval() the text.
+ *    false-like value means the conditions are not match. therefore this item cannot be synthesized.
+ *    HOWEVER, `undefined` or `null` are treated as true, in case you are too lazy to fill it.
+ * 
  * 
  * This plugin can be renamed as you want.
  */
@@ -166,6 +187,7 @@ params._itemDefaultValueMaterialsBlockTitle=useDefaultIfIsNone(params.ItemDefaul
 params._itemDefaultValueMaterialsBlockHide=JSON.parse(params.ItemDefaultValueMaterialsBlockHide||"false");
 params._itemDefaultValueGainsBlockTitle=useDefaultIfIsNone(params.ItemDefaultValueGainsBlockTitle,"==== gains ====");
 params._itemDefaultValueGainsBlockHide=JSON.parse(params.ItemDefaultValueGainsBlockHide||"false");
+params._itemDefaultValueSuccessMsgPrefix=useDefaultIfIsNone(params.ItemDefaultValueSuccessMsgPrefix,"success: ");
 
 params._itemPropertyStringKey=useDefaultIfIsNone(params.ItemPropertyStringKey,"key");
 params._itemPropertyStringDisplay=useDefaultIfIsNone(params.ItemPropertyStringDisplay,"display");
@@ -180,6 +202,7 @@ params._itemPropertyStringGains=useDefaultIfIsNone(params.ItemPropertyStringGain
 params._itemPropertyStringGainsBlockTitle=useDefaultIfIsNone(params.ItemPropertyStringGainsBlockTitle,"gains_block_title");
 params._itemPropertyStringGainsBlockHide=useDefaultIfIsNone(params.ItemPropertyStringGainsBlockHide,"gains_block_hide");
 params._itemPropertyStringTail=useDefaultIfIsNone(params.ItemPropertyStringTail,"tail");
+params._itemPropertyStringSuccessMsgPrefix=useDefaultIfIsNone(params.ItemPropertyStringSuccessMsgPrefix,"success_msg_prefix");
 
 t=[
 undefined,
@@ -199,6 +222,8 @@ function(info){ return info&&(this._itemPropertyStringKey in info); }, // 3-1: f
 _defaultTextColor:"#FFFFFF",
 insufficientTextColor:"#FF0000",
 iconPadding:2,
+popupMsgConf:({loc:"DR",}),
+successSe:({name:"Item3",volume:75,pitch:100,}),
 }), // 5: board displaying settings
 ];
 
@@ -349,7 +374,7 @@ addBase('initialize',function f(x,y,allList,selInfo){
 	this._drawTextExStartOffsetXTimer=0;
 	this.refresh();
 	return rtv;
-},tbl).
+}).
 addBase('initSel',function f(allList,selInfo){
 	// (allList=[{},...])._key2info; // from Scene_合成.createAll_parseData
 	// selInfo=$gameSystem.synthesis_getList();
@@ -389,8 +414,11 @@ addBase('checkCostsEnough',function f(info){
 	for(let x=0,arr=costs,xs=arr.length;x!==xs;++x){
 		const info=arr[x];
 		if('g'===info[0]){ if(!($gameParty.gold()>=info[1])) return false; }
-		else if('j'===info[0]){ if(useDefaultIfIsNone(EVAL.call(this,info[2]),true)) return false; }
-		else{ if(!($gameParty.numItems(DataManager.getItemCont(info[0])[info[1]])>=info[2])) return false; }
+		else if('j'===info[0]){ if(!useDefaultIfIsNone(EVAL.call(this,info[3]),true)) return false; }
+		else{
+			const dataarr=DataManager.getItemCont(info[0]); if(!dataarr) continue;
+			if(!($gameParty.numItems(dataarr[info[1]])>=info[2])) return false;
+		}
 	}
 	return true;
 },t).
@@ -575,17 +603,24 @@ addBase('createWindow_itemListWindow_okHandler',function f(){
 		for(let i=0,arr=info[f.tbl[1][keys[z][0]]],xs=arr&&arr.length;i<xs;++i){
 			const info=arr[i];
 			if('g'===info[0]) $gameParty.gainGold(coef*info[1]);
-			else if('j'===info[0]) EVAL.call(this,info[1]);
+			else if('j'===info[0]) EVAL.call(this,info[2]);
 			else{
-				const item=DataManager.getItemCont(info[0])[info[1]];
+				const dataarr=DataManager.getItemCont(info[0]); if(!dataarr) continue;
+				const item=dataarr[info[1]];
 				$gameParty.gainItem(item,coef*info[2]);
 				self.refreshItemsEnabled&&self.refreshItemsEnabled();
 			}
 		}
 	}
 	if($gameTemp.popupMsg){
-		$gameTemp.popupMsg("製作成功："+info[f.tbl[1]._itemPropertyStringDisplay],{loc:"DR",});
-		AudioManager.playSe(({name:"Item3",volume:75,pitch:100,}),);
+		useDefaultIfIsNone(info[f.tbl[1]._itemPropertyStringSuccessMsgPrefix],f.tbl[1]._itemDefaultValueSuccessMsgPrefix)
+		$gameTemp.popupMsg(
+			useDefaultIfIsNone(info[f.tbl[1]._itemPropertyStringSuccessMsgPrefix],f.tbl[1]._itemDefaultValueSuccessMsgPrefix)+
+			'\\;'+
+			info[f.tbl[1]._itemPropertyStringDisplay],
+			f.tbl[5].popupMsgConf,
+		);
+		AudioManager.playSe(f.tbl[5].successSe,);
 	}
 	self.activate();
 },t).
@@ -599,107 +634,11 @@ addBase('createWindow_requirementsWindow',function f(){
 	if($gameTemp.popupMsg) $gameTemp.popupMsg(f.tbl[4][4],f.tbl[10]);
 },ttt).
 addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
-	f.tbl[9][0](f.tbl);
 	// this._requirementsWindow.refreshHelp=this.createWindow_requirementsWindow_refreshHelp;
 	this.createContents();
 	const lh=this.lineHeight(),x0=this.textPadding();
 	let x=x0,y=0,res={};
-	if(info[f.tbl[5].head]){ this.drawTextEx(info[f.tbl[5].head],x,y,undefined,undefined,res); y=res.y+lh; }
-	if(!info[f.tbl[5].hideNameInRequirement]){
-		this.drawTextEx("\\TXTCENTER:"+JSON.stringify(f.tbl[5].display),x,y,undefined,undefined,res); y=res.y+lh;
-		this.drawTextEx(info[f.tbl[5].display],x,y,undefined,undefined,res); y=res.y+lh;
-	}
-	for(let z=0,keys=f.tbl[6],cw2=this.contentsWidth()>>1;z<keys.length;++z){
-		x=x0;
-		y+=lh;
-		this.drawTextEx("\\TXTCENTER:"+JSON.stringify(f.tbl[5][keys[z]]),x,y,undefined,undefined,res); y=res.y+lh;
-		if(info[f.tbl[5].hideGain]&&'gain'===keys[z]){
-			this.drawTextEx(f.tbl[4][6],x,y,undefined,undefined,res); y=res.y+lh;
-			continue;
-		}
-		for(let i=0,arr=info[f.tbl[5][keys[z]]],xs=arr&&arr.length;i<xs;++i){
-			const info=arr[i];
-			if('g'===info[0]){
-				const usingGoldIcon=this.usingGoldIcon&&this.usingGoldIcon(TextManager.currencyUnit);
-				const beRed=!($gameParty.gold()>=info[1]-0);
-				const signedNumInfo1='gain'===keys[z]?(info[2]<0?info[2]:"+"+info[2]):(info[1]<0?"+"+info[1]:'-'+info[1]); // cost
-				const s=('\\TXTCOLOR"'+f.tbl[12][beRed|0]+'"')+$gameParty.gold()+' \\G'+' / '+signedNumInfo1+' \\G'+('\\TXTCOLOR"'+f.tbl[12][0]+'"');
-				if(x>=cw2){
-					// detect auto newLine
-					if(usingGoldIcon) x+=Window_Base._iconWidth+f.tbl[7][0];
-					const mockRes=Object.assign({},res);
-					this._is_戰鬥介面選單文字消失=true;
-					this.drawTextEx(' ',x,y,undefined,undefined,mockRes);
-					const standardY=mockRes.y;
-					Object.assign(mockRes,res);
-					this.drawTextEx(s,x,y,undefined,undefined,mockRes);
-					const resY=mockRes.y;
-					this._is_戰鬥介面選單文字消失=false;
-					if(standardY!==resY){
-						x=x0;
-						y=res.y+lh;
-					}else if(usingGoldIcon) x-=Window_Base._iconWidth+f.tbl[7][0];
-				}
-				if(usingGoldIcon){
-					this.drawIcon(Yanfly.Icon.Gold, x, y);
-					x+=Window_Base._iconWidth+f.tbl[7][0];
-				}
-				this.drawTextEx(s,x,y,undefined,undefined,res);
-				if(usingGoldIcon){
-					x-=Window_Base._iconWidth+f.tbl[7][0];
-				}
-			}else if('j'===info[0]){
-				if(info[2]){
-					const beRed='cost'===keys[z]&&!f.tbl[8][2](info[1],this);
-					this.drawTextEx(('\\TXTCOLOR"'+f.tbl[12][beRed|0]+'"')+info[2],x,y,undefined,undefined,res);
-				}
-			}else{
-				const item=DataManager.getItemCont(info[0])[info[1]];
-				const beRed=!('gain'===keys[z]||$gameParty.numItems(item)>=info[2]-0);
-				const signedNumInfo2='gain'===keys[z]?(info[2]<0?info[2]:"+"+info[2]):(info[2]<0?"+"+(-info[2]):'-'+info[2]); // cost
-				const s=('\\TXTCOLOR"'+f.tbl[12][0]+'"')+item.name+' '+('\\TXTCOLOR"'+f.tbl[12][beRed|0]+'"')+$gameParty.numItems(item)+'/'+signedNumInfo2+('\\TXTCOLOR"'+f.tbl[12][0]+'"');
-				if(x>=cw2){
-					// detect auto newLine
-					if(item.iconIndex) x+=Window_Base._iconWidth+f.tbl[7][0];
-					const mockRes=Object.assign({},res);
-					this._is_戰鬥介面選單文字消失=true;
-					this.drawTextEx(' ',x,y,undefined,undefined,mockRes);
-					const standardY=mockRes.y;
-					Object.assign(mockRes,res);
-					this.drawTextEx(s,x,y,undefined,undefined,mockRes);
-					const resY=mockRes.y;
-					this._is_戰鬥介面選單文字消失=false;
-					if(standardY!==resY){
-						x=x0;
-						y=res.y+lh;
-					}else if(item.iconIndex) x-=Window_Base._iconWidth+f.tbl[7][0];
-				}
-				if(item.iconIndex){
-					this.drawIcon(item.iconIndex,x,y);
-					x+=Window_Base._iconWidth+f.tbl[7][0];
-				}
-				this.drawTextEx(s,x,y,undefined,undefined,res);
-				if(item.iconIndex){
-					x-=Window_Base._iconWidth+f.tbl[7][0];
-				}
-			}
-			if(res.x<cw2){
-				x=cw2;
-				y=res.y;
-			}else{
-				x=x0;
-				y=res.y+lh;
-			}
-		}
-	}
-	if(info[f.tbl[5].tail]){ this.drawTextEx(info[f.tbl[5].tail],x,y,undefined,undefined,res); y=res.y+lh; }
-},ttt).
-addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
-	// this._requirementsWindow.refreshHelp=this.createWindow_requirementsWindow_refreshHelp;
-	this.createContents();
-	const lh=this.lineHeight(),x0=this.textPadding();
-	let x=x0,y=0,res={};
-	if(info[f.tbl[1]._itemPropertyStringHead]){ this.drawTextEx(info[f.tbl[1]._itemPropertyStringHead],x,y,undefined,undefined,res); y=res.y+lh; }
+	if(f.tbl[1]._itemPropertyStringHead in info){ this.drawTextEx(info[f.tbl[1]._itemPropertyStringHead],x,y,undefined,undefined,res); y=res.y+lh; }
 	if(!useDefaultIfIsNaN(info[f.tbl[1]._itemPropertyStringDisplayBlockHide],f.tbl[1]._itemDefaultValueDisplayBlockHide)){
 		this.drawTextEx(
 			"\\TXTCENTER:"+JSON.stringify(useDefaultIfIsNone(info[f.tbl[1]._itemPropertyStringDisplayBlockTitle],f.tbl[1]._itemDefaultValueDisplayBlockTitle)),
@@ -711,7 +650,8 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 		("\\TXTCOLOR:"+JSON.stringify(JSON.stringify(f.tbl[5]._defaultTextColor))),
 		("\\TXTCOLOR:"+JSON.stringify(JSON.stringify(f.tbl[5].insufficientTextColor))),
 	];
-	for(let z=0,keys=f.tbl[4],cw2=this.contentsWidth()>>1;z<keys.length;++z){
+	const cw2=this.contentsWidth()>>1;
+	for(let z=0,keys=f.tbl[4];z<keys.length;++z){
 		const isHidden=useDefaultIfIsNaN(info[f.tbl[1][keys[z][1]]],f.tbl[1][keys[z][2]]); if(isHidden) continue;
 		const isGain='_itemPropertyStringGains'===keys[z][0];
 		x=x0;
@@ -755,12 +695,13 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 					x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
 				}
 			}else if('j'===info[0]){
-				if(info[2]){
-					const beRed=!isGain&&!useDefaultIfIsNone(EVAL.call(this,info[2]),true);
-					this.drawTextEx(('\\TXTCOLOR"'+f.tbl[12][beRed|0]+'"')+info[2],x,y,undefined,undefined,res);
+				if(info[1]){
+					const beRed=!isGain&&!useDefaultIfIsNone(EVAL.call(this,info[3]),true);
+					this.drawTextEx(allColors[beRed|0]+info[1],x,y,undefined,undefined,res);
 				}
 			}else{
-				const item=DataManager.getItemCont(info[0])[info[1]];
+				const dataarr=DataManager.getItemCont(info[0]); if(!dataarr) continue;
+				const item=dataarr[info[1]];
 				const beRed=!(isGain||$gameParty.numItems(item)>=info[2]-0);
 				const signedNumInfo2=isGain?(info[2]<0?info[2]:"+"+info[2]):(info[2]<0?"+"+(-info[2]):'-'+info[2]); // cost
 				const s=allColors[0]+item.name+' '+allColors[beRed|0]+$gameParty.numItems(item)+'/'+signedNumInfo2+allColors[beRed|0][0];
@@ -778,15 +719,15 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 					if(standardY!==resY){
 						x=x0;
 						y=res.y+lh;
-					}else if(item.iconIndex) x-=Window_Base._iconWidth+f.tbl[7][0];
+					}else if(item.iconIndex) x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
 				}
 				if(item.iconIndex){
 					this.drawIcon(item.iconIndex,x,y);
-					x+=Window_Base._iconWidth+f.tbl[7][0];
+					x+=Window_Base._iconWidth+f.tbl[5].iconPadding;
 				}
 				this.drawTextEx(s,x,y,undefined,undefined,res);
 				if(item.iconIndex){
-					x-=Window_Base._iconWidth+f.tbl[7][0];
+					x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
 				}
 			}
 			if(res.x<cw2){
@@ -798,7 +739,11 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 			}
 		}
 	}
-	if(info[f.tbl[5].tail]){ this.drawTextEx(info[f.tbl[5].tail],x,y,undefined,undefined,res); y=res.y+lh; }
+	if(f.tbl[1]._itemPropertyStringTail in info){
+		x=x0;
+		y=res.y+lh;
+		this.drawTextEx(info[f.tbl[1]._itemPropertyStringTail],x,y,undefined,undefined,res); y=res.y+lh;
+	}
 },t).
 addBase('createWindow_descriptionsWindow',function f(){
 	const sp=this._descriptionsWindow=new Window_Help();
@@ -839,7 +784,7 @@ addBase('createAll_finalTune',function f(){
 },ttt).
 addBase('getInfo',function f(key){
 	return this._data._key2info.get(key);
-},ttt);
+});
 }
 
 })();
