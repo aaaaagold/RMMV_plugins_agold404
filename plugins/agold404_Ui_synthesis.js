@@ -17,13 +17,13 @@
  * @param ItemDefaultValueDisplay
  * @parent ItemPropertyStringsRoot
  * @type text
- * @text title for materials display
+ * @text default title for display
  * @default display
  * 
  * @param ItemDefaultValueMaterialsTitle
  * @parent ItemDefaultValues
  * @type text
- * @text title for materials
+ * @text default title for materials
  * @default materials
  * 
  * @param ItemDefaultValueMaterialsHide
@@ -35,7 +35,7 @@
  * @param ItemDefaultValueGainsTitle
  * @parent ItemDefaultValues
  * @type text
- * @text title for gains
+ * @text default title for gains
  * @default gains
  * 
  * @param ItemDefaultValueGainsHide
@@ -351,13 +351,12 @@ addBase('initSel',function f(allList,selInfo){
 },t).
 addBase('makeCommandList',function f(){
 	if(!this._data) return;
-	this._data.forEach(f.tbl[0],this);
-},ttt=[
-function f(info){
-	const enabled=this._disabledSet&&!this._disabledSet.has(info[f.tbl.key]);
-	this.addCommand(info[f.tbl.display],info[f.tbl.key],enabled);
-}, // forEach
-]).
+	for(let x=0,arr=this._data,xs=arr&&arr.length;x<xs;++x){
+		const info=arr[x];
+		const enabled=this._disabledSet&&!this._disabledSet.has(info[f.tbl[1]._itemPropertyStringKey]);
+		this.addCommand(info[f.tbl[1]._itemPropertyStringDisplay],info[f.tbl[1]._itemPropertyStringKey],enabled);
+	}
+},t).
 addBase('checkCostsEnough',function f(info){
 	if(!info) return false;
 	const costs=info[f.tbl[1]._itemPropertyStringMaterials]; if(!costs) return true;
@@ -411,14 +410,14 @@ addBase('select',function f(idx){
 		}
 	}
 	return rtv;
-},tbl).
+}).
 addBase('_drawTextEx_clearCache',function f(){
 	this._drawTextExStartOffsetXTimer=0;
 	this._drawTextExCurrentTextWidth=undefined;
 	this._drawTextExCurrentTextWidthMax=undefined;
 	this._drawTextExLastOffsetX=undefined;
 	this._drawTextExStartOffsetXLastFc=undefined;
-},tbl).
+}).
 addBase('update',function f(){
 	const rtv=f._super.update.apply(this,arguments);
 	if(this._drawTextExStartOffsetXLastFc!==Graphics.frameCount){
@@ -428,14 +427,14 @@ addBase('update',function f(){
 	if(!(this._drawTextExStartOffsetXTimer-f.tbl[1]-f.tbl[2]<this._drawTextExCurrentTextWidthMax)) this._drawTextExStartOffsetXTimer=0;
 	if(this.drawItem_getOffsetX()!==this._drawTextExLastOffsetX) this.redrawItem(this._index);
 	return rtv;
-},tbl,false,true).
+},tbl).
 addBase('refresh',function f(){
 	this._drawTextEx_clearCache();
 	const rtv=f._super.refresh.apply(this,arguments);
 	this._drawTextEx_clearCache();
 	return rtv;
-},tbl,false,true);
-ttt[0].ori=undefined; ttt[0].tbl=properties;
+},tbl).
+getP;
 }
 
 
@@ -489,7 +488,7 @@ addBase('initialize',function f(){
 	const rtv=f._super.initialize.apply(this,arguments);
 	this.init();
 	return rtv;
-},ttt).
+}).
 addBase('init',function f(){
 	this._state=f.tbl[2][0];
 	ImageManager.otherFiles_addLoad(f.tbl[4][0]);
@@ -498,19 +497,18 @@ addBase('create',function f(){
 	const rtv=f._super.create.apply(this,arguments);
 	this.createAll();
 	return rtv;
-},ttt).
+}).
 addBase('getRoot',function f(){
 	return this._root;
 }).
 addBase('createAll',function f(){
-	f.tbl[9][0](f.tbl);
 	this.createAll_parseData();
 	this.createAll_root();
 	this.createWindow_itemListWindow();
 	this.createWindow_requirementsWindow();
 	this.createWindow_descriptionsWindow();
 	this.createAll_finalTune();
-},ttt).
+}).
 addBase('createAll_parseData',function f(){
 	const raw=ImageManager.otherFiles_getData(f.tbl[1]._templatePath);
 	ImageManager.otherFiles_delData(f.tbl[1]._templatePath);
@@ -679,8 +677,8 @@ addBase('createWindow_descriptionsWindow',function f(){
 	this.getRoot().addChild(sp);
 },ttt).
 addBase('createWindow_descriptionsWindow_refreshHelp',function f(info){
-	this.setText(info[f.tbl[5].description]);
-},ttt).
+	this.setText(info[f.tbl[1]._itemPropertyStringDescription]);
+},t).
 addBase('createAll_finalTune',function f(){
 	// rwd (to font size setting) size
 	{
