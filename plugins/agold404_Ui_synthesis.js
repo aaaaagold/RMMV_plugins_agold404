@@ -14,6 +14,12 @@
  * @param ItemDefaultValues
  * @text default vaules
  * 
+ * @param ItemDefaultValueDescriptionWindowHide
+ * @parent ItemDefaultValues
+ * @type boolean
+ * @text true to hide description window by default
+ * @default false
+ * 
  * @param ItemDefaultValueDisplayBlockTitle
  * @parent ItemDefaultValues
  * @type text
@@ -85,6 +91,12 @@
  * @text a string used as the property string of item description
  * @default description
  * 
+ * @param ItemPropertyStringDescriptionWindowHide
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item description
+ * @default description_window_hide
+ * 
  * @param ItemPropertyStringHead
  * @parent ItemPropertyStringsRoot
  * @type text
@@ -140,6 +152,28 @@
  * @default success_msg_prefix
  * 
  * 
+ * @param WindowLayoutRoot
+ * @text window layout
+ * 
+ * @param WindowLayoutItemListWindowWidth
+ * @parent WindowLayoutRoot
+ * @type number
+ * @text width in pixels for item list window
+ * @default 256
+ * 
+ * @param WindowLayoutDescriptionWindowOnTop
+ * @parent WindowLayoutRoot
+ * @type boolean
+ * @text set description window on top of requirement window
+ * @default false
+ * 
+ * @param WindowLayoutDescriptionWindowHeight
+ * @parent WindowLayoutRoot
+ * @type number
+ * @text height in pixels for description window
+ * @default 96
+ * 
+ * 
  * @help an UI for synthesis
  * 
  * 
@@ -181,6 +215,7 @@
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Ui_synthesis";
 const params=PluginManager.parameters(pluginName)||{};
 params._templatePath=params.TemplatePath;
+params._itemDefaultValueDescriptionWindowHide=JSON.parse(params.ItemDefaultValueDescriptionWindowHide||"false");
 params._itemDefaultValueDisplayBlockTitle=useDefaultIfIsNone(params.ItemDefaultValueDisplayBlockTitle,"==== Item Title ====");
 params._itemDefaultValueDisplayBlockHide=JSON.parse(params.ItemDefaultValueDisplayBlockHide||"false");
 params._itemDefaultValueMaterialsBlockTitle=useDefaultIfIsNone(params.ItemDefaultValueMaterialsBlockTitle,"==== materials ====");
@@ -194,6 +229,7 @@ params._itemPropertyStringDisplay=useDefaultIfIsNone(params.ItemPropertyStringDi
 params._itemPropertyStringDisplayBlockTitle=useDefaultIfIsNone(params.ItemPropertyStringDisplayBlockTitle,"display_block_title");
 params._itemPropertyStringDisplayBlockHide=useDefaultIfIsNone(params.ItemPropertyStringDisplayBlockHide,"display_block_hide");
 params._itemPropertyStringDescription=useDefaultIfIsNone(params.ItemPropertyStringDescription,"description");
+params._itemPropertyStringDescriptionWindowHide=useDefaultIfIsNone(params.ItemPropertyStringDescriptionWindowHide,"description_window_hide");
 params._itemPropertyStringHead=useDefaultIfIsNone(params.ItemPropertyStringHead,"head");
 params._itemPropertyStringMaterials=useDefaultIfIsNone(params.ItemPropertyStringMaterials,"materials");
 params._itemPropertyStringMaterialsBlockTitle=useDefaultIfIsNone(params.ItemPropertyStringMaterialsBlockTitle,"materials_block_title");
@@ -203,6 +239,14 @@ params._itemPropertyStringGainsBlockTitle=useDefaultIfIsNone(params.ItemProperty
 params._itemPropertyStringGainsBlockHide=useDefaultIfIsNone(params.ItemPropertyStringGainsBlockHide,"gains_block_hide");
 params._itemPropertyStringTail=useDefaultIfIsNone(params.ItemPropertyStringTail,"tail");
 params._itemPropertyStringSuccessMsgPrefix=useDefaultIfIsNone(params.ItemPropertyStringSuccessMsgPrefix,"success_msg_prefix");
+
+params._windowLayoutItemListWindowWidth=useDefaultIfIsNaN(params.WindowLayoutItemListWindowWidth,256);
+params._windowLayoutDescriptionWindowOnTop=JSON.parse(params.WindowLayoutDescriptionWindowOnTop||"false");
+params._windowLayoutDescriptionWindowHeight=useDefaultIfIsNaN(params.WindowLayoutDescriptionWindowHeight,96);
+
+const itemListWidth=256;
+const descriptionsHeight=96;
+const descriptionsLineNum=3;
 
 t=[
 undefined,
@@ -220,9 +264,25 @@ function(info){ return info&&(this._itemPropertyStringKey in info); }, // 3-1: f
 ], // 4: material && gain
 ({
 _defaultTextColor:"#FFFFFF",
-insufficientTextColor:"#FF0000",
+insufficientTextColor:"rgba(255,0,0,0.75)",
 iconPadding:2,
+positioning_itemList:{x:0,y:0,w:params._windowLayoutItemListWindowWidth,h:undefined,align:""},
+positioning_requirements:{x:params._windowLayoutItemListWindowWidth,y:0,w:undefined,h:undefined,align:"afterX",},
+positioning_descriptions:{x:params._windowLayoutItemListWindowWidth,y:undefined,w:undefined,h:params._windowLayoutDescriptionWindowHeight,align:"afterY",lineNum:descriptionsLineNum,},
 popupMsgConf:({loc:"DR",}),
+startMsgGetter:(function f(){
+	if(!f.tbl) (f.tbl=({
+		'en-US':"current count / gain count",
+		'zh-TW':"持有數量 / 獲得數量",
+	}))._default=f.tbl['en-US'];
+	return f.tbl[DataManager.getLocale()]||f.tbl._default;
+}),
+standardFontSize_reqWnd:(function f(){
+	const ori=Window_Base.prototype.standardFontSize.apply(this,arguments);
+	return (ori>>1)+(ori>>2);
+}),
+itemNameTooLongStartWait:64,
+itemNameTooLongStopWait:64,
 successSe:({name:"Item3",volume:75,pitch:100,}),
 }), // 5: board displaying settings
 ];
@@ -247,16 +307,6 @@ properties.display=params._itemPropertyStringDisplay;
 properties.description=params._itemPropertyStringDescription;
 properties.cost=params._itemPropertyStringMaterials;
 properties.gain=params._itemPropertyStringGains;
-const itemListWidth=256;
-const descriptionsHeight=96;
-const descriptionsLineNum=3;
-const putDataArrByType=tbl=>{
-	if(!tbl.dataArrByType) tbl.dataArrByType={
-		i:$dataItems,
-		w:$dataWeapons,
-		a:$dataArmors,
-	};
-};
 
 const evaljs=(s,self)=>eval(s);
 
@@ -300,8 +350,8 @@ addBase('synthesis_rmItem',function f(key){
 	if(cont._inlineMap.has(key)) cont._inlineMap.delete(key);
 	else cont.push(['r',key]);
 }).
-addBase('synthesis_addItemInline',function f(key,cost,gain,display){
-	const info={key:key,cost:cost,gain:gain}; if(3<arguments.length) info.display=display;
+addBase('synthesis_addItemInline',function f(info){
+	const key=info&&info.key; if(key==null) return;
 	const cont=this.synthesis_getCont();
 	cont._cache=undefined;
 	cont.push(['i',key]);
@@ -339,14 +389,26 @@ addBase('synthesis_getList',function f(){
 }).
 getP;
 new cfc(Game_Temp.prototype).
-addBase('synthesis_setCurrList',function f(arr){
-	this._synthesis_currList=arr;
-}).
 addBase('synthesis_open',function f(){
 	SceneManager.push(Scene_合成);
 }).
 addBase('synthesis_simpleTest',function f(){
+	// for debug purpose
 	$gameSystem.synthesis_selectAll();
+	this.synthesis_open();
+}).
+addBase('synthesis_addWithList',function f(arr){
+	if(arr==null){
+		if($gameTemp&&$gameTemp.popupMsg&&$gameTemp.popupMsg.constructor===Function) $gameTemp.popupMsg(f.tbl[0][0],f.tbl[0][1]);
+		console.warn(f.tbl[0][0]);
+	}
+	for(let x=0,xs=arr&&arr.length;x<xs;++x) $gameSystem.synthesis_addItemInline(arr[x]);
+},[
+["\\C[2]ERROR\\C[0]: got empty array",({showFrame:234,}),], // 0: err msg,opt
+]).
+addBase('synthesis_openWithList',function f(arr){
+	$gameSystem.synthesis_clearAll();
+	this.synthesis_addWithList(arr);
 	this.synthesis_open();
 }).
 getP;
@@ -414,7 +476,7 @@ addBase('checkCostsEnough',function f(info){
 	for(let x=0,arr=costs,xs=arr.length;x!==xs;++x){
 		const info=arr[x];
 		if('g'===info[0]){ if(!($gameParty.gold()>=info[1])) return false; }
-		else if('j'===info[0]){ if(!useDefaultIfIsNone(EVAL.call(this,info[3]),true)) return false; }
+		else if('j'===info[0]){ if(!useDefaultIfIsNone(EVAL.call(info,info[3]),true)) return false; }
 		else{
 			const dataarr=DataManager.getItemCont(info[0]); if(!dataarr) continue;
 			if(!($gameParty.numItems(dataarr[info[1]])>=info[2])) return false;
@@ -446,10 +508,36 @@ addBase('drawItem',function(index){
 	this._drawTextExLastOffsetX=offsetX;
 }).
 addBase('drawItem_getOffsetX',function f(){
-	return Math.max(Math.min(this._drawTextExCurrentTextWidthMax,this._drawTextExStartOffsetXTimer-f.tbl[1]),0)||0;
-},tbl).
+	return Math.max(Math.min(this._drawTextExCurrentTextWidthMax,this._drawTextExStartOffsetXTimer-f.tbl[5].itemNameTooLongStartWait),0)||0;
+},t).
 addBase('select',function f(idx){
 	const idx0=this._index;
+	if(idx0!==idx){
+		if(this._requirementsWindow&&this._descriptionsWindow){
+			const wr=this._requirementsWindow;
+			const wd=this._descriptionsWindow;
+			const info=this._data[idx];
+			if(info&&useDefaultIfIsNaN(info[f.tbl[1]._itemPropertyStringDescriptionWindowHide],f.tbl[1]._itemDefaultValueDescriptionWindowHide)){
+				const y0=Math.min(wr.y,wd.y);
+				const y1=Math.max(wr.y+wr.height,wd.y+wd.height);
+				wr.y=y0;
+				wr.height=y1-y0;
+				if(wr.contents.height<wr.contentsHeight()){
+					wr.createContents();
+				}
+				wd.visible=false;
+			}else{
+				if(wr.y<wd.y){
+					wr.height=wd.y-wr.y;
+				}else{
+					const y1=wd.y+wd.height;
+					wr.height-=y1-wr.y;
+					wr.y=y1;
+				}
+				wd.visible=true;
+			}
+		}
+	}
 	const rtv=f._super.select.apply(this,arguments);
 	this._drawTextEx_clearCache();
 	const mit=this.maxItems();
@@ -464,7 +552,7 @@ addBase('select',function f(idx){
 		}
 	}
 	return rtv;
-}).
+},t).
 addBase('_drawTextEx_clearCache',function f(){
 	this._drawTextExStartOffsetXTimer=0;
 	this._drawTextExCurrentTextWidth=undefined;
@@ -478,16 +566,16 @@ addBase('update',function f(){
 		this._drawTextExStartOffsetXTimer+=Graphics.frameCount-this._drawTextExStartOffsetXLastFc||0;
 		this._drawTextExStartOffsetXLastFc=Graphics.frameCount;
 	}
-	if(!(this._drawTextExStartOffsetXTimer-f.tbl[1]-f.tbl[2]<this._drawTextExCurrentTextWidthMax)) this._drawTextExStartOffsetXTimer=0;
+	if(!(this._drawTextExStartOffsetXTimer-f.tbl[5].itemNameTooLongStartWait-f.tbl[5].itemNameTooLongStopWait<this._drawTextExCurrentTextWidthMax)) this._drawTextExStartOffsetXTimer=0;
 	if(this.drawItem_getOffsetX()!==this._drawTextExLastOffsetX) this.redrawItem(this._index);
 	return rtv;
-},tbl).
+},t).
 addBase('refresh',function f(){
 	this._drawTextEx_clearCache();
 	const rtv=f._super.refresh.apply(this,arguments);
 	this._drawTextEx_clearCache();
 	return rtv;
-},tbl).
+}).
 getP;
 }
 
@@ -500,43 +588,6 @@ a.ori=Scene_MenuBase;
 window[a.name]=a;
 const p=a.prototype=Object.create(a.ori.prototype);
 p.constructor=a;
-ttt=[
-a.ori.prototype,
-a.ori,
-['itemList','amounts',], // 2
-{
-itemList:{x:0,y:0,w:itemListWidth,h:undefined,align:""},
-requirements:{x:itemListWidth,y:0,w:undefined,h:undefined,align:"afterX",},
-descriptions:{x:itemListWidth,y:undefined,w:undefined,h:descriptionsHeight,align:"afterY",lineNum:descriptionsLineNum,},
-}, // 3
-[
-dataPath, // 4-0
-info=>info&&(properties.key in info), // 4-1
-" repeated: ", // 4-2
-new Set([
-	'cancel',
-]), // 4-3
-"持有數量/獲得數量", // 4-4
-"製作成功：", // 4-5
-"\\TXTCENTER:\"未知\"", // 4-6
-], // 4
-properties, // 5
-['cost','gain',], // 6
-[2,], // 7: iconPadding,
-[
-function f(){
-	const ori=Window_Base.prototype.standardFontSize.apply(this,arguments);
-	return (ori>>1)+(ori>>2);
-}, // 8-0
-jsInfo=>jsInfo[2], // 8-1
-evaljs, // 8-2
-], // 8: funcs
-[putDataArrByType,], // 9: make tbl
-{loc:"DR",}, // 10: opt of popupMsg
-{name:"Item3",volume:75,pitch:100}, // 11: success sound effect
-[ "#FFFFFF" , "#FF0000" ], // 12: // \TXTCOLOR // [ init req text color , insufficient text color ]
-];
-
 new cfc(p).
 addBase('initialize',function f(){
 	const rtv=f._super.initialize.apply(this,arguments);
@@ -544,9 +595,9 @@ addBase('initialize',function f(){
 	return rtv;
 }).
 addBase('init',function f(){
-	this._state=f.tbl[2][0];
-	ImageManager.otherFiles_addLoad(f.tbl[4][0]);
-},ttt).
+	this._state='itemList'; // 'amounts'
+	ImageManager.otherFiles_addLoad(f.tbl[1]._templatePath);
+},t).
 addBase('create',function f(){
 	const rtv=f._super.create.apply(this,arguments);
 	this.createAll();
@@ -590,20 +641,20 @@ addBase('createAll_root',function f(){
 }).
 addBase('createWindow_itemListWindow',function f(){
 	const sp=this._itemListWindow=new Window_合成_list(0,0,this._data,$gameSystem.synthesis_getList());
-	const conf=f.tbl[3].itemList; conf.h=Graphics.boxHeight;
+	const conf=f.tbl[5].positioning_itemList; conf.w=f.tbl[1]._windowLayoutItemListWindowWidth; conf.h=Graphics.boxHeight;
 	sp.positioning(conf);
 	this.getRoot().addChild(sp);
-},ttt).
+},t).
 addBase('createWindow_itemListWindow_okHandler',function f(){
 	// bind `this` to scene
 	const self=this._itemListWindow; if(!self.isCurrentItemEnabled()){ SoundManager.playBuzzer(); return self.activate(); }
 	const info=self.getCurrentInfo(); if(!info) return;
 	for(let keys=f.tbl[4],z=keys&&keys.length,cw2=self.contentsWidth()>>1;z--;){
-		const coef=1-(z<<1);
+		const coef=(z<<1)-1;
 		for(let i=0,arr=info[f.tbl[1][keys[z][0]]],xs=arr&&arr.length;i<xs;++i){
 			const info=arr[i];
 			if('g'===info[0]) $gameParty.gainGold(coef*info[1]);
-			else if('j'===info[0]) EVAL.call(this,info[2]);
+			else if('j'===info[0]) EVAL.call(info,info[2]);
 			else{
 				const dataarr=DataManager.getItemCont(info[0]); if(!dataarr) continue;
 				const item=dataarr[info[1]];
@@ -626,13 +677,16 @@ addBase('createWindow_itemListWindow_okHandler',function f(){
 },t).
 addBase('createWindow_requirementsWindow',function f(){
 	const sp=this._requirementsWindow=new Window_Base();
-	sp.processNormalCharacter=Window_Message.prototype.processNormalCharacter;
-	sp.standardFontSize=f.tbl[8][0];
-	const conf=f.tbl[3].requirements; conf.w=Graphics.width-f.tbl[3].itemList.w; conf.h=Graphics.boxHeight-f.tbl[3].descriptions.h;
+	//sp.processNormalCharacter=Window_Message.prototype.processNormalCharacter;
+	sp.standardFontSize=f.tbl[5].standardFontSize_reqWnd;
+	const conf=f.tbl[5].positioning_requirements;
+	conf.x=f.tbl[1]._windowLayoutItemListWindowWidth;
+	conf.w=Graphics.width-f.tbl[1]._windowLayoutItemListWindowWidth;
+	conf.h=Graphics.boxHeight-f.tbl[1]._windowLayoutDescriptionWindowHeight;
 	sp.positioning(conf);
 	this.getRoot().addChild(sp);
-	if($gameTemp.popupMsg) $gameTemp.popupMsg(f.tbl[4][4],f.tbl[10]);
-},ttt).
+	if($gameTemp.popupMsg) $gameTemp.popupMsg(f.tbl[5].startMsgGetter(),f.tbl[5].popupMsgConf);
+},t).
 addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 	// this._requirementsWindow.refreshHelp=this.createWindow_requirementsWindow_refreshHelp;
 	this.createContents();
@@ -640,26 +694,37 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 	let x=x0,y=0,res={};
 	if(f.tbl[1]._itemPropertyStringHead in info){ this.drawTextEx(info[f.tbl[1]._itemPropertyStringHead],x,y,undefined,undefined,res); y=res.y+lh; }
 	if(!useDefaultIfIsNaN(info[f.tbl[1]._itemPropertyStringDisplayBlockHide],f.tbl[1]._itemDefaultValueDisplayBlockHide)){
-		this.drawTextEx(
-			"\\TXTCENTER:"+JSON.stringify(useDefaultIfIsNone(info[f.tbl[1]._itemPropertyStringDisplayBlockTitle],f.tbl[1]._itemDefaultValueDisplayBlockTitle)),
-			x,y,undefined,undefined,res,
-		); y=res.y+lh;
+		const title=useDefaultIfIsNone(info[f.tbl[1]._itemPropertyStringDisplayBlockTitle],f.tbl[1]._itemDefaultValueDisplayBlockTitle);
+		if(title){
+			this.drawTextEx(
+				"\\TXTCENTER:"+JSON.stringify(title),
+				x,y,undefined,undefined,res,
+			);
+			y=res.y+lh;
+		}
 		this.drawTextEx(info[f.tbl[1]._itemPropertyStringDisplay],x,y,undefined,undefined,res); y=res.y+lh;
 	}
 	const allColors=[
 		("\\TXTCOLOR:"+JSON.stringify(JSON.stringify(f.tbl[5]._defaultTextColor))),
 		("\\TXTCOLOR:"+JSON.stringify(JSON.stringify(f.tbl[5].insufficientTextColor))),
 	];
-	const cw2=this.contentsWidth()>>1;
+	const cw=this.contentsWidth();
+	const cw2=Graphics.boxWidth>=(cw<<1)?x0:cw>>1;
 	for(let z=0,keys=f.tbl[4];z<keys.length;++z){
 		const isHidden=useDefaultIfIsNaN(info[f.tbl[1][keys[z][1]]],f.tbl[1][keys[z][2]]); if(isHidden) continue;
 		const isGain='_itemPropertyStringGains'===keys[z][0];
 		x=x0;
 		y+=lh;
-		this.drawTextEx(
-			"\\TXTCENTER:"+JSON.stringify(useDefaultIfIsNone(info[f.tbl[1][keys[z][3]]],f.tbl[1][keys[z][4]])),
-			x,y,undefined,undefined,res,
-		); y=res.y+lh;
+		{
+			const title=useDefaultIfIsNone(info[f.tbl[1][keys[z][3]]],f.tbl[1][keys[z][4]]);
+			if(title){
+				this.drawTextEx(
+					"\\TXTCENTER:"+JSON.stringify(title),
+					x,y,undefined,undefined,res,
+				);
+				y=res.y+lh;
+			}
+		}
 		for(let i=0,arr=info[f.tbl[1][keys[z][0]]],xs=arr&&arr.length;i<xs;++i){
 			const info=arr[i];
 			if('g'===info[0]){
@@ -696,7 +761,7 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 				}
 			}else if('j'===info[0]){
 				if(info[1]){
-					const beRed=!isGain&&!useDefaultIfIsNone(EVAL.call(this,info[3]),true);
+					const beRed=!isGain&&!useDefaultIfIsNone(EVAL.call(info,info[3]),true);
 					this.drawTextEx(allColors[beRed|0]+info[1],x,y,undefined,undefined,res);
 				}
 			}else{
@@ -704,10 +769,10 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 				const item=dataarr[info[1]];
 				const beRed=!(isGain||$gameParty.numItems(item)>=info[2]-0);
 				const signedNumInfo2=isGain?(info[2]<0?info[2]:"+"+info[2]):(info[2]<0?"+"+(-info[2]):'-'+info[2]); // cost
-				const s=allColors[0]+item.name+' '+allColors[beRed|0]+$gameParty.numItems(item)+'/'+signedNumInfo2+allColors[beRed|0][0];
+				const s=allColors[0]+(item?item.name:"")+' '+allColors[beRed|0]+$gameParty.numItems(item)+'/'+signedNumInfo2+allColors[beRed|0][0];
 				if(x>=cw2){
 					// detect auto newLine
-					if(item.iconIndex) x+=Window_Base._iconWidth+f.tbl[5].iconPadding;
+					if(item&&item.iconIndex) x+=Window_Base._iconWidth+f.tbl[5].iconPadding;
 					const mockRes=Object.assign({},res);
 					this._is_戰鬥介面選單文字消失=true;
 					this.drawTextEx(' ',x,y,undefined,undefined,mockRes);
@@ -719,14 +784,14 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 					if(standardY!==resY){
 						x=x0;
 						y=res.y+lh;
-					}else if(item.iconIndex) x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
+					}else if(item&&item.iconIndex) x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
 				}
-				if(item.iconIndex){
+				if(item&&item.iconIndex){
 					this.drawIcon(item.iconIndex,x,y);
 					x+=Window_Base._iconWidth+f.tbl[5].iconPadding;
 				}
 				this.drawTextEx(s,x,y,undefined,undefined,res);
-				if(item.iconIndex){
+				if(item&&item.iconIndex){
 					x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
 				}
 			}
@@ -747,19 +812,23 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 },t).
 addBase('createWindow_descriptionsWindow',function f(){
 	const sp=this._descriptionsWindow=new Window_Help();
-	const fsz0=sp.standardFontSize(),fsz=(fsz0>>1)+(fsz0>>3),LH0=(fsz*3),LH125=LH0>>1; sp.changeFontSize(fsz); sp.standardFontSize=()=>fsz; sp.lineHeight=()=>LH125;
-	sp.height=sp.fittingHeight(f.tbl[3].descriptions.lineNum);
-	const conf=f.tbl[3].descriptions; conf.y=f.tbl[3].requirements.h; conf.w=f.tbl[3].requirements.w;
+	//const fsz0=sp.standardFontSize(),fsz=(fsz0>>1)+(fsz0>>3),LH0=(fsz*3),LH125=LH0>>1; sp.changeFontSize(fsz); sp.standardFontSize=()=>fsz; sp.lineHeight=()=>LH125;
+	const conf=f.tbl[5].positioning_descriptions;
+	sp.height=sp.fittingHeight(conf.lineNum);
+	conf.x=f.tbl[1]._windowLayoutItemListWindowWidth;
+	conf.y=f.tbl[5].positioning_requirements.h;
+	conf.w=f.tbl[5].positioning_requirements.w;
+	conf.h=f.tbl[1]._windowLayoutDescriptionWindowHeight;
 	sp.positioning(conf,this._requirementsWindow);
 	this.getRoot().addChild(sp);
-},ttt).
+},t).
 addBase('createWindow_descriptionsWindow_refreshHelp',function f(info){
 	this.setText(info[f.tbl[1]._itemPropertyStringDescription]);
 },t).
 addBase('createAll_finalTune',function f(){
 	// rwd (to font size setting) size
 	{
-		const h=Math.max(this._descriptionsWindow.fittingHeight(f.tbl[3].descriptions.lineNum),this._descriptionsWindow.height);
+		const h=Math.max(this._descriptionsWindow.fittingHeight(f.tbl[5].positioning_descriptions.lineNum),this._descriptionsWindow.height);
 		if(h!==this._descriptionsWindow.height){
 			this._requirementsWindow.height-=h-this._descriptionsWindow.height;
 			this._descriptionsWindow.height=h;
@@ -779,9 +848,14 @@ addBase('createAll_finalTune',function f(){
 	this._itemListWindow.setHandler('cancel',this.popScene.bind(this));
 	this._itemListWindow.setHandler('ok',this.createWindow_itemListWindow_okHandler.bind(this));
 	// re-adjust loc
+	if(f.tbl[1]._windowLayoutDescriptionWindowOnTop){
 	this._requirementsWindow.y+=this._descriptionsWindow.height;
 	this._descriptionsWindow.y=0;
-},ttt).
+	}else{
+	this._descriptionsWindow.y=this._requirementsWindow.height;
+	this._requirementsWindow.y=0;
+	}
+},t).
 addBase('getInfo',function f(key){
 	return this._data._key2info.get(key);
 });
