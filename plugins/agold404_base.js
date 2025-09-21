@@ -1301,6 +1301,16 @@ escapeFunction_set('TXTFONTSIZE',function f(code,textState){
 	textState.index=strPos.end;
 	return this.changeFontSize(EVAL.call(this,JSON.parse(textState.text.slice(strPos.start,strPos.end))));
 }).
+escapeFunction_set('TXTCOLOR',function f(code,textState){
+	if(textState.text[textState.index]!==":") return window.isTest()&&console.warn("expected a ':' immediately after '\\TXTFONTSIZE'");
+	const strt=textState.index+1;
+	const strPos=getCStyleStringStartAndEndFromString(textState.text,strt);
+	if(!(strPos.start>=strt)) return window.isTest()&&console.warn("expected a c-style string after '\\TXTFONTSIZE:'");
+	textState.index=strPos.end;
+	const color=EVAL.call(this,JSON.parse(textState.text.slice(strPos.start,strPos.end)));
+	this.changeTextColor(color);
+	return "\\TXTCOLOR:"+JSON.stringify(JSON.stringify(color));
+}).
 escapeFunction_set('SKNV',function f(code,textState){
 	return this.processEscapeCharacter_dataobj.apply(this,arguments);
 }).
