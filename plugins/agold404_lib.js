@@ -968,6 +968,10 @@ const useDefaultIfIsNaN=window.useDefaultIfIsNaN=(n,d)=>{
 	const rtv=n-0;
 	return isNaN(rtv)?d:rtv;
 };
+const useDefaultIfIsNone=window.useDefaultIfIsNone=(n,d)=>{
+	// none: null or undefined
+	return n==null?d:n;
+};
 const getWiderPoints=window.getWiderPoints=(pt3,width,isNormalToCoordinates,dim)=>{
 	// currently only support dim===2
 	width=width-0||0;
