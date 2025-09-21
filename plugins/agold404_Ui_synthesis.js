@@ -11,30 +11,108 @@
  * @default data/synthesis.json
  * 
  * 
- * @param ItemPropertyStringName
- * @type text
- * @text a string used as the property string of item name
- * @default name
+ * @param ItemDefaultValues
+ * @text default vaules
  * 
- * @param ItemPropertyStringSummary
+ * @param ItemDefaultValueDisplay
+ * @parent ItemPropertyStringsRoot
  * @type text
- * @text a string used as the property string of item description
- * @default summary
+ * @text title for materials display
+ * @default display
+ * 
+ * @param ItemDefaultValueMaterialsTitle
+ * @parent ItemDefaultValues
+ * @type text
+ * @text title for materials
+ * @default materials
+ * 
+ * @param ItemDefaultValueMaterialsHide
+ * @parent ItemDefaultValues
+ * @type boolean
+ * @text true to hide materials block by default
+ * @default false
+ * 
+ * @param ItemDefaultValueGainsTitle
+ * @parent ItemDefaultValues
+ * @type text
+ * @text title for gains
+ * @default gains
+ * 
+ * @param ItemDefaultValueGainsHide
+ * @parent ItemDefaultValues
+ * @type boolean
+ * @text true to hide gains block by default
+ * @default false
+ * 
+ * 
+ * @param ItemPropertyStringsRoot
+ * @text change strings used as the property string of an item
+ * 
+ * @param ItemPropertyStringKey
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item key
+ * @default key
+ * 
+ * @param ItemPropertyStringDisplay
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item displayed name
+ * @default display
  * 
  * @param ItemPropertyStringDescription
+ * @parent ItemPropertyStringsRoot
  * @type text
  * @text a string used as the property string of item description
  * @default description
  * 
+ * @param ItemPropertyStringHead
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item head
+ * @default head
+ * 
  * @param ItemPropertyStringMaterials
+ * @parent ItemPropertyStringsRoot
  * @type text
  * @text a string used as the property string of item materials
  * @default materials
  * 
+ * @param ItemPropertyStringMaterialsTitle
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item materials_title
+ * @default materials_title
+ * 
+ * @param ItemPropertyStringMaterialsHide
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item materials_hide
+ * @default materials_hide
+ * 
  * @param ItemPropertyStringGains
+ * @parent ItemPropertyStringsRoot
  * @type text
  * @text a string used as the property string of item gains
  * @default gains
+ * 
+ * @param ItemPropertyStringGainsTitle
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item gains_title
+ * @default gains_title
+ * 
+ * @param ItemPropertyStringGainsHide
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item gains_hide
+ * @default gains_hide
+ * 
+ * @param ItemPropertyStringTail
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of item tail
+ * @default tail
  * 
  * 
  * @help an UI for synthesis
@@ -42,10 +120,13 @@
  * 
  * default item layout = 
  * {
- *   "name":"...",
+ *   "key":"...",
+ *   "display:"...",
  *   "description":"...",
  *   "materials":[],
+ *   "materials_title":"",
  *   "gains":[],
+ *   "gains_title":"",
  *   "other customized informations": ANY
  * }
  * 
@@ -67,19 +148,36 @@
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Ui_synthesis";
 const params=PluginManager.parameters(pluginName)||{};
 params._templatePath=params.TemplatePath;
-params._itemPropertyStringName=params.ItemPropertyStringName||"";
-params._itemPropertyStringDescription=params.ItemPropertyStringDescription||"";
-params._itemPropertyStringMaterials=params.ItemPropertyStringMaterials||"";
-params._itemPropertyStringGains=params.ItemPropertyStringGains||"";
+params._itemPropertyStringKey=useDefaultIfIsNone(params.ItemPropertyStringKey,"key");
+params._itemPropertyStringDisplay=useDefaultIfIsNone(params.ItemPropertyStringDisplay,"display");
+params._itemPropertyStringDescription=useDefaultIfIsNone(params.ItemPropertyStringDescription,"description");
+params._itemPropertyStringHead=useDefaultIfIsNone(params.ItemPropertyStringHead,"head");
+params._itemPropertyStringMaterials=useDefaultIfIsNone(params.ItemPropertyStringMaterials,"materials");
+params._itemPropertyStringMaterialsTitle=useDefaultIfIsNone(params.ItemPropertyStringMaterialsTitle,"materials_title");
+params._itemPropertyStringMaterialsHide=useDefaultIfIsNone(params.ItemPropertyStringMaterialsHide,"materials_hide");
+params._itemPropertyStringGains=useDefaultIfIsNone(params.ItemPropertyStringGains,"gains");
+params._itemPropertyStringGainsTitle=useDefaultIfIsNone(params.ItemPropertyStringGainsTitle,"gains_title");
+params._itemPropertyStringGainsHide=useDefaultIfIsNone(params.ItemPropertyStringGainsHide,"gains_hide");
+params._itemPropertyStringTail=useDefaultIfIsNone(params.ItemPropertyStringTail,"tail");
 
 t=[
 undefined,
 params, // 1: plugin params
 window.isTest(), // 2: isTest
-"findingWnd", // 3: keyName
+[
+new Set([
+	'cancel',
+]), // 3-0: reserved property names
+function(info){ return info&&(this._itemPropertyStringKey in info); }, // 3-1: filter out infos without key
+], // 3: init
+[
+['_itemPropertyStringMaterialsHide' , '_itemPropertyStringMaterials' , '_itemPropertyStringMaterialsTitle' , ], // 4-0: material
+['_itemPropertyStringGainsHide'     , '_itemPropertyStringGains'     , '_itemPropertyStringGainsTitle'     , ], // 4-1: gain
+], // 4: material && gain
 ];
 
 
+let ttt;
 //const dataPath="data/合成.json";
 const dataPath=params._templatePath;
 const properties={
@@ -93,7 +191,8 @@ hideGain:"hideGain",
 head:"head",
 tail:"tail",
 };
-properties.key=params._itemPropertyStringName;
+properties.key=params._itemPropertyStringKey;
+properties.display=params._itemPropertyStringDisplay;
 properties.description=params._itemPropertyStringDescription;
 properties.cost=params._itemPropertyStringMaterials;
 properties.gain=params._itemPropertyStringGains;
@@ -192,6 +291,13 @@ new cfc(Game_Temp.prototype).
 addBase('synthesis_setCurrList',function f(arr){
 	this._synthesis_currList=arr;
 }).
+addBase('synthesis_open',function f(){
+	SceneManager.push(Scene_合成);
+}).
+addBase('synthesis_simpleTest',function f(){
+	$gameSystem.synthesis_selectAll();
+	this.synthesis_open();
+}).
 getP;
 }
 
@@ -223,10 +329,10 @@ addBase('initSel',function f(allList,selInfo){
 	// selInfo=$gameSystem.synthesis_getList();
 	this._data=[];
 	if(!selInfo) return;
-	const selKey2type=new Map(); selInfo.forEach(f.tbl[1],selKey2type);
+	const selKey2type=new Map(); for(let x=0,arr=selInfo,xs=arr.length;x<xs;++x) selKey2type.set(arr[x][1],arr[x][0]);
 	if(selInfo._selAll){
 		for(let x=0,arr=allList,xs=arr.length;x!==xs;++x){
-			const key=arr[x][f.tbl[0].key];
+			const key=arr[x][f.tbl[1]._itemPropertyStringKey];
 			if(selKey2type.has(key)) continue; // 'r' , 'i'
 			this._data.push(arr[x]);
 		}
@@ -242,30 +348,27 @@ addBase('initSel',function f(allList,selInfo){
 	}
 	this._disabledSet=selInfo._disabledSet;
 	return this._data;
-},[
-properties,
-function(x){ this.set(x[1],x[0]); },
-]).
+},t).
 addBase('makeCommandList',function f(){
 	if(!this._data) return;
 	this._data.forEach(f.tbl[0],this);
-},t=[
+},ttt=[
 function f(info){
 	const enabled=this._disabledSet&&!this._disabledSet.has(info[f.tbl.key]);
 	this.addCommand(info[f.tbl.display],info[f.tbl.key],enabled);
 }, // forEach
 ]).
 addBase('checkCostsEnough',function f(info){
-	f.tbl[1](f.tbl); if(!info) return false;
-	const costs=info[f.tbl[0].cost]; if(!costs) return true;
+	if(!info) return false;
+	const costs=info[f.tbl[1]._itemPropertyStringMaterials]; if(!costs) return true;
 	for(let x=0,arr=costs,xs=arr.length;x!==xs;++x){
 		const info=arr[x];
 		if('g'===info[0]){ if(!($gameParty.gold()>=info[1])) return false; }
-		else if('j'===info[0]){ if(!f.tbl[2](info[1],this)) return false; }
-		else{ if(!($gameParty.numItems(f.tbl.dataArrByType[info[0]][info[1]])>=info[2])) return false; }
+		else if('j'===info[0]){ if(useDefaultIfIsNone(EVAL.call(this,info[2]),true)) return false; }
+		else{ if(!($gameParty.numItems(DataManager.getItemCont(info[0])[info[1]])>=info[2])) return false; }
 	}
 	return true;
-},[properties,putDataArrByType,evaljs]).
+},t).
 addBase('getCurrentInfo',function(index){
 	const idx=index===undefined?this._index:index;
 	return this._data[idx];
@@ -332,7 +435,7 @@ addBase('refresh',function f(){
 	this._drawTextEx_clearCache();
 	return rtv;
 },tbl,false,true);
-t[0].ori=undefined; t[0].tbl=properties;
+ttt[0].ori=undefined; ttt[0].tbl=properties;
 }
 
 
@@ -344,7 +447,7 @@ a.ori=Scene_MenuBase;
 window[a.name]=a;
 const p=a.prototype=Object.create(a.ori.prototype);
 p.constructor=a;
-t=[
+ttt=[
 a.ori.prototype,
 a.ori,
 ['itemList','amounts',], // 2
@@ -386,16 +489,16 @@ addBase('initialize',function f(){
 	const rtv=f._super.initialize.apply(this,arguments);
 	this.init();
 	return rtv;
-},t).
+},ttt).
 addBase('init',function f(){
 	this._state=f.tbl[2][0];
 	ImageManager.otherFiles_addLoad(f.tbl[4][0]);
-},t).
+},ttt).
 addBase('create',function f(){
 	const rtv=f._super.create.apply(this,arguments);
 	this.createAll();
 	return rtv;
-},t).
+},ttt).
 addBase('getRoot',function f(){
 	return this._root;
 }).
@@ -407,59 +510,58 @@ addBase('createAll',function f(){
 	this.createWindow_requirementsWindow();
 	this.createWindow_descriptionsWindow();
 	this.createAll_finalTune();
-},t).
+},ttt).
 addBase('createAll_parseData',function f(){
-	const raw=ImageManager.otherFiles_getData(f.tbl[4][0]);
+	const raw=ImageManager.otherFiles_getData(f.tbl[1]._templatePath);
+	ImageManager.otherFiles_delData(f.tbl[1]._templatePath);
 	if(!raw){
 		this._data=[];
 		return;
 	}
-	const arr=this._data=JSON.parse(raw).filter(f.tbl[4][1]);
+	const arr=this._data=JSON.parse(raw).filter(f.tbl[3][1],f.tbl[1]);
 	const m=this._data._key2info=new Map();
 	for(let x=0,xs=arr.length;x!==xs;++x){
-		if(!(f.tbl[5].description in arr[x])) arr[x][f.tbl[5].description]="";
-		if(!(f.tbl[5].display in arr[x])) arr[x][f.tbl[5].display]=arr[x][f.tbl[5].key];
-		const key=arr[x][f.tbl[5].key];
-		if(f.tbl[4][3].has(key)){
+		if(!(f.tbl[1]._itemPropertyStringDescription in arr[x])) arr[x][f.tbl[1]._itemPropertyStringDescription]="";
+		if(!(f.tbl[1]._itemPropertyStringDisplay     in arr[x])) arr[x][f.tbl[1]._itemPropertyStringDisplay]=arr[x][f.tbl[1]._itemPropertyStringKey];
+		const key=arr[x][f.tbl[1]._itemPropertyStringKey];
+		if(f.tbl[3][0].has(key)){
 			throw new Error("you cannot use "+key+" as internal name.");
 		}
 		if(m.has(key)){
-			throw new Error(f.tbl[5].key+f.tbl[4][2]+key);
+			throw new Error(f.tbl[1]._itemPropertyStringKey+" repeated: "+key);
 		}
 		m.set(key,arr[x]);
 	}
 },t).
 addBase('createAll_root',function f(){
 	this.addChild(this._root=new Sprite());
-},t).
+}).
 addBase('createWindow_itemListWindow',function f(){
 	const sp=this._itemListWindow=new Window_合成_list(0,0,this._data,$gameSystem.synthesis_getList());
 	const conf=f.tbl[3].itemList; conf.h=Graphics.boxHeight;
 	sp.positioning(conf);
 	this.getRoot().addChild(sp);
-},t).
+},ttt).
 addBase('createWindow_itemListWindow_okHandler',function f(){
 	// bind `this` to scene
 	const self=this._itemListWindow; if(!self.isCurrentItemEnabled()){ SoundManager.playBuzzer(); return self.activate(); }
 	const info=self.getCurrentInfo(); if(!info) return;
-	//const costs=info[f.tbl[5].cost];
-	//const gains=info[f.tbl[5].gain];
-	for(let keys=f.tbl[6],z=keys.length,cw2=self.contentsWidth()>>1;z--;){
+	for(let keys=f.tbl[4],z=keys&&keys.length,cw2=self.contentsWidth()>>1;z--;){
 		const coef=1-(z<<1);
-		for(let i=0,arr=info[f.tbl[5][keys[z]]],xs=arr.length;i!==xs;++i){
+		for(let i=0,arr=info[f.tbl[1][keys[z][1]]],xs=arr&&arr.length;i<xs;++i){
 			const info=arr[i];
 			if('g'===info[0]) $gameParty.gainGold(coef*info[1]);
-			else if('j'===info[0]) f.tbl[8][2](info[1],this);
+			else if('j'===info[0]) EVAL.call(this,info[1]);
 			else{
-				const item=f.tbl.dataArrByType[info[0]][info[1]];
+				const item=DataManager.getItemCont(info[0])[info[1]];
 				$gameParty.gainItem(item,coef*info[2]);
 				self.refreshItemsEnabled&&self.refreshItemsEnabled();
 			}
 		}
 	}
 	if($gameTemp.popupMsg){
-		$gameTemp.popupMsg(f.tbl[4][5]+info[f.tbl[5].display],f.tbl[10]);
-		AudioManager.playSe(f.tbl[11]);
+		$gameTemp.popupMsg("製作成功："+info[f.tbl[1]._itemPropertyStringDisplay],{loc:"DR",});
+		AudioManager.playSe(({name:"Item3",volume:75,pitch:100,}),);
 	}
 	self.activate();
 },t).
@@ -471,7 +573,7 @@ addBase('createWindow_requirementsWindow',function f(){
 	sp.positioning(conf);
 	this.getRoot().addChild(sp);
 	if($gameTemp.popupMsg) $gameTemp.popupMsg(f.tbl[4][4],f.tbl[10]);
-},t).
+},ttt).
 addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 	f.tbl[9][0](f.tbl);
 	// this._requirementsWindow.refreshHelp=this.createWindow_requirementsWindow_refreshHelp;
@@ -528,7 +630,7 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 					this.drawTextEx(('\\TXTCOLOR"'+f.tbl[12][beRed|0]+'"')+info[2],x,y,undefined,undefined,res);
 				}
 			}else{
-				const item=f.tbl.dataArrByType[info[0]][info[1]];
+				const item=DataManager.getItemCont(info[0])[info[1]];
 				const beRed=!('gain'===keys[z]||$gameParty.numItems(item)>=info[2]-0);
 				const signedNumInfo2='gain'===keys[z]?(info[2]<0?info[2]:"+"+info[2]):(info[2]<0?"+"+(-info[2]):'-'+info[2]); // cost
 				const s=('\\TXTCOLOR"'+f.tbl[12][0]+'"')+item.name+' '+('\\TXTCOLOR"'+f.tbl[12][beRed|0]+'"')+$gameParty.numItems(item)+'/'+signedNumInfo2+('\\TXTCOLOR"'+f.tbl[12][0]+'"');
@@ -567,7 +669,7 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 		}
 	}
 	if(info[f.tbl[5].tail]){ this.drawTextEx(info[f.tbl[5].tail],x,y,undefined,undefined,res); y=res.y+lh; }
-},t).
+},ttt).
 addBase('createWindow_descriptionsWindow',function f(){
 	const sp=this._descriptionsWindow=new Window_Help();
 	const fsz0=sp.standardFontSize(),fsz=(fsz0>>1)+(fsz0>>3),LH0=(fsz*3),LH125=LH0>>1; sp.changeFontSize(fsz); sp.standardFontSize=()=>fsz; sp.lineHeight=()=>LH125;
@@ -575,10 +677,10 @@ addBase('createWindow_descriptionsWindow',function f(){
 	const conf=f.tbl[3].descriptions; conf.y=f.tbl[3].requirements.h; conf.w=f.tbl[3].requirements.w;
 	sp.positioning(conf,this._requirementsWindow);
 	this.getRoot().addChild(sp);
-},t).
+},ttt).
 addBase('createWindow_descriptionsWindow_refreshHelp',function f(info){
 	this.setText(info[f.tbl[5].description]);
-},t).
+},ttt).
 addBase('createAll_finalTune',function f(){
 	// rwd (to font size setting) size
 	{
@@ -604,10 +706,10 @@ addBase('createAll_finalTune',function f(){
 	// re-adjust loc
 	this._requirementsWindow.y+=this._descriptionsWindow.height;
 	this._descriptionsWindow.y=0;
-},t).
+},ttt).
 addBase('getInfo',function f(key){
 	return this._data._key2info.get(key);
-},t);
+},ttt);
 }
 
 })();
