@@ -4479,6 +4479,22 @@ new Map([
 (()=>{ let k,r,t;
 
 
+new cfc(Sprite_Base.prototype).
+addBase('updateAnimationSprites',function f(){
+	if(this._animationSprites.length){
+		const curr=this._animationSprites;
+		const isPlayings=[];
+		curr.forEach(f.tbl[0],isPlayings);
+		if(curr.length!==isPlayings.length) this._animationSprites=isPlayings;
+	}
+},[
+function f(sprite){
+	sprite.isPlaying()?this.push(sprite):sprite.remove();
+}, // 0: forEach
+]).
+getP;
+
+
 new cfc(DataManager).
 addRoof('onLoad_after_animation',function f(obj,name,src,msg){
 	const rtv=f.ori.apply(this,arguments);
@@ -4525,6 +4541,8 @@ addBase('createCellSprites',function f(cellsCnt){
 	}
 }).
 add('setup',function f(target,ani,mir,dly,opt){
+	this._hasFlashSprite=false;
+	{ const c=this._screenFlashSprite,p=c&&c.parent; if(p) p.removeChild(c); }
 	this.createCellSprites(ani._maxAnimationCellsCnt);
 	return f.ori.apply(this,arguments);
 }).
@@ -4536,6 +4554,59 @@ addBase('updateAllCellSprites',function f(frame){
 		else sp.visible=false;
 	}
 	this._lastUpdatedCellIdxEnd=newIdxEnd;
+}).
+addBase('createScreenFlashSprite',function f(){
+	this._hasFlashSprite=true;
+}).
+addBase('startScreenFlash',function f(color,duration){
+	this._screenFlashDuration=duration;
+	if(!this._hasFlashSprite) return;
+	if(!this._screenFlashSprite) this.addChild(this._screenFlashSprite=new ScreenSprite());
+	this._screenFlashSprite.setColor(color[0],color[1],color[2]);
+	this._screenFlashSprite.opacity=color[3];
+}).
+addBase('processTimingData',function f(timing){
+	const func=f.tbl[0][timing.flashScope]; if(func) func.apply(this,arguments);
+	if(timing.se) AudioManager.playSe(timing.se);
+},[
+[
+undefined, // 0-0
+function f(timing){
+	this.startFlash(
+		timing.flashColor,
+		timing.flashDuration*this._rate,
+	);
+}, // 0-1
+function f(timing){
+	this.startScreenFlash(
+		timing.flashColor,
+		timing.flashDuration*this._rate,
+	);
+}, // 0-2
+function f(timing){
+	this.startHiding(
+		timing.flashDuration*this._rate,
+	);
+}, // 0-3
+], // 0: cases
+]).
+addBase('updateFrame_getByFrmIdx',function f(timings){
+	let rtv=timings._byFrameIdx;
+	if(!rtv){
+		rtv=timings._byFrameIdx=[];
+		for(let x=timings.length;x--;){
+			const tm=timings[x];
+			(rtv[tm.frame]||(rtv[tm.frame]=[])).push(tm);
+		}
+	}
+	return rtv;
+}).
+addBase('updateFrame',function f(){
+	if(!(0<this._duration)) return;
+	const frameIndex=this.currentFrameIndex();
+	this.updateAllCellSprites(this._animation.frames[frameIndex]);
+	const arr=this.updateFrame_getByFrmIdx(this._animation.timings)[frameIndex]; // reverse order
+	for(let x=arr&&arr.length;x--;) this.processTimingData(arr[x]);
 }).
 getP;
 
@@ -5819,9 +5890,9 @@ new cfc(SceneManager).add('updateScene',function f(){
 }).addBase('createdPosition3AnimationInTheFrame_reset',function f(){
 	Sprite_Animation._createdPosition3AnimationsInTheFrame.clear();
 }).addBase('createdPosition3AnimationInTheFrame_add',function f(dataobj){
-	const s=Sprite_Animation._createdPosition3AnimationsInTheFrame;
-	const sz=s.size;
 	if(dataobj&&dataobj.position===3){
+		const s=Sprite_Animation._createdPosition3AnimationsInTheFrame;
+		const sz=s.size;
 		s.add(dataobj);
 		return s.size-sz;
 	}
