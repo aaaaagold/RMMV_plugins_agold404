@@ -134,13 +134,13 @@ affectStaticSe:false,
 	const info=Object.assign({},se);
 	info._echoOpt=opt;
 	info.volume*=this.seEcho_opt_getNextVolRate(opt); if(!(info.volume>=this.seEcho_opt_getMinVol(opt))) return;
-	info._echoFrame=(se._echoFrame||Graphics.frameCount)+this.seEcho_opt_getDelayFrame(opt); if(!info._echoFrame) return;
+	info._echoFrame=(se._echoFrame||Graphics.getSceneFrameCnt())+this.seEcho_opt_getDelayFrame(opt); if(!info._echoFrame) return;
 	this.seEcho_echos_getCont().push(info);
 	return info;
 }).add('seEcho_echos_clear',function f(){
 	this.seEcho_echos_getCont().clear();
 }).add('seEcho_echos_play',function f(){
-	for(const h=this.seEcho_echos_getCont(),currFrame=Graphics.frameCount;h.length&&currFrame>=h.top._echoFrame;){
+	for(const h=this.seEcho_echos_getCont(),currFrame=Graphics.getSceneFrameCnt();h.length&&currFrame>=h.top._echoFrame;){
 		const curr=h.top; h.pop();
 		AudioManager.playSe(curr); // will add an echo
 	}
