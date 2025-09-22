@@ -82,8 +82,14 @@
  * @param ItemPropertyStringDisplayBlockTitle
  * @parent ItemPropertyStringsRoot
  * @type text
- * @text a string used as the property string of item displayed name
+ * @text a string used as the property string of item displayed block title in requirement window
  * @default display_block_title
+ * 
+ * @param ItemPropertyStringDisplayBlockText
+ * @parent ItemPropertyStringsRoot
+ * @type text
+ * @text a string used as the property string of replaced item displayed name in requirement window
+ * @default display_block_text
  * 
  * @param ItemPropertyStringDescription
  * @parent ItemPropertyStringsRoot
@@ -94,13 +100,13 @@
  * @param ItemPropertyStringDescriptionWindowHide
  * @parent ItemPropertyStringsRoot
  * @type text
- * @text a string used as the property string of item description
+ * @text a string used as the property string to determine whether to hide description window or not
  * @default description_window_hide
  * 
  * @param ItemPropertyStringHead
  * @parent ItemPropertyStringsRoot
  * @type text
- * @text a string used as the property string of item head
+ * @text a string used as the property string of item head in requirement window
  * @default head
  * 
  * @param ItemPropertyStringMaterials
@@ -118,7 +124,7 @@
  * @param ItemPropertyStringMaterialsBlockHide
  * @parent ItemPropertyStringsRoot
  * @type text
- * @text a string used as the property string of item materials_hide
+ * @text a string used as the property string to determine whether to hide materials block or not
  * @default materials_block_hide
  * 
  * @param ItemPropertyStringGains
@@ -136,7 +142,7 @@
  * @param ItemPropertyStringGainsBlockHide
  * @parent ItemPropertyStringsRoot
  * @type text
- * @text a string used as the property string of item gains_hide
+ * @text a string used as the property string to determine whether to hide gains block or not
  * @default gains_block_hide
  * 
  * @param ItemPropertyStringTail
@@ -227,6 +233,7 @@ params._itemDefaultValueSuccessMsgPrefix=useDefaultIfIsNone(params.ItemDefaultVa
 params._itemPropertyStringKey=useDefaultIfIsNone(params.ItemPropertyStringKey,"key");
 params._itemPropertyStringDisplay=useDefaultIfIsNone(params.ItemPropertyStringDisplay,"display");
 params._itemPropertyStringDisplayBlockTitle=useDefaultIfIsNone(params.ItemPropertyStringDisplayBlockTitle,"display_block_title");
+params._itemPropertyStringDisplayBlockText=useDefaultIfIsNone(params.ItemPropertyStringDisplayBlockText,"display_block_text");
 params._itemPropertyStringDisplayBlockHide=useDefaultIfIsNone(params.ItemPropertyStringDisplayBlockHide,"display_block_hide");
 params._itemPropertyStringDescription=useDefaultIfIsNone(params.ItemPropertyStringDescription,"description");
 params._itemPropertyStringDescriptionWindowHide=useDefaultIfIsNone(params.ItemPropertyStringDescriptionWindowHide,"description_window_hide");
@@ -702,7 +709,8 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 			);
 			y=res.y+lh;
 		}
-		this.drawTextEx(info[f.tbl[1]._itemPropertyStringDisplay],x,y,undefined,undefined,res); y=res.y+lh;
+		const text=useDefaultIfIsNone(info[f.tbl[1]._itemPropertyStringDisplayBlockText],info[f.tbl[1]._itemPropertyStringDisplay]);
+		this.drawTextEx(text,x,y,undefined,undefined,res); y=res.y+lh;
 	}
 	const allColors=[
 		("\\TXTCOLOR:"+JSON.stringify(JSON.stringify(f.tbl[5]._defaultTextColor))),
