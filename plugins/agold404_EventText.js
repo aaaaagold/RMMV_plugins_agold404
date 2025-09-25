@@ -90,6 +90,7 @@ new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 ]).add('setChrTxt',function f(txt){
 	let wt=this._textWnd;
 	if(!wt){
+		if(!txt) return this;
 		const c=new PIXI.Container();
 		c.addChild(wt=this._textWnd=new Window_Text(0,0,1,1));
 		wt._character=this._character;
