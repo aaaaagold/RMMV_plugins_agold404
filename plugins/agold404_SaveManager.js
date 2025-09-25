@@ -162,7 +162,8 @@ const input=document.createElement('input'),onload=e=>{
 		Scene_Load.prototype.reloadMapIfUpdated();
 		SceneManager.goto(Scene_Map);
 		$gameSystem.onAfterLoad();
-	}catch(e){
+	}catch(err){
+		e.target._wnd.active=true;
 		SoundManager.playBuzzer();
 		$gameTemp=backup.tmp;
 		$gameSystem=backup.sys;
@@ -180,12 +181,17 @@ const input=document.createElement('input'),onload=e=>{
 	}
 	self.value='';
 },onerr=e=>{
+	e.target._wnd.active=true;
 	SoundManager.playBuzzer();
 };
 input.setAttribute('type','file');
 input.onchange=function(){
-	if(!this.files.length) return;
+	if(!this.files.length){
+		this._wnd.active=true;
+		return;
+	}
 	const reader=new FileReader();
+	(reader._wnd=this._wnd).active=false;
 	reader.onload=onload;
 	reader.onerror=onerr;
 	reader.readAsText(this.files[0]); // testing beta...
@@ -194,10 +200,13 @@ input.onchange=function(){
 	switch(this.commandSymbol(this.index())){
 	case optKey: SoundManager.playOk(); sctype=ENUM_SCTYPE_EDITNAME; return SceneManager.push(window[scname]);
 	case optLoadLocal:
+		if(SceneManager.isSceneChanging()) return;
 		SoundManager.playOk();
 		clearInputs();
 		input.value='';
 		input.click();
+		if(input._wnd) input._wnd.active=false;
+		(input._wnd=this).active=true;
 		return;
 	case optSaveLocal: SoundManager.playOk(); sctype=ENUM_SCTYPE_SAVELOCAL; return SceneManager.push(window[scname]);
 	default: return f.ori.apply(this);
