@@ -1118,6 +1118,7 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 }).addBase('topRow',function f(){
 	return Math.floor(this._scrollY/(this.itemHeight()+this.itemSpacingY()));
 }).addBase('updateArrows',function f(){
+	if(!this.openness) return;
 	let scy=this._scrollY;
 	const rectBeg=this.itemRect(0);
 	const maxCols=this.maxCols();
@@ -4479,6 +4480,80 @@ new Map([
 (()=>{ let k,r,t;
 
 
+new cfc(Sprite.prototype).
+addBase('_executeTint',function f(x, y, w, h){
+	const context=this._context;
+	const tone=this._colorTone;
+	const color=this._blendColor;
+	
+	context.globalCompositeOperation='copy';
+	context.drawImage(this._bitmap.canvas,x,y,w,h,0,0,w,h);
+	
+	if(0<tone[3] && Graphics.canUseSaturationBlend()){
+		const gray=tone[3];
+		context.globalCompositeOperation='saturation';
+		context.fillStyle='rgba(255,255,255,'+(gray+1)/256+')';
+		context.fillRect(0,0,w,h);
+	}
+	
+	if(Graphics.canUseDifferenceBlend()){
+		// via inverting colors since only 'light'+ is available
+		
+		const r=tone[0]-0;
+		const g=tone[1]-0;
+		const b=tone[2]-0;
+		if(r||g||b){
+			const someLessThan0=r<0||g<0||b<0;
+			const invertColor=someLessThan0?"#"+f.tbl[0][(r<0)|0]+f.tbl[0][(g<0)|0]+f.tbl[0][(b<0)|0]:undefined;
+			if(invertColor){
+				context.globalCompositeOperation='difference';
+				context.fillStyle=invertColor;
+				context.fillRect(0, 0, w, h);
+			}
+			context.globalCompositeOperation='lighter';
+			context.fillStyle='rgb(' + Math.abs(r) + ',' + Math.abs(g) + ',' + Math.abs(b) + ')';
+			context.fillRect(0,0,w,h);
+			if(invertColor){
+				context.globalCompositeOperation='difference';
+				context.fillStyle=invertColor;
+				context.fillRect(0,0,w,h);
+			}
+		}
+	}else{
+		// only do lighter since 'difference' is not available
+		
+		const r=Math.max(0,tone[0]);
+		const g=Math.max(0,tone[1]);
+		const b=Math.max(0,tone[2]);
+		if(r||g||b){
+			context.globalCompositeOperation='lighter';
+			context.fillStyle='rgb(' + r + ',' + g + ',' + b + ')';
+			context.fillRect(0,0,w,h);
+		}
+	}
+
+	{
+		const r3=Math.max(0,color[0]);
+		const g3=Math.max(0,color[1]);
+		const b3=Math.max(0,color[2]);
+		const a3=Math.max(0,color[3]);
+		if(a3){
+			context.globalCompositeOperation='source-atop';
+			context.fillStyle=Utils.rgbToCssColor(r3,g3,b3);
+			context.globalAlpha=(a3+1)/256;
+			context.fillRect(0,0,w,h);
+		}
+	}
+
+	context.globalCompositeOperation='destination-in';
+	context.globalAlpha=1;
+	context.drawImage(this._bitmap.canvas,x,y,w,h,0,0,w,h);
+},[
+["00","FF"], // 0: rgbColorChannel<0?
+]).
+getP;
+
+
 new cfc(Sprite_Base.prototype).
 addBase('updateAnimationSprites',function f(){
 	if(this._animationSprites.length){
@@ -4932,6 +5007,91 @@ function(r,di){
 new cfc(Game_Actor.prototype).
 addBase('isEquipped',function f(item){
 	return this._equipsTbl_has(item);
+}).
+getP;
+
+
+if(0){
+const t0=[0|0],t3=[3|0];
+new cfc(Game_CharacterBase.prototype).
+addBase('updateIsMoving',function f(){
+	this._isMoving=((this._y!==this._realY)<<1)|(this._x!==this._realX);
+}).
+add('update',function f(){
+	this.updateIsMoving();
+	const rtv=f.ori.apply(this,arguments);
+	//this.updateIsMoving(); // by the following
+	return rtv;
+}).
+addBase('isMoving',function f(){
+	return this._isMoving;
+}).
+add('setPosition',function f(x,y){
+	const rtv=f.ori.apply(this,arguments);
+	this._isMoving=f.tbl[0];
+	return rtv;
+},t0).
+add('copyPosition',function f(chr){
+	const rtv=f.ori.apply(this,arguments);
+	this.updateIsMoving();
+	return rtv;
+},t0).
+add('moveStraight',function f(d){
+	const rtv=f.ori.apply(this,arguments);
+	this.updateIsMoving();
+	return rtv;
+}).
+add('moveDiagonally',function f(dirH,dirV){
+	const rtv=f.ori.apply(this,arguments);
+	this.updateIsMoving();
+	return rtv;
+}).
+add('jump',function f(dx,dy){
+	const rtv=f.ori.apply(this,arguments);
+	this._isMoving=f.tbl[0];
+	return rtv;
+},t3).
+add('updateMove_1stepWork',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.updateIsMoving();
+	return rtv;
+}).
+add('updateJump_1stepWork',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._isMoving=f.tbl[0];
+	return rtv;
+},t3).
+add('updateJump_1stepDone',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._isMoving=f.tbl[0];
+	return rtv;
+},t0).
+getP;
+}
+
+
+new cfc(Game_Event.prototype).
+addBase('updateSelfMovement_getMoveFunc',function f(){
+	return f.tbl[0][this._moveType];
+},[
+[
+undefined, // 0-0
+function f(){
+	this.moveTypeRandom();
+}, // 0-1
+function f(){
+	this.moveTypeTowardPlayer();
+}, // 0-2
+function f(){
+	this.moveTypeCustom();
+}, // 0-3
+], // 0: moveTypes
+]).
+addBase('updateSelfMovement',function f(){
+	if(this._locked) return;
+	const func=this.updateSelfMovement_getMoveFunc();
+	if(!func||!this.isNearTheScreen()||!this.checkStop(this.stopCountThreshold())) return;
+	return func.apply(this,arguments);
 }).
 getP;
 
