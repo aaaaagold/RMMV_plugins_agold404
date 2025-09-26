@@ -233,6 +233,15 @@ window[a.name]=a;
 
 {
 const a=class Window_Depository_BackpackItemList extends Window_Depository_Common{
+initialize(x,y,w,h,opt){
+	// opt === from $gameTemp._depositoryOptions
+	const rtv=Window_Depository_Common.prototype.initialize.apply(this,arguments);
+	this._availableItems=opt&&opt.availableItems&&new Set(opt.availableItems);
+	return rtv;
+}
+includes(item){
+	return (!this._availableItems||this._availableItems.has(item)||this._availableItems.has(DataManager.duplicatedDataobj_getSrc(item)))&&Window_Depository_Common.prototype.includes.apply(this,arguments);
+}
 isEnabled(item){ return !!item; }
 setDepositoryItemListWindow(wnd){ this._depositoryItemListWindow=wnd; }
 _switchToDepositoryItemListWindow(wrap){
@@ -416,7 +425,7 @@ function f(){
 	const y0=wndAbove?wndAbove.y+wndAbove.height:0;
 	const y1=wndBelow?wndBelow.y:Graphics.boxHeight;
 	const w=f.tbl[0]();
-	this.addChild(rtv=this._window_itemList_backpack=new Window_Depository_BackpackItemList(x1-w,y0,w,y1-y0));
+	this.addChild(rtv=this._window_itemList_backpack=new Window_Depository_BackpackItemList(x1-w,y0,w,y1-y0,this._depositoryOptions));
 	rtv.maxCols=f.tbl[1];
 	rtv._onSwitchToWindow=f.tbl[2].switchToDepository.bind(this);
 	rtv.setHandler('ok',this.onBackpackListOk.bind(this));
