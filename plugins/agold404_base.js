@@ -4480,6 +4480,22 @@ new Map([
 (()=>{ let k,r,t;
 
 
+new cfc(WebAudio.prototype).
+addBase('stop',function f(){
+	this._autoPlay=false;
+	this._removeEndTimer();
+	this._removeNodes();
+	const arr=this._stopListeners;
+	if(arr){
+		for(let x=0,xs=arr.length;x<xs;++x){
+			const listner=arr[x];
+			listner();
+		}
+		arr.length=0;
+	}
+});
+
+
 new cfc(Sprite.prototype).
 addBase('_executeTint',function f(x, y, w, h){
 	const context=this._context;
@@ -5093,6 +5109,28 @@ addBase('updateSelfMovement',function f(){
 	if(!func||!this.isNearTheScreen()||!this.checkStop(this.stopCountThreshold())) return;
 	return func.apply(this,arguments);
 }).
+getP;
+
+
+new cfc(Game_Followers.prototype).
+addBase('refresh',function f(){
+	this.forEach(f.tbl[0],this);
+},[
+follower=>follower.refresh(), // 0: forEach
+]).
+addBase('update',function f(){
+	if(this.areGathering()){
+		if(!this.areMoving()){
+			this.updateMove();
+		}
+		if(this.areGathered()){
+			this._gathering=false;
+		}
+	}
+	this.forEach(f.tbl[0],this);
+},[
+follower=>follower.update(), // 0: forEach
+]).
 getP;
 
 
