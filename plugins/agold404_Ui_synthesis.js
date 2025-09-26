@@ -205,6 +205,7 @@
  *    id of item, weapon, armor when type is "i" , "w" , "a", corresponding. or,
  *    golds' number when type is "g"
  *    text shown for this item when type is "j"
+ *    use array to make content eval()-ed: ["'your messages here'"]
  *  count:
  *    amount of items when type is "i" , "w" , "a". or,
  *    text of javascript code to be executed when synthesizing this item when type is "j"
@@ -769,8 +770,11 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 				}
 			}else if('j'===info[0]){
 				if(info[1]){
-					const beRed=!isGain&&!useDefaultIfIsNone(EVAL.call(info,info[3]),true);
-					this.drawTextEx(allColors[beRed|0]+info[1],x,y,undefined,undefined,res);
+					const text=(info[1] instanceof Array)?EVAL.call(info,info[1][0]):info[1];
+					if(text!=null){
+						const beRed=!isGain&&!useDefaultIfIsNone(EVAL.call(info,info[3]),true);
+						this.drawTextEx(allColors[beRed|0]+text,x,y,undefined,undefined,res);
+					}
 				}
 			}else{
 				const dataarr=DataManager.getItemCont(info[0]); if(!dataarr) continue;
