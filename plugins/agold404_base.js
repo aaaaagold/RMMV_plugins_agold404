@@ -8609,7 +8609,7 @@ addBase('processCharacter',function f(textState){
 '\f':(self,textState)=>self.processNewPage(textState),
 '\\':(self,textState)=>{
 	if(textState.text[textState.index+1]==='\\'){ ++textState.index; return self.processNormalCharacter(textState); }
-	self.processEscapeCharacter(self.obtainEscapeCode(textState),textState);
+	return self.processEscapeCharacter(self.obtainEscapeCode(textState),textState);
 },
 _default:(self,textState)=>self.processNormalCharacter(textState),
 }, // 0: func tbl
