@@ -2603,13 +2603,34 @@ Game_Interpreter.cmd101Peek_set(102,function f(argv){
 	this.setupItemChoice(this.currentCommand().parameters);
 });
 
-new cfc(Game_Interpreter.prototype).add('setupChoices',function f(params){
-	const rtv=f.ori.apply(this,arguments);
+new cfc(Game_Interpreter.prototype).
+addBase('setupChoices',function f(params){
+	const choices=params[0].slice();
+	const cancelChoiceN=params[1]>=choices.length?-2:params[1]; // -1: cancel disabled  ;  others: as the n of the choice callback
+	const defaultChoiceN=useDefaultIfIsNaN(params[2],0); // <0: not chosen
+	const positionType=useDefaultIfIsNaN(params[3],2);
+	const background=useDefaultIfIsNaN(params[4],0);
+	
+	$gameMessage.setChoices(choices, defaultChoiceN, cancelChoiceN);
+	$gameMessage.setChoiceBackground(background);
+	$gameMessage.setChoicePositionType(positionType);
+	
 	$gameMessage.setChoiceCallback(this.setupChoices_callback.bind(this));
-	return rtv;
-}).addBase('setupChoices_callback',function f(n){
+}).
+addBase('setupChoices_callback',function f(n){
 	this._branch[this._indent]=n;
 });
+if(0){
+// direct call test example 1
+$gameMessage.setChoices(['a','b'],-1,-2);
+$gameMessage.setChoiceCallback(n=>console.log(n));
+// direct call test example 2
+$gameMessage.setChoices(['a','b'],1,-1);
+$gameMessage.setChoiceCallback(n=>console.log(n));
+// direct call test example 3
+$gameMessage.setChoices(['a','b'],-12,'a');
+$gameMessage.setChoiceCallback(n=>console.log(n));
+}
 
 
 new cfc(Window_Selectable.prototype).
