@@ -25,11 +25,13 @@ t=[
 undefined,
 params, // 1: plugin params
 192, // 2: keyCode
+1000.0/60, // ms per frame
 ];
 
 new cfc(SceneManager).add('updateMain_data1',function f(isNotToUpdateInputData){
-	if(Input.isPressed(f.tbl[2])){ for(let _=f.tbl[1]._defaultFastForwardRate;_--;){
+	if(Input.isPressed(f.tbl[2])){ for(let t=Date.now()+f.tbl[3],_=f.tbl[1]._defaultFastForwardRate;_--;){
 		f.ori.apply(this,arguments);
+		if(Date.now()>=t) break;
 	} }else return f.ori.apply(this,arguments);
 },t);
 
