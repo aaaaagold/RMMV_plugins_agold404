@@ -700,7 +700,12 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 	this.createContents();
 	const lh=this.lineHeight(),x0=this.textPadding();
 	let x=x0,y=0,res={};
-	if(f.tbl[1]._itemPropertyStringHead in info){ this.drawTextEx(info[f.tbl[1]._itemPropertyStringHead],x,y,undefined,undefined,res); y=res.y+lh; }
+	if(f.tbl[1]._itemPropertyStringHead in info){
+		let text=info[f.tbl[1]._itemPropertyStringHead];
+		if(text instanceof Array) text=EVAL.call(info,text[0]);
+		this.drawTextEx(text,x,y,undefined,undefined,res);
+		y=res.y+lh;
+	}
 	if(!useDefaultIfIsNaN(info[f.tbl[1]._itemPropertyStringDisplayBlockHide],f.tbl[1]._itemDefaultValueDisplayBlockHide)){
 		const title=useDefaultIfIsNone(info[f.tbl[1]._itemPropertyStringDisplayBlockTitle],f.tbl[1]._itemDefaultValueDisplayBlockTitle);
 		if(title){
@@ -783,20 +788,13 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 				const signedNumInfo2=isGain?(info[2]<0?info[2]:"+"+info[2]):(info[2]<0?"+"+(-info[2]):'-'+info[2]); // cost
 				const s=allColors[0]+(item?item.name:"")+' '+allColors[beRed|0]+$gameParty.numItems(item)+'/'+signedNumInfo2+allColors[beRed|0][0];
 				if(x>=cw2){
-					// detect auto newLine
 					if(item&&item.iconIndex) x+=Window_Base._iconWidth+f.tbl[5].iconPadding;
 					const mockRes=Object.assign({},res);
-					this._is_戰鬥介面選單文字消失=true;
-					this.drawTextEx(' ',x,y,undefined,undefined,mockRes);
-					const standardY=mockRes.y;
-					Object.assign(mockRes,res);
-					this.drawTextEx(s,x,y,undefined,undefined,mockRes);
-					const resY=mockRes.y;
-					this._is_戰鬥介面選單文字消失=false;
-					if(standardY!==resY){
+					const textWidth=this.measure_drawTextEx(s,x,y,undefined,undefined,mockRes);
+					if(x+textWidth>=(cw2<<1)){
 						x=x0;
 						y=res.y+lh;
-					}else if(item&&item.iconIndex) x-=Window_Base._iconWidth+f.tbl[5].iconPadding;
+					}else if(item&&item.iconIndex) x-=Window_Base._iconWidth+f.tbl[5].iconPadding; // restore offset due to icon
 				}
 				if(item&&item.iconIndex){
 					this.drawIcon(item.iconIndex,x,y);
@@ -815,11 +813,15 @@ addBase('createWindow_requirementsWindow_refreshHelp',function f(info){
 				y=res.y+lh;
 			}
 		}
+		if(x===cw2) res.y=y+=lh; // last only print left-half
 	}
 	if(f.tbl[1]._itemPropertyStringTail in info){
 		x=x0;
 		y=res.y+lh;
-		this.drawTextEx(info[f.tbl[1]._itemPropertyStringTail],x,y,undefined,undefined,res); y=res.y+lh;
+		let text=info[f.tbl[1]._itemPropertyStringTail];
+		if(text instanceof Array) text=EVAL.call(info,text[0]);
+		this.drawTextEx(text,x,y,undefined,undefined,res);
+		y=res.y+lh;
 	}
 },t).
 addBase('createWindow_descriptionsWindow',function f(){
