@@ -13,7 +13,7 @@
 
 Window_Base.
 escapeFunction_set('EVALTOSTR',function f(code,textState){
-	if(textState.text[textState.index]!==":") return console.warn(code,f.tbl[1][0]);
+	if(textState.text[textState.index]!==":") return console.warn(code,"expected a ':' immediately after '\\EVALTOSTR'");
 	++textState.index;
 	this.processSubtext(
 		EVAL.call(this,this.processCStyleStringContent(textState)),
@@ -27,7 +27,7 @@ getP;
 
 Window_Message.
 escapeFunction_set('EVALJSCODE',function f(code,textState){
-	if(textState.text[textState.index]!==":") return console.warn(code,f.tbl[1][0]);
+	if(textState.text[textState.index]!==":") return console.warn(code,"expected a ':' immediately after '\\EVALJSCODE'");
 	++textState.index;
 	EVAL.call(this,this.processCStyleStringContent(textState));
 }).
