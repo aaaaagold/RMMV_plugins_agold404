@@ -476,6 +476,14 @@ t=[
 none,
 ];
 new cfc(TouchInput).
+addBase('toMapXyReal',function f(overwriteTouchXy,overwriteMapXy){
+	overwriteTouchXy=overwriteTouchXy||this;
+	overwriteMapXy=overwriteMapXy||$gameMap;
+	return $gameMap?({
+		x:$gameMap.roundX(overwriteMapXy._displayX+overwriteTouchXy.x/$gameMap.tileWidth  ()),
+		y:$gameMap.roundY(overwriteMapXy._displayY+overwriteTouchXy.y/$gameMap.tileHeight ()),
+	}):({});
+}).
 /*
 addBase('_onMouseDown_preventDefault_condOk',function f(event){
 	const x=Graphics.pageToCanvasX(event.pageX);
