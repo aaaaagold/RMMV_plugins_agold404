@@ -137,6 +137,9 @@ p.showNumBoard=function(id,num,opt){
 	this._numBoard_num(bd,num,title,opt.color&3);
 	return bd;
 };
+p.hasNumBoard=function(id){
+	return this._numBoard_map().has(id);
+};
 p.closeNumBoard=function(id){
 	const sc=this._scene; if(!sc) return;
 	const bd=this._numBoard_map().get(id);
