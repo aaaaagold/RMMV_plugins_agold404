@@ -3631,9 +3631,10 @@ addBase('changeEquip_do',function f(slotId,item){
 	this.refresh();
 }).
 addBase('changeEquipById',function f(etypeId,itemId){
-	const slotId=etypeId-1;
-	const dataarr=this._getEquipSlot(slotId)===1?$dataWeapons:$dataArmors;
-	this.changeEquip(slotId, dataarr[itemId]);
+	const slots=this.equipSlots();
+	const slotId=slots.indexOf(etypeId); // might not having this slot
+	const dataarr=etypeId===1?$dataWeapons:$dataArmors;
+	this.changeEquip(slotId<0?slots.length:slotId,dataarr[itemId]);
 }).
 addBase('forceChangeEquip',function f(slotId,item){
 	this.setEquip(slotId,item);
