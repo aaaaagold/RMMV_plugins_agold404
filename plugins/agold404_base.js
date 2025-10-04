@@ -4665,6 +4665,7 @@ add('setup',function f(target,ani,mir,dly,opt){
 	this._hasFlashSprite=false;
 	{ const c=this._screenFlashSprite,p=c&&c.parent; if(p) p.removeChild(c); }
 	this.createCellSprites(ani._maxAnimationCellsCnt);
+	this._disableScreenFlash=opt&&opt.disableScreenFlash;
 	return f.ori.apply(this,arguments);
 }).
 addBase('updateAllCellSprites',function f(frame){
@@ -4677,6 +4678,7 @@ addBase('updateAllCellSprites',function f(frame){
 	this._lastUpdatedCellIdxEnd=newIdxEnd;
 }).
 addBase('createScreenFlashSprite',function f(){
+	if(this._disableScreenFlash) return;
 	this._hasFlashSprite=true;
 }).
 addBase('startScreenFlash',function f(color,duration){
