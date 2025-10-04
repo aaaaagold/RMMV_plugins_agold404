@@ -1308,7 +1308,10 @@ escapeFunction_set('TXTFONTSIZE',function f(code,textState){
 	const strPos=getCStyleStringStartAndEndFromString(textState.text,strt);
 	if(!(strPos.start>=strt)) return window.isTest()&&console.warn("expected a c-style string after '\\TXTFONTSIZE:'");
 	textState.index=strPos.end;
-	return this.changeFontSize(EVAL.call(this,JSON.parse(textState.text.slice(strPos.start,strPos.end))));
+	const fs=EVAL.call(this,JSON.parse(textState.text.slice(strPos.start,strPos.end)));
+	// this.changeFontSize(fs);
+	// return "\\TXTFONTSIZE:\""+(isNaN(fs)?"NaN":fs?"this.standardPadding()/"+fs/this.standardPadding():0)+"\""; // relative size
+	return "\\TXTFONTSIZE:\""+this.changeFontSize(fs)+"\""; // absolute size
 }).
 escapeFunction_set('TXTCOLOR',function f(code,textState){
 	if(textState.text[textState.index]!==":") return window.isTest()&&console.warn("expected a ':' immediately after '\\TXTFONTSIZE'");
