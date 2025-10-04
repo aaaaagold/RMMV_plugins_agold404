@@ -167,7 +167,20 @@ undefined,
 	return f.tbl[0];
 },[
 [],
-]).add('_redrawtxt',function f(arr,isCalcH){
+]).
+addBase('processNormalCharacter',function f(textState){
+	return f._super.processNormalCharacter.apply(this,arguments);
+}).
+addRoof('processNormalCharacter',function f(textState){
+	if(this._flashbackContentXShifted) return f.ori.apply(this,arguments);
+	this._flashbackContentXShifted=true;
+	textState.x+=this.textPadding();
+	const rtv=f.ori.apply(this,arguments);
+	textState.x-=this.textPadding();
+	this._flashbackContentXShifted=false;
+	return rtv;
+}).
+add('_redrawtxt',function f(arr,isCalcH){
 	const bak_faceName=$gameMessage._faceName;
 	if(!isCalcH) this.contents.clear();
 	const fh1=this.fittingHeight(1),lh=this.lineHeight();
@@ -204,7 +217,8 @@ undefined,
 					}
 					textState.index=0;
 					this.drawTextEx(arr[x].nameField,
-						textState.x=textState.left=tp+f.tbl[0].x+f.tbl[0].nfDx,y-lh,
+						//textState.x=textState.left=tp+f.tbl[0].x+f.tbl[0].nfDx,y-lh,
+						textState.x=textState.left=f.tbl[0].x+f.tbl[0].nfDx,y-lh,
 						0,0,textState,
 					);
 				}
@@ -213,7 +227,8 @@ undefined,
 			if(!isCalcH && face.name) this.drawFace(face.name, face.idx, f.tbl[0].x, y);
 			textState.index=0;
 			this.drawTextEx(arr[x].txt,
-				textState.x=textState.left=tp+this.newLineX(),y,
+				//textState.x=textState.left=tp+this.newLineX(),y,
+				textState.x=textState.left=this.newLineX(),y,
 				0,0,textState,
 			);
 			// calcTextHeight(txt,false) called when '\n' ; returns 1 line height at a time
