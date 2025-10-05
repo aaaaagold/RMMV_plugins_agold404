@@ -333,9 +333,21 @@ new cfc(PIXI.DisplayObject.prototype).addBase('getRect_local',function f(){
 new cfc(Graphics).addBase('isInScreen_rect',function(rect){
 	return !(rect.x>=this.boxWidth || rect.x+rect.width<0 || rect.y>=this.boxHeight || rect.y+rect.height<0);
 });
-new cfc(Sprite_Character.prototype).add('renderWebGL',function f(){
+new cfc(Sprite_Character.prototype).
+addBase('isInScreen_local_getExt',function f(){
+	return f.tbl[0];
+},[
+{
+l:0|4|0,
+r:0|4|0,
+u:0|64|0,
+d:0|9|0,
+},
+]).
+add('renderWebGL',function f(){
 	return this.isInScreen_local()&&f.ori.apply(this,arguments);
-}).add('renderCanvas',function f(){
+}).
+add('renderCanvas',function f(){
 	return this.isInScreen_local()&&f.ori.apply(this,arguments);
 });
 //
