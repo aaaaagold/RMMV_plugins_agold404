@@ -4669,6 +4669,7 @@ add('setup',function f(target,ani,mir,dly,opt){
 	{ const c=this._screenFlashSprite,p=c&&c.parent; if(p) p.removeChild(c); }
 	this.createCellSprites(ani._maxAnimationCellsCnt);
 	this._disableScreenFlash=opt&&opt.disableScreenFlash;
+	this._seAudioVolumeRate=opt&&opt.seAudioVolumeRate;
 	return f.ori.apply(this,arguments);
 }).
 addBase('updateAllCellSprites',function f(frame){
@@ -4693,7 +4694,13 @@ addBase('startScreenFlash',function f(color,duration){
 }).
 addBase('processTimingData',function f(timing){
 	const func=f.tbl[0][timing.flashScope]; if(func) func.apply(this,arguments);
-	if(timing.se) AudioManager.playSe(timing.se);
+	if(timing.se){
+		const isChanged=!isNaN(this._seAudioVolumeRate);
+		const ori=isChanged&&timing.se.volume;
+		if(isChanged) timing.se.volume*=this._seAudioVolumeRate;
+		AudioManager.playSe(timing.se);
+		if(isChanged) timing.se.volume=ori;
+	}
 },[
 [
 undefined, // 0-0
