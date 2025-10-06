@@ -773,8 +773,8 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	textState.x=useDefaultIfIsNaN(x,textState.x);
 	textState.y=useDefaultIfIsNaN(y,textState.y);
 	// try existing value
-	textState.left=useDefaultIfIsNaN(textState.left,textState.x);
-	textState.right=Math.max(textState.right-0||0,textState.left);
+	textState.left=textState.isMeasureOnly?textState.x:useDefaultIfIsNaN(textState.left,textState.x);
+	textState.right=textState.isMeasureOnly?textState.left:Math.max(textState.right-0||0,textState.left);
 	if(!text) return 0;
 	textState.text=this.convertEscapeCharacters(text);
 	textState.height=this.calcTextHeight(textState,false);
@@ -788,7 +788,7 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	if(textState.text.length<textState.index_end) textState.index_end=undefined; // safety first
 	for(const len=useDefaultIfIsNaN(textState.index_end,textState.text.length);textState.index<len;) this.processCharacter(textState);
 	if(textState.isMeasureOnly) this.applyFontSettings(fontSettings);
-	return textState.x-x;
+	return textState.right-textState.left;
 }).
 addBase('cloneFontSettings',function f(){
 	return ({
