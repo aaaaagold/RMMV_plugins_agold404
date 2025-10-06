@@ -57,18 +57,20 @@ addBase('processEscapeCharacter_textPosition',function f(code,textState){
 },[
 {
 TXTLEFT:function(tmpState,textState){
-	textState.x=0;
+	textState.x=useDefaultIfIsNaN(textState.boundaryLeft,0);
 },
 TXTCENTER:function(tmpState,textState){
-	textState.x=(this.contentsWidth()-this.measure_drawTextEx(
+	const left=useDefaultIfIsNaN(textState.boundaryLeft,0);
+	const right=useDefaultIfIsNaN(textState.boundaryRight,this.contentsWidth());
+	textState.x=(right-this.measure_drawTextEx(
 		tmpState.text,
 		tmpState.x,tmpState.y,
 		undefined,undefined,
 		tmpState
-	))/2;
+	)+left)/2;
 },
 TXTRIGHT:function(tmpState,textState){
-	textState.x=(this.contentsWidth()-this.measure_drawTextEx(
+	textState.x=(useDefaultIfIsNaN(textState.boundaryRight,this.contentsWidth())-this.measure_drawTextEx(
 		tmpState.text,
 		tmpState.x,tmpState.y,
 		undefined,undefined,
