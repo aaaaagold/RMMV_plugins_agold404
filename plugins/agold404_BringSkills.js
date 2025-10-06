@@ -353,7 +353,8 @@ addBase('bringSkills_cmd_goBackToTypes',function f(){
 	wndB.deactivate();
 	wndB.deselect();
 	this._skillTypeWindow.activate();
-}).
+	this._helpWindow.setText(EVAL.call(this,t[1]._broughtSkillTextSwitchType)); // set hint text back
+},t).
 addBase('bringSkills_cmd_deBring_playSeSucc',function f(){
 	SoundManager.playEquip();
 }).
@@ -369,6 +370,7 @@ addBase('bringSkills_cmd_deBring',function f(){
 		actor.bringSkills_deBringSkills(item.id);
 		this.bringSkills_cmd_deBring_playSeSucc();
 		wndA.refresh();
+		wndB.refresh();
 	}else this.bringSkills_cmd_deBring_playSeFail();
 	wndB.activate();
 }).
@@ -387,6 +389,7 @@ addBase('bringSkills_cmd_bring',function f(){
 		if(actor.bringSkills_bringSkills(item.id)){
 			this.bringSkills_cmd_bring_playSeSucc();
 			wndB.refresh();
+			wndA.redrawItem(wndA.index());
 		}else this.bringSkills_cmd_bring_playSeFail();
 	}else this.bringSkills_cmd_bring_playSeFail();
 	wndA.activate();
@@ -453,6 +456,7 @@ addBase('update_bringSkills_active',function f(){
 			wnds[x].active=true;
 			if(wnds[x].index()>=0) wnds[x].reselect();
 			else wnds[x].select(0);
+			this._skillTypeWindow.deactivate();
 			break;
 		}
 	}
