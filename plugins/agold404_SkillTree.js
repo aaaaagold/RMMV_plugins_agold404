@@ -673,21 +673,27 @@ const a=class Window_ItemActions extends Window_Command{
 	}
 };
 window[a.name]=a;
-new cfc(Scene_Skill.prototype).add('initialize',function f(){
+new cfc(Scene_Skill.prototype).
+add('initialize',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this._skillTree_showTree=$gameTemp._skillTree_showTree;
 	this._skillTree_bothUseAndLearn=$gameTemp._skillTree_bothUseAndLearn;
 	this._skillTree_skillTreeAtFirst=$gameTemp._skillTree_skillTreeAtFirst;
 	return rtv;
-}).add('create',function f(){
+}).
+add('create',function f(){
 	const rtv=f.ori.apply(this,arguments);
+	this.skilltree_create.apply(this,arguments);
+	return rtv;
+}).
+addBase('skilltree_create',function f(){
 	this.create_tunePositions();
 	this.create_itemNameWindow();
 	this.create_itemActionWindow();
 	this.create_tuneParams();
 	this.create_addLink();
-	return rtv;
-}).addBase('create_itemNameWindow',function f(){
+}).
+addBase('create_itemNameWindow',function f(){
 	const wnd=this._itemNameWindow=new Window_Help(2);
 	wnd.hide();
 	this._itemWindow.addChild(wnd);
