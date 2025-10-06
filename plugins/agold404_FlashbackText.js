@@ -168,6 +168,7 @@ undefined,
 },[
 [],
 ]).
+addBase('processCharacter_addPrinted',none).
 addBase('processNormalCharacter',function f(textState){
 	return f._super.processNormalCharacter.apply(this,arguments);
 }).
@@ -411,34 +412,26 @@ add('onEndOfText',function f(){
 	this.flashbackText_addPrinted();
 	return f.ori.apply(this,arguments);
 }).
+addBase('processCharacter_addPrinted',function f(text,textState){
+	if(!text||textState.isMeasureOnly) return;
+	if(!textState.printed) textState.printed=text;
+	else textState.printed+=text;
+}).
 addRoof('processNormalCharacter',function f(textState){
-	if(!textState.isMeasureOnly){
-		const c=textState.text[textState.index];
-		if(!textState.printed) textState.printed=c;
-		else textState.printed+=c;
-	}
+	this.processCharacter_addPrinted(textState.text[textState.index],textState);
 	return f.ori.apply(this,arguments);
 }).
 addRoof('processNewLine',function f(textState){
-	if(!textState.isMeasureOnly){
-		if(!textState.printed) textState.printed='\n';
-		else textState.printed+='\n';
-	}
+	this.processCharacter_addPrinted('\n',textState);
 	return f.ori.apply(this,arguments);
 }).
 addRoof('processNewPage',function f(textState){
-	if(!textState.isMeasureOnly){
-		if(!textState.printed) textState.printed='\f';
-		else textState.printed+='\f';
-	}
+	this.processCharacter_addPrinted('\f',textState);
 	return f.ori.apply(this,arguments);
 }).
 addRoof('processEscapeCharacter',function f(code,textState){
 	const rtv=f.ori.apply(this,arguments);
-	if(rtv&&!textState.isMeasureOnly){
-		if(!textState.printed) textState.printed=rtv;
-		else textState.printed+=rtv;
-	}
+	this.processCharacter_addPrinted(rtv,textState);
 	return rtv;
 }).
 addBase('flashbackText_processSubtext',function f(subtext,textState,reason){
