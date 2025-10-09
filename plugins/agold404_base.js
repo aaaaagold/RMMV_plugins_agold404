@@ -4527,18 +4527,28 @@ new Map([
 
 new cfc(WebAudio.prototype).
 addBase('stop',function f(){
-	this._autoPlay=false;
-	this._removeEndTimer();
-	this._removeNodes();
 	const arr=this._stopListeners;
 	if(arr){
+		this._stopListeners=undefined; // someone might add callbacks calling this function.
+		// WebAudio is inited to having `_stopListeners`. the only case not having `_stopListeners` is doing `stop`
+		this._autoPlay=false;
+		this._removeEndTimer();
+		this._removeNodes();
 		for(let x=0,xs=arr.length;x<xs;++x){
 			const listner=arr[x];
 			listner();
 		}
 		arr.length=0;
+		this._stopListeners=arr;
 	}
-});
+}).
+addBase('addStopListener_condOk',function f(callback){
+	return this._stopListeners;
+}).
+addBase('addStopListener',function f(callback){
+	if(this.addStopListener_condOk.apply(this,arguments)) this._stopListeners.push(callback); // one should not add more callbacks when it is doing `stop` already
+}).
+getP;
 
 
 new cfc(Sprite.prototype).
