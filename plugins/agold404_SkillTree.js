@@ -414,11 +414,8 @@ add('costHeight',function f(){
 		}
 	}
 	return rtv;
-},t).add('maxCols',function f(){
-	return this._maxCols===undefined?f.tbl[0]:this._maxCols;
-},[
-4,
-]).add('makeItemList_tree_getSkillInfo',function f(arrv,x,y){
+},t).
+add('makeItemList_tree_getSkillInfo',function f(arrv,x,y){
 	arrv=arrv||this._skillTree;
 	if(!arrv) return;
 	const info=arrv[y]&&arrv[y][x];
