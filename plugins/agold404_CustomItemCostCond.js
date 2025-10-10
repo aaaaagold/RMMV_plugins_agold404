@@ -3,6 +3,12 @@
  * @plugindesc use eval to specify 'canUse' condition and item/skill cost
  * @author agold404
  * 
+ * @param SkillCostEvalText
+ * @type note
+ * @text skill cost text eval()
+ * @desc eval()-ed skill cost text. needs agold404_TextPosition.js
+ * @default (skill.hpCost?" \\C[21]"+skill.hpCost:"")+(skill.mpCost?" \\C[23]"+skill.mpCost:"")+(skill.tpCost?" \\C[29]"+skill.tpCost:"")
+ * 
  * @help in item/skill notes
  * 
  * eval() condition
@@ -18,6 +24,9 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_CustomItemCost";
 const params=PluginManager.parameters(pluginName)||{};
+params._skillCostEvalText=JSON.parse(useDefaultIfIsNone(params.SkillCostEvalText,
+	"\"(skill.hpCost?\\\" \\\\\\\\C[21]\\\"+skill.hpCost:\\\"\\\")+(skill.mpCost?\\\" \\\\\\\\C[23]\\\"+skill.mpCost:\\\"\\\")+(skill.tpCost?\\\" \\\\\\\\C[29]\\\"+skill.tpCost:\\\"\\\")\""
+));
 
 t=[
 undefined,
@@ -104,6 +113,20 @@ add('useItem',function f(item){
 addBase('useItem_customEvalItemUseCost',function f(item){
 	if(!item||!item.meta||item.meta.customItemUseCost==null) return;
 	return f.tbl[5](this,item);
+},t).
+getP;
+
+
+new cfc(Window_SkillList.prototype).
+add('drawSkillCost',function f(skill, x, y, width){
+	if(!f.tbl[1]._skillCostEvalText||!Window_Base.prototype.processEscapeCharacter_textPosition) return f.ori.apply(this,arguments);
+	let text;
+	const e=f.tbl[1]._skillCostEvalText;
+	{ let f;
+	const t="\\TXTRIGHT:"+JSON.stringify(eval(e));
+	text=t;
+	}
+	this.drawTextEx(text,x,y,undefined,undefined,{boundaryLeft:x,boundaryRight:x+width});
 },t).
 getP;
 
