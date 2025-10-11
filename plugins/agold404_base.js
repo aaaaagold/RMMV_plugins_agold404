@@ -1816,13 +1816,14 @@ p.onLoad_after.tbl=new Map([
 //
 new cfc(WebAudio.prototype).addBase('_load',function f(url,noerr,putCacheOnly){
 	if(!WebAudio._context) return;
-	const xhr=new XMLHttpRequest();
-	xhr._needDecrypt=false;
+	let needDecrypt=false;
 	if(Decrypter.hasEncryptedAudio && !ResourceHandler.isDirectPath(url)){
 		url=Decrypter.extToEncryptExt(url);
-		xhr._needDecrypt=true;
+		needDecrypt=true;
 	}
 	const cache=this._getCache(url); if(cache) return !(this._putCacheOnly||putCacheOnly)&&this._onXhrLoad(undefined,url,cache);
+	const xhr=new XMLHttpRequest();
+	xhr._needDecrypt=needDecrypt;
 	xhr.open('GET',url);
 	xhr.responseType='arraybuffer';
 	xhr.onload=f.tbl[0].bind(this,xhr,url,this._putCacheOnly||putCacheOnly);
