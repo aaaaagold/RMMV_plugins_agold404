@@ -8839,6 +8839,21 @@ add('terminate',function f(){
 getP;
 
 
+new cfc(DataManager).
+addBase('getEvtCmdListScripts',function f(cmdList){
+	const rtv=[];
+	for(let x=0,xs=cmdList&&cmdList.length;x<xs;++x){
+		const cmd=cmdList[x];
+		if(cmd.code===655) rtv.back.push(cmd.parameters[0]);
+		else if(cmd.code===355) rtv.push([cmd.parameters[0]]);
+	}
+	for(let x=0,xs=rtv.length;x<xs;++x) rtv[x]=rtv[x].join('\n');
+	rtv._overAll=rtv.join('\n// ==== next cmd ==== \n');
+	return rtv;
+}).
+getP;
+
+
 })();
 
 // ---- ---- ---- ---- 
