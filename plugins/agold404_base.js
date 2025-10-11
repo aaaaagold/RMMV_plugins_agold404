@@ -2017,6 +2017,9 @@ function(r,btlr){
 ]);
 // expose to topFrame
 const exposeToTopFrame=window.exposeToTopFrame=function f(){
+	if(!f._reParsers){ f._reParsers={
+		ctors:/^(Game|Scene|Sprite)_[A-Z]/,
+	}; }
 	const w=getTopFrameWindow(); if(w===window) return;
 	w._w=window;
 	// dynamicData
@@ -2041,12 +2044,13 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 		arr.push('Game_Interpreter','Game_Picture','Game_System','Game_Screen','Game_Map','Game_Party',);
 		arr.push('Window_Base','Window_Message',);
 		arr.push('Scene_Base','Scene_Map','Scene_Menu','Scene_Item','Scene_Skill','Scene_Options',);
-		arr.push('useDefaultIfIsNaN',);
+		arr.push('useDefaultIfIsNaN','useDefaultIfIsNone',);
 		arr.push('getCStyleStringStartAndEndFromString',);
 		arr.push('getPrefixPropertyNames',);
 		arr.push('getTopFrameWindow','chTitle',);
 		arr.push('copyToClipboard','pasteCanvas',);
 		arr.push('listMapParents',);
+		for(let names=Object.getOwnPropertyNames(w._w).filter(x=>x.match(f._reParsers.ctors)),x=names.length;x--;) arr.uniquePush(names[x]);
 		for(let x=0,xs=arr.length;x!==xs;++x) w[arr[x]]=w._w[arr[x]];
 	}
 	for(let x=0,arr=arguments,xs=arr.length;x!==xs;++x) w[arr[x]]=w._w[arr[x]];
@@ -5640,7 +5644,7 @@ new cfc(Window_Base.prototype).addBase('duplicateTextState',function(textState,a
 new cfc(SceneManager).addBase('push',function f(sceneClass,shouldRecordCurrentScene){
 	this._stack.push(this._scene.constructor);
 	this.goto(sceneClass,shouldRecordCurrentScene);
-	if(shouldRecordCurrentScene && this._nextScene) this._nextScene._prevScene=this._scene;
+	if(this._scene._prevScene || shouldRecordCurrentScene && this._nextScene) this._nextScene._prevScene=this._scene;
 	return this._nextScene && this._nextScene._prevScene;
 }).addBase('changeScene',function f(){
 	if(this.changeScene_condOk()){
