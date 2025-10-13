@@ -67,7 +67,8 @@ new cfc(Game_Event.prototype).add('start',function f(triggerer){
 	f.ori.apply(this,arguments);
 	return this;
 });
-new cfc(Game_Map.prototype).addBase('setupStartingMapEvent',function f(){
+new cfc(Game_Map.prototype).
+addBase('setupStartingMapEvent',function f(){
 	for(let arr=this._events,xs=arr.length,x=0;x<xs;++x){
 		const evt=arr[x];
 		if(evt&&evt.isStarting()){
@@ -75,11 +76,34 @@ new cfc(Game_Map.prototype).addBase('setupStartingMapEvent',function f(){
 		}
 	}
 	return false;
-}).addBase('setupStartingMapEvent_setup',function f(evt){
+}).
+addBase('setupStartingMapEvent_setup',function f(evt){
 	this._interpreter.setup(evt.list(),evt.eventId(),evt._triggerer);
 	evt.clearStartingFlag();
 	return true;
-});
+}).
+addBase('setupEvents',function f(){
+	this.setupEvents_mapEvents.apply(this,arguments);
+	this.setupEvents_commonEvents.apply(this,arguments);
+	this.refreshTileEvents.apply(this,arguments);
+}).
+addBase('setupEvents_mapEvents',function f(){
+	this._events=[];
+	for(let i=0,sz=$dataMap.events.length;i<sz;++i){
+		if($dataMap.events[i]){
+			this._events[i]=new Game_Event(this._mapId,i);
+		}
+	}
+}).
+addBase('setupEvents_commonEvents',function f(){
+	if(!$dataCommonEvents._parallelEvents) $dataCommonEvents._parallelEvents=this.parallelCommonEvents();
+	if(!this._commonEvents||this._commonEvents.length!==$dataCommonEvents._parallelEvents.length) this._commonEvents=$dataCommonEvents._parallelEvents.map(f.tbl[0]);
+},[
+function(commonEvent){
+	return new Game_CommonEvent(commonEvent.id);
+}, // 0: parallel common evt map
+]).
+getP;
 { const a=Game_Interpreter,p=a.prototype;
 a.NOP={code:0,indent:0,parameters:[],};
 // prevent being slow due to getting non-exists property
@@ -7056,6 +7080,7 @@ function(fllwr,i,a){
 	{ let s=evts._set; if(s) s.clear(); else s=evts._set=new Set(); }
 	let c=evts.coords,m; if(!c) c=evts.coords=[]; // [pri] -> Map() // pri=-1 is all pri
 	let ntc=evts.coordsNt; if(!ntc) ntc=evts.coordsNt=[]; // [pri] -> Map()
+	let tilec=evts.coordsTile; if(!tilec) tilec=evts.coordsTile=new Map(); // [pri] -> Map()
 	const npval=DataManager._def_normalPriority;
 	let setNpval=false;
 	for(let p=7;p-->=0;){
@@ -7073,6 +7098,7 @@ function(fllwr,i,a){
 		m=c[npval]; if(m) m.clear(); else m=c[npval]=new Map();
 		m=ntc[npval]; if(m) m.clear(); else m=ntc[npval]=new Map();
 	}
+	tilec.clear();
 	if(clearOnly) return;
 	
 	this._locTbl_updated_evts=true;
@@ -7086,6 +7112,9 @@ function(evt,i,a){
 	if(!evt.isThrough()){
 		this.update_locTbl_addEvt(evt,a.coordsNt[-1]);
 		this.update_locTbl_addEvt(evt,a.coordsNt[evt._priorityType]);
+	}
+	if(evt.isTile()){
+		this.update_locTbl_addEvt(evt,a.coordsTile);
 	}
 },
 ]).addBase('update_locTbl_addEvt',function f(evt,coord){
@@ -7112,6 +7141,10 @@ function(evt,i,a){
 		this.update_locTbl_addEvt(evt,coordsNt[-1]);
 		this.update_locTbl_addEvt(evt,coordsNt[evt._priorityType]);
 	}
+	if(evt.isTile()){
+		const coordsTile=this._events.coordsNt;
+		this.update_locTbl_addEvt(evt,coordsTile);
+	}
 }).addBase('update_locTbl_delEvt_overall',function f(evt,x,y){
 	if(this.update_locTbl_chkEvtErr(evt)) return;
 	const coords=this._events.coords; if(!coords) return;
@@ -7119,8 +7152,12 @@ function(evt,i,a){
 	this.update_locTbl_delEvt(evt,coords[evt._priorityType],x,y);
 	if(!evt.isThrough()){
 		const coordsNt=this._events.coordsNt;
-		this.update_locTbl_delEvt(evt,this._events.coordsNt[-1],x,y);
-		this.update_locTbl_delEvt(evt,this._events.coordsNt[evt._priorityType],x,y);
+		this.update_locTbl_delEvt(evt,coordsNt[-1],x,y);
+		this.update_locTbl_delEvt(evt,coordsNt[evt._priorityType],x,y);
+	}
+	if(evt.isTile()){
+		const coordsTile=this._events.coordsNt;
+		this.update_locTbl_delEvt(evt,coordsTile,x,y);
 	}
 }).addBase('eventsXy',function f(x,y,p=-1){
 	this.update_locTbl_evts();
@@ -7138,7 +7175,15 @@ function(evt,i,a){
 	return this.eventsXyNt(x,y,DataManager._def_normalPriority);
 },[
 [],
-]);
+]).
+addBase('tileEventsXy',function f(x,y){
+	this.update_locTbl_evts();
+	const coord=this._events&&this._events.coordsTile;
+	return coord&&coord.get(this.getPosKey(x,y))||f.tbl[0];
+},[
+[],
+]).
+getP;
 
 new cfc(Game_Followers.prototype).addBase('isSomeoneCollided',function f(x,y){
 	$gameMap.update_locTbl_fllwrs();
