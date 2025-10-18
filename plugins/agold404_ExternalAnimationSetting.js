@@ -81,6 +81,11 @@ volume: 1 is normal
  * 
  * 
  * 
+ * <setupEval>
+ * </setupEval>
+ * 
+ * 
+ * 
  * This plugin can be renamed as you want.
  */
 
@@ -441,3 +446,47 @@ new cfc(Sprite_Animation.prototype).add('updateFrame',function f(){
 });
 
 })();
+
+
+
+(()=>{ let k,r,t;
+// <setupEval>
+
+new cfc(Scene_Boot.prototype).
+add('terminate_after',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.setupEval_onTerminateAfter.apply(this,arguments);
+	return rtv;
+}).
+addBase('setupEval_onTerminateAfter',function f(){
+	$dataAnimations.forEach(this.setupEval_evalSettings,this);
+}).
+addBase('setupEval_evalSettings',function f(animation){
+	const meta=animation&&animation.meta;
+	if(!meta||!meta.setupEval) return;
+	animation.setupEval=getXmlLikeStyleContent(animation.note,f.tbl[0]).map(f.tbl[1]);
+},[
+["<setupEval>","</setupEval>"], // 0: xmlMark
+txtv=>txtv.join('\n'), // 1: map
+]).
+getP;
+
+new cfc(Sprite_Animation.prototype).
+addRoof('setup',function f(target, animation, mirror, delay, rate){
+	const rtv=f.ori.apply(this,arguments);
+	this.setupEval_onSetup.apply(this,arguments);
+	return rtv;
+}).
+addBase('setupEval_onSetup',function f(target, animation, mirror, delay, rate){
+	for(let arr=animation.setupEval,x=0,xs=arr&&arr.length;x<xs;++x){
+		const s=arr[x];
+		if(s){
+			let f,x,arr;
+			eval(s);
+		}
+	}
+}).
+getP;
+
+})();
+
