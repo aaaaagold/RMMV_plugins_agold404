@@ -6296,6 +6296,7 @@ function f(dataobj){
 	ImageManager.otherFiles_addLoad(f.tbl[2](dataobj));
 },
 function f(dataobj){
+	if(!dataobj) return;
 	dataobj.note=ImageManager.otherFiles_getData(f.tbl[2](dataobj))||f.tbl[0][2];
 	DataManager.extractMetadata(dataobj);
 },
@@ -6303,13 +6304,24 @@ function f(dataobj){
 ];
 t.forEach(x=>x&&x.constructor===Function&&(x.tbl=x.ori=t));
 
-new cfc(Scene_Boot.prototype).add('start_before',function f(){
+new cfc(Scene_Boot.prototype).
+add('start_before',function f(){
 	this.start_before_aniNote();
 	return f.ori.apply(this,arguments);
-}).addBase('start_before_aniNote',function f(idx){
+}).
+addBase('start_before_aniNote',function f(idx){
 	if(idx===undefined) $dataAnimations.forEach(f.tbl[3]);
 	else if($dataAnimations[idx]) f.tbl[3]($dataAnimations[idx]);
-},t);
+},t).
+add('terminate_before',function f(){
+	this.terminate_before_aniNote();
+	return f.ori.apply(this,arguments);
+}).
+addBase('terminate_before_aniNote',function f(idx){
+	if(idx===undefined) $dataAnimations.forEach(f.tbl[4]);
+	else if($dataAnimations[idx]) f.tbl[4]($dataAnimations[idx]);
+},t).
+getP;
 
 
 new cfc(Sprite_Animation.prototype).add('setup',function f(target,ani,mir,dly,opt){
