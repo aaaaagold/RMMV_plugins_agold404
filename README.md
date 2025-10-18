@@ -30,6 +30,7 @@ scenes -> items -> plugins
 - press a key to pause: `agold404_PressPToPause.js`
 
 screen effect
+- show an image as animation (with frames): `agold404_ImgAutoAni.js`
 - shake screen with Y-direction: `agold404_ShakeScreenY.js`
 
 sound effect
