@@ -53,6 +53,8 @@ const ac=(a,c)=>a.appendChild(c)&&a||a,sa=(e,a,v)=>e.setAttribute(a,v)&&e||e,rc=
 },atxt=(a,t)=>a.appendChild(d.createTextNode(t))&&a||a,clearInputs=_=>{
 	Input.clear(); Input.update();
 	TouchInput.clear(); TouchInput.update();
+},isMz=()=>{
+	return !!StorageManager.loadFromForage;
 };
 let editing=0;
 
@@ -98,6 +100,7 @@ new cfc(DataManager).add('agold404_SaveManager_pluginParams_get',function f(){
 		}
 		for(let x=0,arr=f.tbl[1],xs=arr.length;x!==xs;++x) if(rtv[arr[x]]===undefined) rtv[arr[x]]=f.tbl[0][arr[x]].display;
 	}
+	if(isMz()) delete rtv.renameTag;
 	return rtv;
 },t=[
 {
@@ -154,15 +157,7 @@ const input=document.createElement('input'),onload=e=>{
 		map:$gameMap,
 		plr:$gamePlayer,
 	};
-	try{
-		DataManager.createGameObjects();
-		DataManager.extractSaveContents(JsonEx.parse(LZString.decompressFromBase64(self.result)));
-		SoundManager.playLoad();
-		SceneManager._scene.fadeOutAll();
-		Scene_Load.prototype.reloadMapIfUpdated();
-		SceneManager.goto(Scene_Map);
-		$gameSystem.onAfterLoad();
-	}catch(err){
+	const restoreData=()=>{
 		e.target._wnd.active=true;
 		SoundManager.playBuzzer();
 		$gameTemp=backup.tmp;
@@ -178,6 +173,34 @@ const input=document.createElement('input'),onload=e=>{
 		$gameTroop=backup.trp;
 		$gameMap=backup.map;
 		$gamePlayer=backup.plr;
+	};
+	try{
+		if(isMz()){
+			StorageManager.zipToJson(atob(self.result.slice(self.result.indexOf(',')+1))).
+				then(json=>StorageManager.jsonToObject(json)).
+				then(contents=>{
+					DataManager.createGameObjects();
+					DataManager.extractSaveContents(contents);
+					DataManager.correctDataErrors();
+					
+					SoundManager.playLoad();
+					const time = SceneManager._scene.slowFadeSpeed() / 60.0;
+					AudioManager.fadeOutBgm(time);
+					AudioManager.fadeOutBgs(time);
+					AudioManager.fadeOutMe(time);
+					SceneManager.goto(Scene_Map);
+				}).catch(restoreData);
+			return;
+		}
+		DataManager.createGameObjects();
+		DataManager.extractSaveContents(JsonEx.parse(LZString.decompressFromBase64(self.result)));
+		SoundManager.playLoad();
+		SceneManager._scene.fadeOutAll();
+		Scene_Load.prototype.reloadMapIfUpdated();
+		SceneManager.goto(Scene_Map);
+		$gameSystem.onAfterLoad();
+	}catch(err){
+		restoreData();
 	}
 	self.value='';
 },onerr=e=>{
@@ -194,6 +217,10 @@ input.onchange=function(){
 	(reader._wnd=this._wnd).active=false;
 	reader.onload=onload;
 	reader.onerror=onerr;
+	if(isMz()){
+		reader.readAsDataURL(this.files[0]);
+		return;
+	}
 	reader.readAsText(this.files[0]); // testing beta...
 };
 (p[k]=function f(){
@@ -227,7 +254,7 @@ const r=p[k];
 (p[k]=function f(){
 	f.ori.apply(this,arguments);
 	this._listWindow.select(DataManager.latestSavefileId()-1);
-	this._gi=JSON.parse(StorageManager.load(0)||"[]");
+	this._gi=StorageManager.load?JSON.parse(StorageManager.load(0)||"[]"):DataManager._globalInfo;
 }).ori=r;
 }
 { const k='onSavefileOk';
@@ -236,7 +263,7 @@ p[k]=function(){
 	let succ=1;
 	const obj=this._gi[id];
 	if(obj){
-		const gc=ge('GameCanvas');
+		const gc=ge('GameCanvas')||ge('gameCanvas');
 		if(gc){
 			TouchInput.bypassPreventDefault_touch_stackPushTrue && TouchInput.bypassPreventDefault_touch_stackPushTrue();
 			const self=this;
@@ -283,6 +310,15 @@ p[k]=function(){
 				infostring='input a file name for download';
 				input.value="save-"+id+".rpgsave";
 				btn.onclick=function(){
+					if(isMz()){
+						StorageManager.loadFromForage(DataManager.makeSavename(id)).
+							then(zip=>{
+								sa(sa(sa(ce('a'),'download',input.value),'href',"data:application/plain;base64,"+btoa(zip)),'target','_blank').click();
+								backToLastWindow();
+								self._listWindow.refresh();
+							});
+						return;
+					}
 					sa(sa(sa(ce('a'),'download',input.value),'href',"data:application/plain,"+LZString.compressToBase64(StorageManager.load(id))),'target','_blank').click();
 					backToLastWindow();
 					self._listWindow.refresh();
