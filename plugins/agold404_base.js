@@ -2197,28 +2197,36 @@ addBase('drawActorIcons_defaultWidth',function f(){
 addBase('drawStateIcons',function f(actor,x,y,width){
 	if(!(0<width)) return;
 	const xe=x+width;
-	const icons=actor.stateIcons();
+	const ids=actor.stateIcons_getSortedStateIds();
 	let b=x;
-	for(let i=0,sz=icons.length;i<sz;++i){
+	for(let i=0,sz=ids.length;i<sz;++i){
 		const e=b+Window_Base._iconWidth;
 		if(!(xe>=e)) break;
-		this.drawIcon(icons[i],b,y+2);
-		b=e;
+		if(this.drawStateIcon(actor,ids[i],b,y+2)) b=e;
 	}
 	return b-x;
+}).
+addBase('drawStateIcon',function f(actor,stateId,x,y){
+	const icon=$dataStates[stateId]&&$dataStates[stateId].iconIndex; if(!icon) return;
+	this.drawIcon(icon,x,y);
+	return true;
 }).
 addBase('drawBuffIcons',function f(actor,x,y,width){
 	if(!(0<width)) return;
 	const xe=x+width;
 	const icons=actor.buffIcons();
 	let b=x;
-	for(let i=0,sz=icons.length;i<sz;++i){
+	for(let i=0,sz=actor._buffs.length;i<sz;++i){
 		const e=b+Window_Base._iconWidth;
 		if(!(xe>=e)) break;
-		this.drawIcon(icons[i],b,y+2);
-		b=e;
+		if(this.drawBuffIcon(actor,i,b,y+2)) b=e;
 	}
 	return b-x;
+}).
+addBase('drawBuffIcon',function f(actor,buffId,x,y){
+	const icon=actor.buffIconIndex(actor._buffs[buffId],buffId); if(!icon) return;
+	this.drawIcon(icon,x,y);
+	return true;
 }).
 getP;
 
