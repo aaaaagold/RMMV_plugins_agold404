@@ -2069,6 +2069,7 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 		arr.push('Game_Interpreter','Game_Picture','Game_System','Game_Screen','Game_Map','Game_Party',);
 		arr.push('Window_Base','Window_Message',);
 		arr.push('Scene_Base','Scene_Map','Scene_Menu','Scene_Item','Scene_Skill','Scene_Options',);
+		arr.push('isArray',);
 		arr.push('useDefaultIfIsNaN','useDefaultIfIsNone',);
 		arr.push('getCStyleStringStartAndEndFromString',);
 		arr.push('getPrefixPropertyNames',);
