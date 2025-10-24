@@ -46,7 +46,7 @@
  */
 
 (()=>{ let k,r,t;
-const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Trait_duplicatedStates";
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Trait_statesStackTimes";
 const params=PluginManager.parameters(pluginName)||{};
 params._globalChanges=JSON.parse(params.GlobalChanges||"0");
 
