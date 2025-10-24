@@ -2160,6 +2160,19 @@ new cfc(p).add('_createAllParts',function f(){
 (()=>{ let k,r,t;
 
 
+new cfc(Game_BattlerBase.prototype).
+addBase('stateIcons_getSortedStateIds',function f(){
+	return this._states.filter(f.tbl[0]).sort(DataManager.arrSortFunc_mostImportantStateAtFirst);
+},[
+stateId=>(0<$dataStates[stateId].iconIndex), // 0: filter
+]).
+addBase('stateIcons',function f(){
+	return this.stateIcons_getSortedStateIds().map(f.tbl[0]);
+},[
+stateId=>$dataStates[stateId].iconIndex, // 0: map stateId to iconIndex
+]).
+getP;
+
 new cfc(Window_Base.prototype).
 addBase('drawActorIcons',function f(actor,x,y,width){
 	const argc=arguments.length;
@@ -8296,11 +8309,9 @@ addBase('stateIdsWithIcon_getUniques',function f(){
 addBase('stateIdsWithIcon_getAll',function f(){
 	return this._stateIdsWithIcon_get().slice();
 }).
-addBase('stateIcons',function f(){
-	return this.stateIdsWithIcon_getUniques().sort(this.sortStates_cmpFunc,this).map(f.tbl[0]);
-},[
-stateId=>$dataStates[stateId].iconIndex, // 0: map stateId to iconIndex
-]).
+addBase('stateIcons_getSortedStateIds',function f(){
+	return this.stateIdsWithIcon_getUniques().sort(this.sortStates_cmpFunc,this);
+}).
 // restriction
 addBase('restriction_init',function f(){
 	// initializing here
