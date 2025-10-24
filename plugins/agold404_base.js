@@ -2160,6 +2160,56 @@ new cfc(p).add('_createAllParts',function f(){
 (()=>{ let k,r,t;
 
 
+new cfc(Window_Base.prototype).
+addBase('drawActorIcons',function f(actor,x,y,width){
+	const argc=arguments.length;
+	const arg1=arguments[1];
+	const arg3=arguments[3];
+	if(arguments.length<4) arguments.length=4;
+	
+	width=useDefaultIfIsNaN(width,this.drawActorIcons_defaultWidth.apply(this,arguments));
+	arguments[3]=width;
+	const dx1=this.drawStateIcons.apply(this,arguments);
+	arguments[1]=x+dx1;
+	arguments[3]=width-dx1;
+	this.drawBuffIcons.apply(this,arguments);
+	
+	arguments[3]=arg3;
+	arguments[1]=arg1;
+	arguments.length=argc;
+}).
+addBase('drawActorIcons_defaultWidth',function f(){
+	return 144;
+}).
+addBase('drawStateIcons',function f(actor,x,y,width){
+	if(!(0<width)) return;
+	const xe=x+width;
+	const icons=actor.stateIcons();
+	let b=x;
+	for(let i=0,sz=icons.length;i<sz;++i){
+		const e=b+Window_Base._iconWidth;
+		if(!(xe>=e)) break;
+		this.drawIcon(icons[i],b,y+2);
+		b=e;
+	}
+	return b-x;
+}).
+addBase('drawBuffIcons',function f(actor,x,y,width){
+	if(!(0<width)) return;
+	const xe=x+width;
+	const icons=actor.buffIcons();
+	let b=x;
+	for(let i=0,sz=icons.length;i<sz;++i){
+		const e=b+Window_Base._iconWidth;
+		if(!(xe>=e)) break;
+		this.drawIcon(icons[i],b,y+2);
+		b=e;
+	}
+	return b-x;
+}).
+getP;
+
+
 new cfc(DataManager).
 addBase('duplicatedDataobj_getSrc',filterArg0).
 getP;
