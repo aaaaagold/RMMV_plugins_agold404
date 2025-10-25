@@ -78,6 +78,8 @@ addBase('dataobjExtInfo_adjustWindowSize',function f(wnd,infoText){
 	const p2=this.standardPadding()*2;
 	const cw=textState.right-textState.left;
 	const ch=textState.y;
+	rtv=wnd.clear_recreateContentsIfOriginallySmaller(cw,ch);
+if(0){
 	const cc=wnd.contents;
 	const newCw=Math.max(cw,cc.width);
 	const newCh=Math.max(ch,cc.height);
@@ -88,6 +90,7 @@ addBase('dataobjExtInfo_adjustWindowSize',function f(wnd,infoText){
 		wnd.createContents();
 		rtv=true;
 	}
+}
 	wnd._width=cw+p2;
 	wnd._height=ch+p2;
 	wnd._refreshAllParts();
