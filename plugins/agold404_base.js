@@ -789,7 +789,14 @@ getP;
 new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	const tone=$gameSystem&&$gameSystem.windowTone()||f.tbl[0];
 	this.setTone(tone[0], tone[1], tone[2]);
-},[0,0,0,0]).addBase('drawTextEx',function f(text, x, y, _3, _4, out_textState){
+},[0,0,0,0]).
+addBase('clear_recreateContentsIfSmaller',function f(newContentsWidth,newContentsHeight){
+	let cc=this.contents;
+	if(!cc||cc.width<newContentsWidth||cc.height<newContentsHeight) cc=this.contents=new Bitmap(newContentsWidth,newContentsHeight);
+	else cc.clearRect(0,0,newContentsWidth,newContentsHeight);
+	this.resetFontSettings();
+}).
+addBase('drawTextEx',function f(text, x, y, _3, _4, out_textState){
 	// return dx
 	const textState=out_textState||{};
 	textState.index=useDefaultIfIsNaN(textState.index_start,0); // `textState.index` is related to `text`. must be reset if text is reset
@@ -852,9 +859,17 @@ addBase('processDrawIcon',function(iconIndex,textState){
 }).
 getP;
 //
-new cfc(Window_Base.prototype).addBase('lineHeight',function f(){
-	return 3+~~(this.standardFontSize()*1.25); // 3 is a experienced value
-}).addBase('positioning',function f(setting,ref){
+new cfc(Window_Base.prototype).
+addBase('currentFontSize',function f(){
+	// this._windowContentsSprite.bitmap === this.contents
+	const sp=this._windowContentsSprite;
+	const bmp=sp&&sp.bitmap;
+	return bmp?bmp.fontSize:this.standardFontSize();
+}).
+addBase('lineHeight',function f(){
+	return 3+~~(this.currentFontSize()*1.25); // 3 is a experienced value
+}).
+addBase('positioning',function f(setting,ref){
 	setting=setting||f.tbl;
 	let x,y,w,h;
 	if(ref){
@@ -2043,7 +2058,7 @@ function(r,btlr){
 // expose to topFrame
 const exposeToTopFrame=window.exposeToTopFrame=function f(){
 	if(!f._reParsers){ f._reParsers={
-		ctors:/^(Game|Scene|Sprite)_[A-Z]/,
+		ctors:/^(Game|Scene|Sprite|Window)_[A-Z]/,
 	}; }
 	const w=getTopFrameWindow(); if(w===window) return;
 	w._w=window;
@@ -2162,11 +2177,17 @@ new cfc(p).add('_createAllParts',function f(){
 
 
 new cfc(Game_BattlerBase.prototype).
+addBase('statesContainer_cntStateId',function f(stateId){
+	return this.isStateAffected(stateId)|0;
+}).
 addBase('stateIcons_getSortedStateIds',function f(){
 	return this._states.filter(f.tbl[0]).sort(DataManager.arrSortFunc_mostImportantStateAtFirst);
 },[
 stateId=>(0<$dataStates[stateId].iconIndex), // 0: filter
 ]).
+addBase('stateIcons_getStatesCnt',function f(){
+	return this.stateIcons_getSortedStateIds().length;
+}).
 addBase('stateIcons',function f(){
 	return this.stateIcons_getSortedStateIds().map(f.tbl[0]);
 },[
@@ -2195,8 +2216,30 @@ addBase('drawActorIcons',function f(actor,x,y,width){
 addBase('drawActorIcons_defaultWidth',function f(){
 	return 144;
 }).
+addBase('drawActorIcons_drawMoreInfos_fontSize',function f(){
+	return f.tbl[0];
+},[
+16,
+]).
+addBase('drawActorIcons_drawMoreInfos_textColor',function f(){
+	return f.tbl[0];
+},[
+'rgba(255,255,255,0.875)',
+]).
+addBase('drawActorIcons_drawMoreInfos_outlineWidth',function f(){
+	return f.tbl[0];
+},[
+5,
+]).
+addBase('drawActorIcons_drawMoreInfos_padding',function f(){
+	return f.tbl[0];
+},[
+1,
+]).
 addBase('drawStateIcons',function f(actor,x,y,width){
 	if(!(0<width)) return;
+	const fontSettings=this.cloneFontSettings();
+	const outlineWidth=this.contents.outlineWidth;
 	const xe=x+width;
 	const ids=actor.stateIcons_getSortedStateIds();
 	let b=x;
@@ -2205,30 +2248,192 @@ addBase('drawStateIcons',function f(actor,x,y,width){
 		if(!(xe>=e)) break;
 		if(this.drawStateIcon(actor,ids[i],b,y+2)) b=e;
 	}
+	this.contents.outlineWidth=outlineWidth;
+	this.applyFontSettings(fontSettings);
 	return b-x;
 }).
 addBase('drawStateIcon',function f(actor,stateId,x,y){
 	const icon=$dataStates[stateId]&&$dataStates[stateId].iconIndex; if(!icon) return;
 	this.drawIcon(icon,x,y);
+	this.drawStateIcon_drawMoreInfos.apply(this,arguments);
 	return true;
+}).
+addBase('drawStateIcon_drawMoreInfos',function f(actor,stateId,x,y){
+	this.drawStateIcon_drawMoreInfos_settings.apply(this,arguments);
+	this.drawStateIcon_drawMoreInfos_contents.apply(this,arguments);
+}).
+addBase('drawStateIcon_drawMoreInfos_settings',function f(actor,stateId,x,y){
+	this.changeFontSize(this.drawActorIcons_drawMoreInfos_fontSize.apply(this,arguments));
+	this.changeTextColor(this.drawActorIcons_drawMoreInfos_textColor.apply(this,arguments));
+	this.contents.outlineWidth=this.drawActorIcons_drawMoreInfos_outlineWidth.apply(this,arguments);
+}).
+addBase('drawStateIcon_drawMoreInfos_contents',function f(actor,stateId,x,y){
+	const fontSize=this.currentFontSize();
+	const padding=this.drawActorIcons_drawMoreInfos_padding.apply(this,arguments);
+	this.drawText(actor._stateTurns[stateId],
+		x+padding,
+		y+Window_Base._iconHeight-fontSize,
+		Window_Base._iconWidth-(padding<<1),'left',
+	);
 }).
 addBase('drawBuffIcons',function f(actor,x,y,width){
 	if(!(0<width)) return;
+	const fontSettings=this.cloneFontSettings();
+	const outlineWidth=this.contents.outlineWidth;
 	const xe=x+width;
 	const icons=actor.buffIcons();
 	let b=x;
-	for(let i=0,sz=actor._buffs.length;i<sz;++i){
+	for(let i=0,sz=actor.buffLength();i<sz;++i){
 		const e=b+Window_Base._iconWidth;
 		if(!(xe>=e)) break;
 		if(this.drawBuffIcon(actor,i,b,y+2)) b=e;
 	}
+	this.contents.outlineWidth=outlineWidth;
+	this.applyFontSettings(fontSettings);
 	return b-x;
 }).
 addBase('drawBuffIcon',function f(actor,buffId,x,y){
 	const icon=actor.buffIconIndex(actor._buffs[buffId],buffId); if(!icon) return;
 	this.drawIcon(icon,x,y);
+	this.drawBuffIcon_drawMoreInfos.apply(this,arguments);
 	return true;
 }).
+addBase('drawBuffIcon_drawMoreInfos',function f(actor,buffId,x,y){
+	this.drawBuffIcon_drawMoreInfos_settings.apply(this,arguments);
+	this.drawBuffIcon_drawMoreInfos_contents.apply(this,arguments);
+}).
+addBase('drawBuffIcon_drawMoreInfos_settings',function f(actor,buffId,x,y){
+	this.changeFontSize(this.drawActorIcons_drawMoreInfos_fontSize.apply(this,arguments));
+	this.changeTextColor(this.drawActorIcons_drawMoreInfos_textColor.apply(this,arguments));
+	this.contents.outlineWidth=this.drawActorIcons_drawMoreInfos_outlineWidth.apply(this,arguments);
+}).
+addBase('drawBuffIcon_drawMoreInfos_contents',function f(actor,buffId,x,y){
+	const fontSize=this.currentFontSize();
+	const lineHeight=this.lineHeight();
+	const padding=this.drawActorIcons_drawMoreInfos_padding.apply(this,arguments);
+	const padding2=padding<<1;
+	this.drawText('x'+actor._buffs[buffId],
+		x+padding,
+		y+padding-((lineHeight-fontSize)>>1),
+		Window_Base._iconWidth-padding2,'right',
+	);
+	this.drawText(actor._buffTurns[buffId],
+		x+padding,
+		y+Window_Base._iconHeight-fontSize,
+		Window_Base._iconWidth-padding2,'left',
+	);
+}).
+getP;
+
+new cfc(Sprite_StateIcon.prototype).
+addBase('updateIcon',function f(){
+	const btlr=this._battler;
+	if(!btlr || !btlr.isAlive()) return this.updateIcon_updateByInfos('clear');
+	if(!(++this._animationIndex>=0)) return;
+	
+	const statesCnt=btlr.stateIcons_getStatesCnt();
+	if(this._animationIndex<statesCnt) return this.updateIcon_updateByInfos_fillState();
+	
+	const buffIdxv=[]; for(let i=0,sz=btlr.buffLength();i<sz;++i) if(btlr.buff(i)) buffIdxv.push(i);
+	const totalCnt=statesCnt+buffIdxv.length;
+	if(totalCnt===0) return this.updateIcon_updateByInfos('clear');
+	if(!(this._animationIndex<totalCnt)) this._animationIndex=0;
+	if(this._animationIndex<statesCnt) return this.updateIcon_updateByInfos_fillState();
+	
+	const buffId=buffIdxv[this._animationIndex-statesCnt];
+	return this.updateIcon_updateByInfos_buff(
+		'buff',
+		btlr.buffIconIndex(btlr._buffs[buffId],buffId),
+		btlr._buffTurns[buffId],
+		btlr._buffs[buffId],
+	);
+}).
+addBase('updateIcon_updateByInfos_fillState',function f(){
+	const btlr=this._battler;
+	const stateId=btlr.stateIcons_getSortedStateIds()[this._animationIndex];
+	return this.updateIcon_updateByInfos_state(
+		'state',
+		$dataStates[stateId]&&$dataStates[stateId].iconIndex,
+		btlr._stateTurns[stateId],
+		btlr.statesContainer_cntStateId(stateId),
+	);
+}).
+addBase('updateIcon_updateByInfos',function f(type,iconIndex,turns,stacks){
+	const func=this[f.tbl[0][type]]||this[f.tbl[0]._default];
+	return func&&func.apply(this,arguments);
+},[
+{
+clear:'updateIcon_updateByInfos_clear',
+buff:'updateIcon_updateByInfos_buff',
+state:'updateIcon_updateByInfos_state',
+_default:'updateIcon_updateByInfos_clear',
+}, // type -> method name
+]).
+addBase('updateIcon_updateByInfos_clear',function f(type,iconIndex,turns,stacks){
+	this._animationIndex=-1;
+	this._iconIndex=0;
+}).
+addBase('updateIcon_updateByInfos_buff',function f(type,iconIndex,turns,stacks){
+	this._iconIndex=iconIndex;
+	this._iconTurns=turns;
+	this._iconStacks=stacks;
+}).
+addBase('updateIcon_updateByInfos_state',function f(type,iconIndex,turns,stacks){
+	this._iconIndex=iconIndex;
+	this._iconTurns=turns;
+	this._iconStacks=undefined;
+}).
+add('initMembers',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._animationIndex=-1;
+	this.initMembers_textInfos.apply(this,arguments);
+	return rtv;
+}).
+addBase('initMembers_textInfos',function f(){
+	const textInfos=this._textInfos=new Window_Text(0,0,1,1);
+	this.addChild(textInfos);
+	return textInfos;
+}).
+add('updateFrame',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.updateFrame_textInfos.apply(this,arguments);
+	return rtv;
+}).
+addBase('updateFrame_textInfos',function f(){
+	const textInfos=this._textInfos;
+	const fontSize=f.tbl[0];
+	const margin=useDefaultIfIsNaN(f.tbl[1],textInfos.textPadding());
+	const margin2=margin<<1;
+	textInfos.changeFontSize(fontSize);
+	const lineHeight=textInfos.lineHeight();
+	textInfos.clear_recreateContentsIfSmaller(this.width+margin2,this.height+(lineHeight<<1)+margin2);
+	textInfos.changeFontSize(fontSize);
+	if(!this._iconIndex) return;
+	{ const anchor=this.anchor;
+	textInfos.position.set(
+		-this.width*anchor.x-margin,
+		-this.height*anchor.y-margin-lineHeight,
+	);
+	}
+	const padding=f.tbl[2];
+	const padding2=padding<<1;
+	if(this._iconStacks!=null){
+		textInfos.drawText(isNaN(this._iconStacks)?this._iconStacks:'x'+this._iconStacks,
+			margin+padding,
+			margin+padding,
+			Window_Base._iconWidth-padding2,'right',
+		);
+	}
+	textInfos.drawText(this._iconTurns,
+		margin+padding,
+		margin+lineHeight+Window_Base._iconHeight-((lineHeight-fontSize)>>1),
+		Window_Base._iconWidth-padding2,'left',
+	);
+},[
+16, // 0: font size
+undefined, // 1: margin. use textPadding()
+4, // 2: padding
+]).
 getP;
 
 
@@ -8318,6 +8523,9 @@ addBase('stateIdsWithIcon_getUniques',function f(){
 addBase('stateIdsWithIcon_getAll',function f(){
 	return this._stateIdsWithIcon_get().slice();
 }).
+addBase('stateIcons_getStatesCnt',function f(){
+	return this._stateIdsWithIcon_get().multisetUniquesCnt();
+}).
 addBase('stateIcons_getSortedStateIds',function f(){
 	return this.stateIdsWithIcon_getUniques().sort(this.sortStates_cmpFunc,this);
 }).
@@ -8786,6 +8994,52 @@ getP;
 // ---- ---- ---- ---- fix bug
 
 (()=>{ let k,r,t;
+
+
+new cfc(Bitmap.prototype).
+addBase('drawText',function f(text,x,y,maxWidth,lineHeight,align,inRectRange){
+	// rewrite: the actual line height is about 1.25x fontsize. draw @ y = 1x fontsize.
+	if(text==null) return;
+	if(inRectRange&&inRectRange.constructor!==Rectangle) inRectRange=undefined;
+	
+	let tx = x;
+	// let ty = y + lineHeight - ( lineHeight - this.fontSize * 1.25 )/2 - this.fontSize * 0.25;
+	const ty = y + (lineHeight>>1) + this.fontSize * 0.375;
+	maxWidth = maxWidth || 0x7fffffff;
+	if(align==='center') tx+=maxWidth>>1;
+	if(align==='right') tx+=maxWidth;
+	
+	const ctx=this._context;
+	let context=ctx,dx=0,dy=0;
+	const alpha=context.globalAlpha;
+	if(inRectRange){
+		f.tbl[0].width =inRectRange.width ;
+		f.tbl[0].height=inRectRange.height;
+		context=this.__context=f.tbl[0].getContext('2d');
+		dx=-inRectRange.x;
+		dy=-inRectRange.y;
+	}else context.save();
+	
+	context.font=this._makeFontNameText();
+	context.textAlign=align;
+	context.textBaseline='alphabetic';
+	context.globalAlpha=1;
+	this._drawTextOutline(text, tx+dx, ty+dy, maxWidth);
+	context.globalAlpha=alpha;
+	this._drawTextBody(text, tx+dx, ty+dy, maxWidth);
+	
+	if(inRectRange){
+		const c=f.tbl[0],w=c.width,h=c.height;
+		(this.__context=ctx).drawImage(c,inRectRange.x,inRectRange.y);
+	}else context.restore();
+	
+	this._setDirty();
+	return ty;
+},[
+document.ce('canvas'), // 0: tmp canvas
+]).
+getP;
+
 
 new cfc(Window_Base.prototype).
 addBase('convertEscapeCharacters',function f(text){
