@@ -8425,6 +8425,9 @@ addBase('traitsUniqueIds',function f(code){
 	// ONLY used to iterate all unique id once. time overhead of `multisetUniques` is amortized.
 	return this._traitsSet(code).multisetUniques();
 }).
+addBase('traitsUniqueIdsCnt',function f(code){
+	return this._traitsSet(code).multisetUniquesCnt();
+}).
 addBase('_traitsWithId',function f(code,id){
 	if(!this.traitsOpCache_hasUsedOp(code,id,'wId')){
 		this.traitsOpCache_addUsedOp(code,id,'wId');
@@ -8722,6 +8725,29 @@ addBase('_attackElements',function(){
 }).
 addBase('attackElements',function(){
 	return this._attackElements.apply(this,arguments).slice();
+}).
+addBase('statesContainer_uniqueStateIds',function f(){
+	return this._states.multisetUniques();
+}).
+addBase('statesContainer_uniqueStateIdsCnt',function f(){
+	return this._states.multisetUniquesCnt();
+}).
+addBase('stateResistSetUniqueCnt',function f(){
+	return this.traitsUniqueIdsCnt(Game_BattlerBase.TRAIT_STATE_RESIST);
+}).
+addBase('refresh_resistStates',function f(){
+	const stateSetCnt=this.statesContainer_uniqueStateIdsCnt();
+	const resistSetCnt=this.stateResistSetUniqueCnt();
+	const isArrAllStateIds=window._dbg_resistStates==null?stateSetCnt<resistSetCnt:window._dbg_resistStates;
+	const arr=isArrAllStateIds?this.statesContainer_uniqueStateIds():this.stateResistSet();
+	for(let x=arr.length;x--;){
+		if(isArrAllStateIds && !this.isStateResist(arr[x])) continue;
+		for(let p,n=this.statesContainer_cntStateId(arr[x]);n&&n!==p;){
+			this.eraseState(arr[x]);
+			p=n;
+			n=this.statesContainer_cntStateId(arr[x]);
+		}
+	}
 }).
 getP;
 
