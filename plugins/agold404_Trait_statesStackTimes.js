@@ -149,6 +149,9 @@ new cfc(Game_Battler.prototype).
 addBase('addNewState_condOk',function f(stateId){
 	return this.traitMultiStates_getMaxStackTimes(stateId)>=this.statesContainer_cntStateId(stateId)+1;
 }).
+getP;
+
+new cfc(Game_BattlerBase.prototype).
 add('eraseState',function f(stateId){
 	const rtv=f.ori.apply(this,arguments);
 	if(0<this.statesContainer_cntStateId(stateId)) this.resetStateCounts(stateId);
