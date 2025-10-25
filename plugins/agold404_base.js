@@ -790,11 +790,21 @@ new cfc(Window_Base.prototype).addBase('updateTone',function f(){
 	const tone=$gameSystem&&$gameSystem.windowTone()||f.tbl[0];
 	this.setTone(tone[0], tone[1], tone[2]);
 },[0,0,0,0]).
-addBase('clear_recreateContentsIfSmaller',function f(newContentsWidth,newContentsHeight){
+addBase('clear_recreateContentsIfOriginallySmaller',function f(newContentsWidth,newContentsHeight){
+	let rtv=false;
+	if(isNaN(newContentsWidth)) newContentsWidth=this.contentsWidth();
+	if(isNaN(newContentsHeight)) newContentsHeight=this.contentsHeight();
 	let cc=this.contents;
-	if(!cc||cc.width<newContentsWidth||cc.height<newContentsHeight) cc=this.contents=new Bitmap(newContentsWidth,newContentsHeight);
-	else cc.clearRect(0,0,newContentsWidth,newContentsHeight);
+	if(!cc||cc.width<newContentsWidth||cc.height<newContentsHeight){
+		if(cc){
+			newContentsWidth=Math.max(newContentsWidth,cc.width);
+			newContentsHeight=Math.max(newContentsHeight,cc.height);
+		}
+		cc=this.contents=new Bitmap(newContentsWidth,newContentsHeight);
+		rtv=true;
+	}else cc.clearRect(0,0,newContentsWidth,newContentsHeight);
 	this.resetFontSettings();
+	return rtv;
 }).
 addBase('drawTextEx',function f(text, x, y, _3, _4, out_textState){
 	// return dx
@@ -2406,7 +2416,7 @@ addBase('updateFrame_textInfos',function f(){
 	const margin2=margin<<1;
 	textInfos.changeFontSize(fontSize);
 	const lineHeight=textInfos.lineHeight();
-	textInfos.clear_recreateContentsIfSmaller(this.width+margin2,this.height+(lineHeight<<1)+margin2);
+	textInfos.clear_recreateContentsIfOriginallySmaller(this.width+margin2,this.height+(lineHeight<<1)+margin2);
 	textInfos.changeFontSize(fontSize);
 	if(!this._iconIndex) return;
 	{ const anchor=this.anchor;
