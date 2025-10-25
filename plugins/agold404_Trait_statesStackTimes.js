@@ -157,4 +157,28 @@ add('eraseState',function f(stateId){
 getP;
 
 
+new cfc(Window_Base.prototype).
+add('drawStateIcon_drawMoreInfos_contents',function f(actor,stateId,x,y){
+	const rtv=f.ori.apply(this,arguments);
+	const fontSize=this.currentFontSize();
+	const lineHeight=this.lineHeight();
+	const padding=this.drawActorIcons_drawMoreInfos_padding.apply(this,arguments);
+	this.drawText('x'+actor.statesContainer_cntStateId(stateId),
+		x+padding,
+		y+padding-((lineHeight-fontSize)>>1),
+		Window_Base._iconWidth-(padding<<1),'right',
+	);
+	return rtv;
+}).
+getP;
+
+new cfc(Sprite_StateIcon.prototype).
+add('updateIcon_updateByInfos_state',function f(type,iconIndex,turns,stacks){
+	const rtv=f.ori.apply(this,arguments);
+	this._iconStacks=stacks;
+	return rtv;
+}).
+getP;
+
+
 })();
