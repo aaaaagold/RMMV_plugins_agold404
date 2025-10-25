@@ -775,7 +775,7 @@ addBase('itemActionWindow_canShow',function f(idx,ignoreIsTree){
 	return !w.skillTree_isHidden(idx);
 }).
 addBase('itemActionWindow_ok',function f(){
-	this.actor().setLastMenuSkill(this.skillTree_item_bypassHiddenSkillReplacement());
+	this.actor().setLastMenuSkill(this._itemWindow.skillTree_item_bypassHiddenSkillReplacement());
 	this.determineItem();
 }).
 addBase('itemActionWindow_learn',function f(idx){
