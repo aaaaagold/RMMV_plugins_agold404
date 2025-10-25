@@ -22,7 +22,7 @@
  */
 
 (()=>{ let k,r,t;
-const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_SkillReference";
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_CameraChasing";
 const params=PluginManager.parameters(pluginName)||{};
 
 t=[
@@ -38,7 +38,9 @@ addBase('cameraChasing_get',function f(){
 	if(!(info.yq instanceof Queue)) info.yq=Object.assign(new Queue(),info.yq);
 	return info;
 }).
-addBase('cameraChasing_set',function f(target,smoothFrames,sineFrames,delayFrames,){
+addBase('cameraChasing_set',function f(target,smoothFrames,sineFrames,delayFrames,
+	// autoReleaseOnSineEnd, // auto release when smoothFrames==0
+){
 	if(!target) target=$gamePlayer;
 	smoothFrames|=0;
 	if(smoothFrames<0){
@@ -55,6 +57,7 @@ addBase('cameraChasing_set',function f(target,smoothFrames,sineFrames,delayFrame
 		smoothFrames:smoothFrames,
 		sineFramesCurr:0,
 		sineFramesMax:sineFrames,
+		//sineFrameEndRelease:!!autoReleaseOnSineEnd,
 		delayFrames:delayFrames,
 		initDisplayXy:[X,Y],
 		xa:X*amount,
