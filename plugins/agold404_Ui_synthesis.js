@@ -530,9 +530,7 @@ addBase('select',function f(idx){
 				const y1=Math.max(wr.y+wr.height,wd.y+wd.height);
 				wr.y=y0;
 				wr.height=y1-y0;
-				if(wr.contents.height<wr.contentsHeight()){
-					wr.createContents();
-				}
+				wr.clear_recreateContentsIfOriginallySmaller();
 				wd.visible=false;
 			}else{
 				if(wr.y<wd.y){
