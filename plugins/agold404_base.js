@@ -512,6 +512,12 @@ t=[
 none,
 ];
 new cfc(TouchInput).
+add('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._cumulatedDx=0;
+	this._cumulatedDy=0;
+	return rtv;
+}).
 addBase('toMapXyReal',function f(overwriteTouchXy,overwriteMapXy){
 	overwriteTouchXy=overwriteTouchXy||this;
 	overwriteMapXy=overwriteMapXy||$gameMap;
@@ -600,6 +606,18 @@ addBase('_onMouseMove',function(event) {
 		Graphics.pageToCanvasX(event.pageX),
 		Graphics.pageToCanvasY(event.pageY),
 	);
+	this._cumulatedDx+=event.movementX;
+	this._cumulatedDy+=event.movementY;
+}).
+addBase('cumulatedDx',function f(){
+	const rtv=this._cumulatedDx;
+	this._cumulatedDx=0;
+	return rtv;
+}).
+addBase('cumulatedDy',function f(){
+	const rtv=this._cumulatedDy;
+	this._cumulatedDy=0;
+	return rtv;
 }).
 getP;
 //
