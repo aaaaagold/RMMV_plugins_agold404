@@ -54,6 +54,10 @@ p.addBase=function(key,f,t,m){
 	cf(this._p,key,f,t,true,true,m);
 	return this;
 };
+p.addBaseIfNotOwn=function(key){
+	if(!Object.getOwnPropertyDescriptor(this._p,key)) this.addBase(key,function f(){ return f._super[f._funcName].apply(this,arguments); });
+	return this;
+};
 p.addRoof=function(key,f,t,m){
 	cf(this._p,key,f,t,false,false,m,true);
 	return this;
