@@ -125,15 +125,8 @@ addBase('itemNewTag_drawItemByItemAndRect_drawIsNew',function f(item,rect){
 getP;
 
 
-{ const p=Scene_MenuBase.prototype,k='terminate_after';
-if(!Object.getOwnPropertyDescriptor(p,k)) new cfc(p).
-addBase(k,function f(){
-	return f._super[f._funcName].apply(this,arguments);
-}).
-getP;
-}
-
 new cfc(Scene_MenuBase.prototype).
+addBaseIfNotOwn('terminate_after').
 add('terminate_after',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.itemNewTag_clearRecordsOnTerminate.apply(this,arguments);
