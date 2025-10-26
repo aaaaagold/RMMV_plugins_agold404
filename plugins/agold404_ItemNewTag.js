@@ -134,7 +134,7 @@ add('terminate_after',function f(){
 }).
 addBase('itemNewTag_clearRecordsOnTerminate',function f(){
 	const sc=SceneManager._scene;
-	if(!(sc._prevScene?(sc._prevScene instanceof Scene_Map):(SceneManager._nextScene instanceof Scene_Map))) return;
+	if((sc instanceof Scene_Shop)||!(sc._prevScene?(sc._prevScene instanceof Scene_Map):(SceneManager._nextScene instanceof Scene_Map))) return;
 	$gameTemp.itemNewTag_container_clear();
 	return;
 }).
