@@ -854,6 +854,8 @@ addBase('cloneFontSettings',function f(){
 		fontFace:this.contents&&this.contents.fontFace,
 		fontSize:this.contents&&this.contents.fontSize,
 		textColor:this.contents&&this.contents.textColor,
+		//outlineColor:this.contents&&this.contents.outlineColor,
+		//outlineWidth:this.contents&&this.contents.outlineWidth,
 	});
 }).
 addBase('applyFontSettings',function f(fontSettings){
@@ -861,6 +863,8 @@ addBase('applyFontSettings',function f(fontSettings){
 	this.contents.fontFace=fontSettings.fontFace;
 	this.contents.fontSize=fontSettings.fontSize;
 	this.contents.textColor=fontSettings.textColor;
+	//this.contents.outlineColor=fontSettings.outlineColor;
+	//this.contents.outlineWidth=fontSettings.outlineWidth;
 }).
 addBase('processNormalCharacter',function f(textState){
 	const c=textState.text[textState.index++];
@@ -5913,13 +5917,17 @@ addBase('drawItem',function f(idx){
 	const item=this._data[idx];
 	if(item) this.drawItemByItemAndRect(item,this.itemRect(idx));
 }).addBase('drawItemByItemAndRect',function f(item,rect){
+	this.changePaintOpacity(this.isEnabled(item));
+	this.drawItemByItemAndRect_main.apply(this,arguments);
+	this.changePaintOpacity(1);
+}).
+addBase('drawItemByItemAndRect_main',function f(item,rect){
 	const numberWidth=this.numberMaxWidth(item,rect);
 	rect.width-=this.textPadding();
-	this.changePaintOpacity(this.isEnabled(item));
 	this.drawItemName(item, rect.x, rect.y, rect.width - numberWidth);
 	this.drawItemNumber(item, rect.x, rect.y, rect.width);
-	this.changePaintOpacity(1);
-});
+}).
+getP;
 
 new cfc(Game_Battler.prototype).addBase('getParty',function f(){
 	const func=f.tbl[0].get(this.constructor);
@@ -9051,10 +9059,10 @@ getP;
 
 
 new cfc(Bitmap.prototype).
-addBase('drawText',function f(text,x,y,maxWidth,lineHeight,align,inRectRange){
+addBase('drawText',function f(text,x,y,maxWidth,lineHeight,align,opt){
 	// rewrite: the actual line height is about 1.25x fontsize. draw @ y = 1x fontsize.
 	if(text==null) return;
-	if(inRectRange&&inRectRange.constructor!==Rectangle) inRectRange=undefined;
+	let inRectRange=opt&&opt.inRectRange; if(inRectRange&&inRectRange.constructor!==Rectangle) inRectRange=undefined;
 	
 	let tx = x;
 	// let ty = y + lineHeight - ( lineHeight - this.fontSize * 1.25 )/2 - this.fontSize * 0.25;
@@ -9092,6 +9100,12 @@ addBase('drawText',function f(text,x,y,maxWidth,lineHeight,align,inRectRange){
 },[
 document.ce('canvas'), // 0: tmp canvas
 ]).
+getP;
+
+new cfc(Window_Base.prototype).
+addBase('drawText',function f(text,x,y,maxWidth,align,opt){
+	this.contents.drawText(text,x,y,maxWidth,this.lineHeight(),align,opt);
+}).
 getP;
 
 
@@ -9179,7 +9193,7 @@ getP;
 // due to built-in API updated
 
 new cfc(Bitmap.prototype).
-add('drawText',function f(text, x, y, maxWidth, lineHeight, align){
+add('drawText',function f(text, x, y, maxWidth, lineHeight, align, opt){
 	if(!f.tbl[0][5][0].has(arguments[5])){
 		if(arguments.length<6) arguments.length=6;
 		arguments[5]=f.tbl[0][5][1];
