@@ -2561,13 +2561,52 @@ addBase('setStypeId',function(stypeId){
 getP;
 
 
-new cfc(Scene_Equip.prototype).
+new cfc(Scene_MenuBase.prototype).
 addBase('setUiState',function f(val){
 	return this._uiState=val;
 }).
 addBase('getUiState',function f(){
 	return this._uiState;
 }).
+addBase('changeUiState_focusOnItemWnd',function f(){
+}).
+getP;
+
+new cfc(Scene_ItemBase.prototype).
+add('showSubWindow',function f(wnd){
+	const rtv=f.ori.apply(this,arguments);
+	wnd.open();
+	return rtv;
+}).
+getP
+
+new cfc(Scene_Item.prototype).
+addBase('changeUiState_focusOnItemWnd',function f(){
+	this.setUiState(f.tbl[0]);
+	const aw=this._actorWindow;
+	{
+		aw.deactivate();
+		aw.close();
+	}
+	const cw=this._categoryWindow;
+	{
+		cw.deactivate();
+	}
+	const iw=this._itemWindow;
+	{
+		iw.activate();
+		const M=iw.maxItems();
+		let currIdx=iw.index();
+		if(!(currIdx>=0)) iw.select(currIdx=0);
+		else if(!(currIdx<M)) iw.select(currIdx=M-1);
+		iw.activate();
+	}
+},[
+'focusOnItemWnd',
+]).
+getP
+
+new cfc(Scene_Equip.prototype).
 addBase('changeUiState_focusOnSlotWnd',function f(){
 	this.setUiState(f.tbl[0]);
 	if(!(this._slotWindow.index()>=0)) this._slotWindow.select(0);
