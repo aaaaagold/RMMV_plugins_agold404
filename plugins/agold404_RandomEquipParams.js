@@ -49,6 +49,7 @@ window.isTest(),
 undefined, // 3: reserved for kwpts
 ["<RandomTotalPointsOnSomeParams>","</RandomTotalPointsOnSomeParams>"], // 4: xmlMark for random params
 'focusOnLayeredItemWnd', // 5: uiState
+(a,b)=>$gameParty.itemOrder_getOrder?$gameParty.itemOrder_getOrder(undefined,a)-$gameParty.itemOrder_getOrder(undefined,b):(a&&a.id)-(b&&b.id), // 6: cmp for sort
 ];
 
 
@@ -511,6 +512,7 @@ addBase('randomEquipParams_createItemWindow_method_makeItemList_do',function f()
 		if(lw.isEnabled(bak[x])) canUseItemsSet.add(srcObj);
 		m.get(srcObj).push(bak[x]);
 	}
+	this._data.sort(f.tbl[6]);
 	return rtv;
 },t).
 addBase('randomEquipParams_createLayeredItemWindow',function f(isCanIncludeNull){
