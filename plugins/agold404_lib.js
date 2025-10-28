@@ -55,7 +55,7 @@ p.addBase=function(key,f,t,m){
 	return this;
 };
 p.addBaseIfNotOwn=function(key){
-	if(!Object.getOwnPropertyDescriptor(this._p,key)) this.addBase(key,function f(){ return f._super[f._funcName].apply(this,arguments); });
+	if(!Object.getOwnPropertyDescriptor(this._p,key)) this.addBase(key,function f(){ const func=f._super[f._funcName]; return func&&func.apply(this,arguments); });
 	return this;
 };
 p.addRoof=function(key,f,t,m){
