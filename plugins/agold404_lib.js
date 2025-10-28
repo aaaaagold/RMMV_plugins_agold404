@@ -46,19 +46,54 @@ const a=function cfc(p){
 }
 const p=a.prototype;
 p.constructor=a;
+p._addDbgInfo=function(p,key,f,methodName){
+	let contRoot=a._dbgInfo_modLog_byCtor; if(!contRoot) contRoot=a._dbgInfo_modLog_byCtor=new Map();
+	const ctor=(p.constructor===Function?p:p.constructor).name;
+	let cont=contRoot.get(ctor); if(!cont){ contRoot.set(ctor,cont=({
+		scrSets:{},
+		scrNameMaps_scr:{},
+		scrNameMaps_func:{},
+	})); }
+	let scrSet=cont.scrSets[key]; if(!scrSet) scrSet=cont.scrSets[key]=new Set();
+	let scrNameMap_scr=cont.scrNameMaps_scr[key]; if(!scrNameMap_scr) scrNameMap_scr=cont.scrNameMaps_scr[key]=new Map();
+	let scrNameMap_func=cont.scrNameMaps_func[key]; if(!scrNameMap_func) scrNameMap_func=cont.scrNameMaps_func[key]=new Map();
+	
+	const scr=document.currentScript;
+	scrSet.add(scr);
+	const url=scr._url||scr.baseURI;
+	{ let s=scrNameMap_scr.get(url); if(!s) scrNameMap_scr.set(url,s=new Set());
+	s.add(scr);
+	}
+	if(f){ let s=scrNameMap_func.get(url); if(!s) scrNameMap_func.set(url,s=new Set());
+	s.add(f);
+	}
+	
+	const modLogs=a._dbgInfo_modLogs=a._dbgInfo_modLogs||[];
+	modLogs.push([ctor].concat([...arguments]));
+};
 p.add=function(key,f,t,d,u,m,r){
+	this._addDbgInfo(this._p,key,f,'add');
 	cf(this._p,key,f,t,d,u,m,r);
 	return this;
 };
 p.addBase=function(key,f,t,m){
+	this._addDbgInfo(this._p,key,f,'addBase');
 	cf(this._p,key,f,t,true,true,m);
 	return this;
 };
-p.addBaseIfNotOwn=function(key){
+p._addBaseIfNotOwn=function(key){
+	this._addDbgInfo(this._p,key,undefined,'addBaseIfNotOwn');
 	if(!Object.getOwnPropertyDescriptor(this._p,key)) this.addBase(key,function f(){ const func=f._super[f._funcName]; return func&&func.apply(this,arguments); });
 	return this;
 };
+p.addWithBaseIfNotOwn=function(key,f,t,d,u,m,r){
+	this._addDbgInfo(this._p,key,f,'addAndFirstBaseIfNotOwn');
+	this._addBaseIfNotOwn(key);
+	this.add.apply(this,arguments);
+	return this;
+};
 p.addRoof=function(key,f,t,m){
+	this._addDbgInfo(this._p,key,f,'addRoot');
 	cf(this._p,key,f,t,false,false,m,true);
 	return this;
 };
