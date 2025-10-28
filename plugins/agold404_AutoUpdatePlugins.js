@@ -22,7 +22,7 @@
  */
 
 (()=>{ let k,r,t;
-const ver='2025-10-26 2',verJudgeKey='_agold404_AutoUpdatePlugins_isVerJudging';
+const ver='2025-10-28 0',verJudgeKey='_agold404_AutoUpdatePlugins_isVerJudging';
 { const key=verJudgeKey; if(window[key]){
 	return ver;
 } }
