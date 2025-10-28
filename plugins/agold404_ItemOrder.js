@@ -66,6 +66,12 @@ add('gainItem',function f(item,amount,includeEquip){
 addBase('itemOrder_appendNew',function f(cont,item,amount,includeEquip){
 	if(!f.tbl[1]._isEnableLogItemGainOrder||!cont||amount<0) return; // not gain
 	const arr=this._itemOrder_getOrderCont(cont);
+	const srcObj=DataManager.duplicatedDataobj_getSrc(item);
+	if(srcObj!==item){
+		arguments[1]=srcObj;
+		f.apply(this,arguments);
+		arguments[1]=item;
+	}
 	const key=this._itemOrder_getItemKey(item,cont);
 	if(key) arr.uniquePush(key);
 },t).
@@ -132,7 +138,7 @@ getP;
 
 
 new cfc(Window_ItemList.prototype).
-add('processHandling_do',function f(){
+addWithBaseIfNotOwn('processHandling_do',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.processHandling_reorderMode();
 	return rtv;
@@ -141,7 +147,14 @@ addBase('processHandling_reorderMode',function f(){
 	if(this.isHandled(f.tbl[7]) && Input.isTriggered(f.tbl[7])) this.callHandler(f.tbl[7]);
 	else return true;
 },t).
-add('processCursorMove',function f(){
+addWithBaseIfNotOwn('processCursorMove',function f(){
+	if(!this.itemOrder_isReorderMode()) return f.ori.apply(this,arguments);
+	const lastIdx=this.index();
+	const rtv=f.ori.apply(this,arguments);
+	this.itemOrder_arrangeOrder(this.index(),lastIdx);
+	return rtv;
+}).
+addWithBaseIfNotOwn('processTouch',function f(){
 	if(!this.itemOrder_isReorderMode()) return f.ori.apply(this,arguments);
 	const lastIdx=this.index();
 	const rtv=f.ori.apply(this,arguments);
