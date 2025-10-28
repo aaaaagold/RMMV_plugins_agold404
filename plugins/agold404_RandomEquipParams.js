@@ -133,7 +133,7 @@ addBase('randomEquipParams_createNew_format1',function f(item){
 	}
 	return rtv;
 }).
-add('gainItem',function f(item,amount,includeEquip){
+addRoof('gainItem',function f(item,amount,includeEquip){
 	if(amount>=1&&item&&item.params&&item.params.randomEquipParams_format1){
 		item=arguments[0]=this.randomEquipParams_createNew_format1.apply(this,arguments);
 		return f.apply(this,arguments);
@@ -192,8 +192,7 @@ add('updateHelp',function f(){
 	this._statusWindow=swori;
 	return rtv;
 }).
-addBaseIfNotOwn('makeItemList_do').
-add('makeItemList_do',function f(){
+addWithBaseIfNotOwn('makeItemList_do',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	const lw=this.randomEquipParams_isUsingLayeredWindows();
 	if(!lw) return rtv;
@@ -215,15 +214,15 @@ add('makeItemList_do',function f(){
 	if(includeNull) dst.push(null);
 	return rtv;
 },t).
-add('setActor',function f(actor){
+addWithBaseIfNotOwn('setActor',function f(actor){
 	this.randomEquipParams_setActor.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
-add('setSlotId',function f(slotId){
+addWithBaseIfNotOwn('setSlotId',function f(slotId){
 	this.randomEquipParams_setSlotId.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
-add('onNewSelect',function f(){
+addWithBaseIfNotOwn('onNewSelect',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.randomEquipParams_onNewSelect.apply(this,arguments);
 	return rtv;
