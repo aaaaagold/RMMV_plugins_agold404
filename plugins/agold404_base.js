@@ -2734,18 +2734,6 @@ addBase('processOk',function f(){
 }).
 getP;
 
-new cfc(Window_EquipItem.prototype).
-addBase('makeItemList',function f(){
-	return f._super[f._funcName].apply(this,arguments);
-}).
-addBase('drawItemNumber_num',function f(item,x,y,width,num){
-	return f._super[f._funcName].apply(this,arguments);
-}).
-addBase('onNewSelect',function f(){
-	return f._super[f._funcName].apply(this,arguments);
-}).
-getP;
-
 
 new cfc(Game_Party.prototype).
 add('initAllItems',function f(){
