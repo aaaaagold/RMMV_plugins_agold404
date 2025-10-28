@@ -126,8 +126,7 @@ getP;
 
 
 new cfc(Scene_MenuBase.prototype).
-addBaseIfNotOwn('terminate_after').
-add('terminate_after',function f(){
+addWithBaseIfNotOwn('terminate_after',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.itemNewTag_clearRecordsOnTerminate.apply(this,arguments);
 	return;
