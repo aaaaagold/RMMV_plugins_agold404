@@ -221,15 +221,15 @@ addBase('onReorderOk',function f(){
 	}
 }).
 addBase('onReorderOk_cancelReorderResult',function f(isSoundAlreadyPlayed){
-	console.log('cancel');
+	//console.log('cancel');
 	if(!isSoundAlreadyPlayed) SoundManager.playCancel();
 },t).
 addBase('onReorderOk_saveReorderResult',function f(isSoundAlreadyPlayed){
-	console.log('save');
+	//console.log('save');
 	if(!isSoundAlreadyPlayed) SoundManager.playOk();
 },t).
 addBase('onReorderOk_enterReorderMode',function f(isSoundAlreadyPlayed){
-	console.log('enter');
+	//console.log('enter');
 	if(!isSoundAlreadyPlayed) SoundManager.playCursor();
 },t).
 getP;
