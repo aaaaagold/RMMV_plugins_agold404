@@ -38,6 +38,12 @@ const cf=(p,k,f,tbl,is_putDeepest,is_notUsingOri,moduleName,is_asRoof)=>{
 	f._moduleName=moduleName;
 	f._super=pre;
 	f._isRoof=is_asRoof;
+	if(f.toString().match(cfc.prototype._re_usingOri)){
+		if(!f.ori) console.warn('using f.ori without it',p,k,f,document.currentScript);
+	}else{
+		if(f.ori) console.warn('not using f.ori with it',p,k,f,document.currentScript);
+	}
+	(f._isUsedByCf=f._isUsedByCf||new Set()).add(document.currentScript);
 	return p;
 };
 const a=function cfc(p){
@@ -59,6 +65,7 @@ p._addDbgInfo=function(p,key,f,methodName){
 	let scrNameMap_func=cont.scrNameMaps_func[key]; if(!scrNameMap_func) scrNameMap_func=cont.scrNameMaps_func[key]=new Map();
 	
 	const scr=document.currentScript;
+if(scr){
 	scrSet.add(scr);
 	const url=scr._url||scr.baseURI;
 	{ let s=scrNameMap_scr.get(url); if(!s) scrNameMap_scr.set(url,s=new Set());
@@ -67,12 +74,19 @@ p._addDbgInfo=function(p,key,f,methodName){
 	if(f){ let s=scrNameMap_func.get(url); if(!s) scrNameMap_func.set(url,s=new Set());
 	s.add(f);
 	}
+}
 	
 	const modLogs=a._dbgInfo_modLogs=a._dbgInfo_modLogs||[];
 	modLogs.push([ctor].concat([...arguments]));
 };
+p._re_usingOri=/(?<![A-Za-z0-9_$])f\.ori(?![A-Za-z0-9_$])/;
 p.add=function(key,f,t,d,u,m,r){
 	this._addDbgInfo(this._p,key,f,'add');
+	if(!u && !Object.getOwnPropertyDescriptor(this._p,key)){
+		const scr=document.currentScript;
+		if(this._p[key]) console.warn('addWithBaseIfNotOwn?',this._p,key,f,scr);
+		else console.warn('addBase?',this._p,key,f,scr);
+	}
 	cf(this._p,key,f,t,d,u,m,r);
 	return this;
 };
@@ -81,14 +95,16 @@ p.addBase=function(key,f,t,m){
 	cf(this._p,key,f,t,true,true,m);
 	return this;
 };
-p._addBaseIfNotOwn=function(key){
+p._addBaseIfNotOwn=function(key,t){
 	this._addDbgInfo(this._p,key,undefined,'addBaseIfNotOwn');
-	if(!Object.getOwnPropertyDescriptor(this._p,key)) this.addBase(key,function f(){ const func=f._super[f._funcName]; return func&&func.apply(this,arguments); });
+	if(!Object.getOwnPropertyDescriptor(this._p,key)) this.addBase(key,function f(){ const func=f._super&&f._super[f._funcName]; return func&&func.apply(this,arguments); },t);
 	return this;
 };
 p.addWithBaseIfNotOwn=function(key,f,t,d,u,m,r){
 	this._addDbgInfo(this._p,key,f,'addAndFirstBaseIfNotOwn');
-	this._addBaseIfNotOwn(key);
+	const scr=document.currentScript;
+	if(!this._p[key] && !f.toString().match(this._re_usingOri)) console.warn('addBase?',this._p,key,f,scr,);
+	this._addBaseIfNotOwn(key,t);
 	this.add.apply(this,arguments);
 	return this;
 };
