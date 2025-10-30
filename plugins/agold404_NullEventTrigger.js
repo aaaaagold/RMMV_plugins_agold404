@@ -13,7 +13,8 @@ new cfc(DataManager).add('onLoad_after_map',function f(obj){
 	const rtv=f.ori.apply(this,arguments);
 	this.onLoad_after_map_setNullTriggers(obj);
 	return rtv;
-}).add('onLoad_after_map_setNullTriggers',function f(obj){
+}).
+addBase('onLoad_after_map_setNullTriggers',function f(obj){
 	obj.events.forEach(f.tbl[0]);
 },t=[
 evtd=>{ if(!evtd) return;

@@ -49,7 +49,8 @@ noTemplate:"[ERROR] template map not loaded",
 Utils.isOptionValid('test'), // 3: isTest
 ];
 
-new cfc(Game_System.prototype).add('cpevt_loadevt',function(mapid){
+new cfc(Game_System.prototype).
+addBase('cpevt_loadevt',function(mapid){
 	if(!this._cpevt) this._cpevt={ mapid:0 , evts:[] , };
 	if(this._cpevt.mapid!==mapid){
 		this._cpevt.mapid=mapid;

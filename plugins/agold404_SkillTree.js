@@ -184,7 +184,7 @@ add('start_before',function f(){
 	this.start_before_skillTree();
 	return f.ori.apply(this,arguments);
 }).
-add('start_before_skillTree',function f(actrIdx,classIdx){
+addBase('start_before_skillTree',function f(actrIdx,classIdx){
 	let idx;
 	
 	idx=actrIdx;
@@ -256,7 +256,8 @@ addBase('skillTree_getTraits',function f(){
 getP;
 
 
-new cfc(Scene_ItemBase.prototype).add('create_tunePositions',function f(){
+new cfc(Scene_ItemBase.prototype).
+addBase('create_tunePositions',function f(){
 	this._isInitingItemActionWindow=false;
 	let y=0;
 	if(this._categoryWindow){
@@ -301,7 +302,8 @@ function(prefixItem){ this.addCommand.apply(this,prefixItem); }, // 1: forEach p
 { const p=Window_SkillList.prototype;
 const pp=p.__proto__;
 let ttt=[pp];
-new cfc(p).add('isTree',function f(){
+new cfc(p).
+addBase('isTree',function f(){
 	return this._stypeId==="ext-技能樹";
 }).add('initialize',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -309,31 +311,26 @@ new cfc(p).add('isTree',function f(){
 	return rtv;
 }).addBase('isSimpleTreeMode',function f(){
 	return this._isSimpleTreeMode;
-}).add('itemSpacingY',function f(){
+}).
+addWithBaseIfNotOwn('itemSpacingY',function f(){
 	return this.isTree()?this.lineHeight():f.ori.apply(this,arguments);
-}).add('itemWidth',(p.itemWidth===pp.itemWidth?(function f(){
-	if(this.isTree() && this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconWidth);
-	return f.tbl[0][f._funcName].apply(this,arguments);
-}):(function f(){
+}).
+addWithBaseIfNotOwn('itemWidth',function f(){
 	if(this.isTree() && this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconWidth);
 	return f.ori.apply(this,arguments);
-})),ttt,true).add('itemHeight',(p.itemHeight===pp.itemHeight?(function f(){
-	if(this.isTree()){
-		if(this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconHeight);
-		return this.lineHeight()<<1;
-	}
-	return f.tbl[0][f._funcName].apply(this,arguments);
-}):(function f(){
+},ttt,true).
+addWithBaseIfNotOwn('itemHeight',function f(){
 	if(this.isTree()){
 		if(this.isSimpleTreeMode()) return Math.max(this.lineHeight(),Window_Base._iconHeight);
 		return this.lineHeight()<<1;
 	}
 	return f.ori.apply(this,arguments);
-})),ttt,true).add('includes',function f(){
+},ttt,true).add('includes',function f(){
 	return this.isTree() || f.ori.apply(this,arguments);
 }).add('drawItem',function f(){
 	return this.isTree()?this.drawItem_tree.apply(this,arguments):f.ori.apply(this,arguments);
-}).add('drawItem_tree',function f(index){
+}).
+addBase('drawItem_tree',function f(index){
 	const skill=this._data[index];
 	if(skill){
 		const costHeight = this.costHeight();
@@ -382,13 +379,15 @@ addBase('skillTree_getHiddenSkillReplacement',function f(idx){
 	}
 	return rtv;
 },t).
-add('costHeight',function f(){
+addBase('costHeight',function f(){
 	return this.lineHeight();
-},undefined,true,false).add('makeItemList',function f(){
+},undefined,true,false).
+addWithBaseIfNotOwn('makeItemList',function f(){
 	this._maxCols=undefined;
 	this._skillTree_learnMeta=undefined;
 	return this.isTree()?this.makeItemList_tree():f.ori.apply(this,arguments);
-}).add('makeItemList_tree',function f(){
+}).
+addBase('makeItemList_tree',function f(){
 	const rtv=this._data=[];
 	if(!this._actor) return rtv;
 	const arrv=this._skillTree=this._actor.getData().skillTree.slice();
@@ -415,7 +414,7 @@ add('costHeight',function f(){
 	}
 	return rtv;
 },t).
-add('makeItemList_tree_getSkillInfo',function f(arrv,x,y){
+addBase('makeItemList_tree_getSkillInfo',function f(arrv,x,y){
 	arrv=arrv||this._skillTree;
 	if(!arrv) return;
 	const info=arrv[y]&&arrv[y][x];
@@ -443,7 +442,8 @@ add('makeItemList_tree_getSkillInfo',function f(arrv,x,y){
 		condFailMsg:condFailMsg,
 		prerequisite:prerequisite,
 	});
-}).add('skillTree_getPrevSkillIdx',function f(idx){
+}).
+addBase('skillTree_getPrevSkillIdx',function f(idx){
 	return; // deprecated: lines are not to be linked automatically
 	const arrv=this._skillTree; if(!arrv) return;
 	if(!this._prevSkills) this._prevSkills=[];
@@ -462,9 +462,11 @@ add('makeItemList_tree_getSkillInfo',function f(arrv,x,y){
 		}
 	}
 	return this._prevSkills[idx];
-}).add('isEnabled_ori',p.isEnabled).add('isEnabled',function f(item){
-	return this.isTree()?this.isEnabled_tree.apply(this,arguments):this.isEnabled_ori.apply(this,arguments);
-}).add('isEnabled_tree',function f(item){
+}).
+addWithBaseIfNotOwn('isEnabled',function f(item){
+	return this.isTree()?this.isEnabled_tree.apply(this,arguments):f.ori.apply(this,arguments);
+}).
+addBase('isEnabled_tree',function f(item){
 	return !!item;
 }).add('refresh',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -588,37 +590,33 @@ if(0)	for(let idx=this._data.length;idx--;){
 	ctx.restore();
 	this.refreshItemNameWindow();
 	return rtv;
-}).add('skillTree_linkWidth',function f(){
+}).
+addBase('skillTree_linkWidth',function f(){
 	return f.tbl[0];
 },[
 4,
-]).add('skillTree_linkColor',function f(){
+]).
+addBase('skillTree_linkColor',function f(){
 	return f.tbl[0];
 },[
 'rgba(234,234,234,0.75)',
-]).add('update_active',(p.update_active===pp.update_active?(function f(){
-	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
-	this.update_switchSimpleTreeMode();
-	return rtv;
-}):(function f(){
+]).
+addWithBaseIfNotOwn('update_active',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.update_switchSimpleTreeMode();
 	return rtv;
-})),ttt,true).addBase('update_switchSimpleTreeMode',function f(){
+},ttt,true).addBase('update_switchSimpleTreeMode',function f(){
 	if(!this.isTree()||!Input.isTriggered('control')) return;
 	this._isSimpleTreeMode^=1;
 	this.updateCursor();
 	this.refresh();
 	SoundManager.playCursor();
-}).add('onSelect',(p.onSelect===pp.onSelect?(function f(){
-	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
-	this.refreshItemNameWindow();
-	return rtv;
-}):(function f(){
+}).
+addWithBaseIfNotOwn('onSelect',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.refreshItemNameWindow();
 	return rtv;
-})),ttt).
+},ttt).
 addRoof('item',function f(idx){
 	if(this._skillTree_isBypassHiddenSkillReplacement) return f.ori.apply(this,arguments);
 	return this.skillTree_getHiddenSkillReplacement(this.index());
@@ -695,7 +693,8 @@ addBase('create_itemNameWindow',function f(){
 	wnd.hide();
 	this._itemWindow.addChild(wnd);
 	this._itemWindow._itemNameWindow=wnd;
-}).add('create_itemActionWindow',function f(){
+}).
+addBase('create_itemActionWindow',function f(){
 	this._isInitingItemActionWindow=true;
 	const wnd=this._itemActionWindow=new Window_ItemActions(0,0,{_scene:this,makeCommandList:this.itemActionWindow_makeCommandList,});
 	this._isInitingItemActionWindow=false;
@@ -712,7 +711,8 @@ addBase('create_itemNameWindow',function f(){
 }).addBase('create_addLink',function f(){
 	this._statusWindow._itemWindow=this._itemWindow;
 	this._itemWindow._statusWindow=this._statusWindow;
-}).add('itemActionWindow_makeCommandList',function f(){
+}).
+addBase('itemActionWindow_makeCommandList',function f(){
 	for(let x=0,arr=f.tbl[1],xs=arr.length;x!==xs;++x){
 		if(!this._skillTree_bothUseAndLearn){
 			if(this._scene._skillTypeWindow.currentExt()==="ext-技能樹"){
@@ -797,11 +797,13 @@ addBase('itemActionWindow_learn',function f(idx){
 		this._itemActionWindow.refresh();
 	}
 	this._itemActionWindow.activate();
-}).add('itemActionWindow_cancel',function f(){
+}).
+addBase('itemActionWindow_cancel',function f(){
 	this._itemActionWindow.deactivate();
 	this._itemActionWindow.hide();
 	this._itemWindow.activate();
-}).add('itemActionWindow_updatePlacement',function f(){
+}).
+addBase('itemActionWindow_updatePlacement',function f(){
 	const iw=this._itemWindow;
 	const iaw=this._itemActionWindow;
 	const rect=iw.itemRect(iw.index());

@@ -22,7 +22,8 @@
 new cfc(Graphics).add('renderOtherEffects',function f(){
 	this.renderBlackholeEffects();
 	return f.ori.apply(this,arguments);
-}).add('renderBlackholeEffects',function f(){
+}).
+addBase('renderBlackholeEffects',function f(){
 	const arr=this.renderBlackholeEffectSettings_get(); if(!arr.length&&!this._renderBlackholeEffect_isRendered) return;
 	let dstC=this._renderBlackholeEffectDst;
 	if(!dstC){
@@ -68,10 +69,12 @@ new cfc(Graphics).add('renderOtherEffects',function f(){
 1<<15, // 2: shift oneMoreBit threshold
 0|3, // 3: max shift bits
 function(state){ if(state.dur<state.durTotal) this.push(state); }, // 4: keep
-]).add('renderBlackholeEffectSettings_get',function f(){
+]).
+addBase('renderBlackholeEffectSettings_get',function f(){
 	let rtv=this._renderBlackholeEffectSettings; if(!rtv) rtv=this._renderBlackholeEffectSettings=[];
 	return rtv;
-}).add('renderBlackholeEffectSettings_add',function f(totalDur,fadeInDur,fadeOutDur,holeSetting){
+}).
+addBase('renderBlackholeEffectSettings_add',function f(totalDur,fadeInDur,fadeOutDur,holeSetting){
 	totalDur|=0;
 	fadeInDur|=0; if(fadeInDur<0) fadeInDur=0;
 	fadeOutDur|=0; if(fadeOutDur<0) fadeOutDur=0;
@@ -86,7 +89,8 @@ function(state){ if(state.dur<state.durTotal) this.push(state); }, // 4: keep
 	};
 	this.renderBlackholeEffectSettings_get().push(info);
 	return info;
-}).add('renderBlackholeEffect1',function f(state,i){
+}).
+addBase('renderBlackholeEffect1',function f(state,i){
 	const setting=state.setting;
 	if(!setting) return; // setting is also state
 	if(!(state.lastFrame<Graphics.frameCount)) state.lastFrame=Graphics.frameCount-1;
@@ -163,21 +167,24 @@ function(state){ if(state.dur<state.durTotal) this.push(state); }, // 4: keep
 	this._renderBlackholeEffect_isRendered=true;
 });
 
-new cfc(Sprite.prototype).add('renderBlackholeEffectSettings_add',function f(totalDur,fadeInDur,fadeOutDur,holeSetting){
+new cfc(Sprite.prototype).
+addBase('renderBlackholeEffectSettings_add',function f(totalDur,fadeInDur,fadeOutDur,holeSetting){
 	if(!holeSetting) return;
 	const info={}; for(let k in holeSetting) info[k]=holeSetting[k];
 	info.follow=this;
 	return Graphics.renderBlackholeEffectSettings_add(totalDur,fadeInDur,fadeOutDur,info);
 });
 
-new cfc(Game_Actor.prototype).add('renderBlackholeEffectSettings_add',function f(totalDur,fadeInDur,fadeOutDur,holeSetting){
+new cfc(Game_Actor.prototype).
+addBase('renderBlackholeEffectSettings_add',function f(totalDur,fadeInDur,fadeOutDur,holeSetting){
 	const sc=SceneManager._scene;
 	const m=sc&&sc._btlr2sp;
 	const sp=m&&m.get(this); if(!sp) return;
 	return sp.renderBlackholeEffectSettings_add.apply(sp,arguments);
 });
 
-new cfc(Game_Character.prototype).add('renderBlackholeEffectSettings_add',function f(totalDur,fadeInDur,fadeOutDur,holeSetting){
+new cfc(Game_Character.prototype).
+addBase('renderBlackholeEffectSettings_add',function f(totalDur,fadeInDur,fadeOutDur,holeSetting){
 	const sc=SceneManager._scene;
 	const m=sc&&sc._chr2sp;
 	const sp=m&&m.get(this); if(!sp) return;

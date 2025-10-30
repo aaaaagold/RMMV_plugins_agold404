@@ -34,7 +34,8 @@ new cfc(Game_Event.prototype).addBase('_characterName_grayscalize',function f(n)
 	const meta=this.getMeta();
 	if(meta.grayscale && n) n=tuneN(n,meta);
 	return n;
-}).add('characterName',function f(){
+}).
+addWithBaseIfNotOwn('characterName',function f(){
 	return this._characterName_grayscalize(f.ori.apply(this,arguments));
 });
 

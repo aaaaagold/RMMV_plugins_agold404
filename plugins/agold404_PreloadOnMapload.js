@@ -18,7 +18,8 @@ new cfc(DataManager).add('onLoad_before_map',function f(obj,name,src,msg){
 	this.onLoad_map_preloadImages(obj,name,src,msg);
 	this.onLoad_map_preloadAudios(obj,name,src,msg);
 	return rtv;
-}).add('onLoad_map_preloadImages',function f(obj,name,src,msg){
+}).
+addBase('onLoad_map_preloadImages',function f(obj,name,src,msg){
 	const S=new Set(),paths=[];
 	for(let ende=0,idx;(idx=obj.note.indexOf(f.tbl[0][0],ende))>=0;){
 		// they're paths, no '<' or '>'
@@ -36,7 +37,8 @@ new cfc(DataManager).add('onLoad_before_map',function f(obj,name,src,msg){
 ['<preloadImages>','</preloadImages>'], // 0: start , end 
 t.bsR, // 1: \r -> ''
 /:([0-9]+)$/, // 2: hue info
-]).add('onLoad_map_preloadAudios',function f(obj,name,src,msg){
+]).
+addBase('onLoad_map_preloadAudios',function f(obj,name,src,msg){
 	const S=new Set(),paths=[];
 	for(let ende=0,idx;(idx=obj.note.indexOf(f.tbl[0][0],ende))>=0;){
 		// they're paths, no '<' or '>'

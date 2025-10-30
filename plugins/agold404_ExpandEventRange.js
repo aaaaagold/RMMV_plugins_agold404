@@ -111,7 +111,8 @@ _:[ [ -Infinity, Infinity, ],[ -Infinity, Infinity, ] ],
 	return this._expandRangeL||0;
 },undefined,true,true).add('getExpandRangeB',function f(){
 	return this._expandRangeB||0;
-},undefined,true,true).add('_canPass_expandRange',function f(x,y,d,thePointOnly,oriFunc){
+},undefined,true,true).
+addBase('_canPass_expandRange',function f(x,y,d,thePointOnly,oriFunc){
 	if(thePointOnly) return oriFunc.apply(this,arguments);
 	const arr=this.getPosKeys_tuple(x,y,d,true);
 	for(let i=arr.length;i--;){
@@ -145,7 +146,8 @@ else new cfc(p).add(k,function f(x,y,d,thePointOnly,_reservedForPassingOriFunc){
 });
 }
 
-new cfc(Game_Map.prototype).add('update_locTbl_addEvt',function f(evt,coord){
+new cfc(Game_Map.prototype).
+addBase('update_locTbl_addEvt',function f(evt,coord){
 	evt.getPosKeys().forEach(f.tbl[0],[arguments,this]);
 },[
 function f(key){
@@ -153,7 +155,8 @@ function f(key){
 	const map=this[1];
 	map._update_locTbl_addEvt_byKey(evt,coord,key);
 },
-]).add('update_locTbl_delEvt',function f(evt,coord,x,y){
+]).
+addBase('update_locTbl_delEvt',function f(evt,coord,x,y){
 	evt.getPosKeys(x-evt.x,y-evt.y).forEach(f.tbl[0],[arguments,this]);
 },[
 function f(key){

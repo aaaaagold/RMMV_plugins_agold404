@@ -67,7 +67,8 @@ new cfc(Scene_Base.prototype).addBase('totalPlayTime_start',function f(val){
 	return Math.max(now-last,0)||0; // timer adjusted or calls too soon
 });
 
-new cfc(Scene_Map.prototype).add('start_after',function f(){
+new cfc(Scene_Map.prototype).
+addWithBaseIfNotOwn('start_after',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.totalPlayTime_start();
 	return rtv;
@@ -78,7 +79,8 @@ new cfc(Scene_Map.prototype).add('start_after',function f(){
 	SceneManager.totalPlayTime_inMap_inc(this._totalPlayTime_update());
 });
 
-new cfc(Scene_Battle.prototype).add('start_after',function f(){
+new cfc(Scene_Battle.prototype).
+addWithBaseIfNotOwn('start_after',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.totalPlayTime_start();
 	return rtv;

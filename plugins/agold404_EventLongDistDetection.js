@@ -9,7 +9,8 @@
 
 (()=>{ let k,r,t;
 
-new cfc(Game_Event.prototype).add('isNearTheScreen',function f(){
+new cfc(Game_Event.prototype).
+addWithBaseIfNotOwn('isNearTheScreen',function f(){
 	return (f.tbl[0] in this.getMeta())||f.ori.apply(this,arguments);
 },t=[
 'longDistDetection',

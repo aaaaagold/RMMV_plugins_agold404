@@ -14,7 +14,8 @@ new cfc(DataManager).add('onLoad_after_map',function f(obj){
 	const rtv=f.ori.apply(this,arguments);
 	this.onLoad_after_map_setTriggerHere(obj);
 	return rtv;
-}).add('onLoad_after_map_setTriggerHere',function f(obj){
+}).
+addBase('onLoad_after_map_setTriggerHere',function f(obj){
 	obj.events.forEach(f.tbl[0]);
 },t=[
 evtd=>{ if(!evtd) return;

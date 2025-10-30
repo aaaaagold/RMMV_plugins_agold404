@@ -91,14 +91,16 @@ addBase('standardFontSize',function f(){
 getP;
 window[a.name]=a; }
 
-new cfc(Window_Message.prototype).add('startMessage_nameField',function f(){
+new cfc(Window_Message.prototype).
+addBase('startMessage_nameField',function f(){
 	this.startMessage_nameField_ensureObject();
 	if($gameMessage._nameField!=null){
 		this._nameField._currentText=$gameMessage._nameField;
 		let w;
 		{ const textState={};
 		this._nameField.measure_drawTextEx(this._nameField._currentText,this.textPadding(),0,undefined,'center',textState);
-		w=~~(textState.right+1); }
+		w=~~(textState.right+1);
+		}
 		if(w<Window_Base._faceWidth) w=Window_Base._faceWidth;
 		const pad=((this.standardPadding()+this.textPadding())<<1)+1;
 		w+=pad;
@@ -129,13 +131,15 @@ add('startMessage',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.update_nameField();
 	return rtv;
-}).add('update_nameField',function f(){
+}).
+addBase('update_nameField',function f(){
 	if(this._nameField){
 		this._update_nameField_syncOpenness();
 		this._update_nameField_syncBg();
 	}
 	this.update_nameField_updateText();
-}).add('_update_nameField_syncOpenness',function f(){
+}).
+addBase('_update_nameField_syncOpenness',function f(){
 	//this._nameField.openness=this.openness;
 	if(!this._nameField.enabled||this.isClosing()||this.isClosed()) this._nameField.close();
 	else if(this.isOpening()||this.isOpen()) this._nameField.open();
@@ -154,7 +158,8 @@ add('startMessage',function f(){
 		if(!this._nameField.isClosed()) this._nameField.close(); // re-opened in update_nameField
 		else this._nameField.setBackgroundType(this._nameField._background=this._background);
 	}
-}).add('update_nameField_updateText',function f(){
+}).
+addBase('update_nameField_updateText',function f(){
 	this.startMessage_nameField_ensureObject();
 	if(this._nameField._currentText!==$gameMessage._nameField){
 		if(!this._nameField.isClosed()) this._nameField.close(); // re-opened in update_nameField

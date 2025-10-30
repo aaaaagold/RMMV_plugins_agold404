@@ -11,7 +11,8 @@
 
 const P=Tilemap;
 
-new cfc(P).add('_generateProperTileId',function f(mapd,dstx,dsty,lv,tileIdAsBase,borderIsNotEnd){
+new cfc(P).
+addBase('_generateProperTileId',function f(mapd,dstx,dsty,lv,tileIdAsBase,borderIsNotEnd){
 	if(!mapd||!mapd.data||typeof Tilemap==='undefined'||Tilemap.isAutotile===undefined||!Tilemap.isAutotile(tileIdAsBase)) return;
 	const w=mapd.width,h=mapd.height,sz=w*h;
 	const toBase=f.tbl[0],getTile=(x,y,lv)=>mapd.data[lv*sz+y*w+x],isEnd=(x,y)=>{
@@ -172,11 +173,14 @@ new cfc(P).add('_generateProperTileId',function f(mapd,dstx,dsty,lv,tileIdAsBase
 	return tileIdAsBase;
 },[
 t=>(48*~~((t-2048)/48))+2048, // 0: [func] to autotile base
-],true,true).add('generateProperTileId',function f(x,y,lv,tileIdAsBase,borderIsNotEnd){
+]).
+addBase('generateProperTileId',function f(x,y,lv,tileIdAsBase,borderIsNotEnd){
 	return this._generateProperTileId($dataMap,x,y,lv,tileIdAsBase,borderIsNotEnd)-0||0;
-});
+}).
+getP;
 
-new cfc(Game_Map.prototype).add('changeTile',function f(val,x,y,z,opt){
+new cfc(Game_Map.prototype).
+addBase('changeTile',function f(val,x,y,z,opt){
 	// return true if changed
 	if(!$dataMap) return;
 	opt=opt||{};
@@ -206,7 +210,8 @@ new cfc(Game_Map.prototype).add('changeTile',function f(val,x,y,z,opt){
 	if(tm) tm._mapData=cont;
 	if(rtv) this.changeTile_setChanged(true);
 	return rtv;
-},undefined,true,true).add('changeTile_syncScreen',function f(){
+}).
+addBase('changeTile_syncScreen',function f(){
 	if(!this.changeTile_isChanged()) return;
 	this.changeTile_setChanged(false);
 	const tm=SceneManager.getTilemap();
@@ -215,7 +220,8 @@ new cfc(Game_Map.prototype).add('changeTile',function f(val,x,y,z,opt){
 		tm._needsRepaint=true;
 	}
 	return this;
-},undefined,true,true).add('changeTile_syncData',function f(){
+}).
+addBase('changeTile_syncData',function f(){
 	if(!$dataMap) return;
 	const cont=this.changeTile_getCont();
 	$dataMap._changeTile_bak_data=$dataMap._changeTile_bak_data||$dataMap.data.slice();
@@ -223,7 +229,8 @@ new cfc(Game_Map.prototype).add('changeTile',function f(val,x,y,z,opt){
 	$dataMap.data=cont;
 	const tm=SceneManager.getTilemap();
 	if(tm) tm._mapData=cont;
-},undefined,true,true).add('_changeTile_getInfo',function f(){
+}).
+addBase('_changeTile_getInfo',function f(){
 	if(!$dataMap) return; // called too early
 	let info=this._changedTile; if(!info) info=this._changedTile={isChangedAndNotRefreshed:false,};
 	const mpd=$gameMap.data();
@@ -237,15 +244,19 @@ new cfc(Game_Map.prototype).add('changeTile',function f(val,x,y,z,opt){
 	return info;
 },[
 [], // used when called without $dataMap being set
-]).add('changeTile_getCont',function f(){
+]).
+addBase('changeTile_getCont',function f(){
 	return this._changeTile_getInfo().cont;
-}).add('changeTile_sync',function f(){
+}).
+addBase('changeTile_sync',function f(){
 	this.changeTile_syncData();
 	this.changeTile_syncScreen();
-}).add('changeTile_isChanged',function f(){
+}).
+addBase('changeTile_isChanged',function f(){
 	const info=this._changeTile_getInfo();
 	return info.isChangedAndNotRefreshed;
-}).add('changeTile_setChanged',function f(val){
+}).
+addBase('changeTile_setChanged',function f(val){
 	const info=this._changeTile_getInfo();
 	return info.isChangedAndNotRefreshed=val;
 });

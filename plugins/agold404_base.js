@@ -368,10 +368,10 @@ u:0|64|0,
 d:0|9|0,
 },
 ]).
-add('renderWebGL',function f(){
+addWithBaseIfNotOwn('renderWebGL',function f(){
 	return this.isInScreen_local()&&f.ori.apply(this,arguments);
 }).
-add('renderCanvas',function f(){
+addWithBaseIfNotOwn('renderCanvas',function f(){
 	return this.isInScreen_local()&&f.ori.apply(this,arguments);
 });
 //
@@ -2679,14 +2679,14 @@ addBase('onItemOk',function f(){
 	this._itemWindow.refresh();
 	this._statusWindow.refresh();
 }).
-add('start',function f(){
+addWithBaseIfNotOwn('start',function f(){
 	this.changeUiState_focusOnCmdWnd();
 	return f.ori.apply(this,arguments);
 }).
-add('update_focusWndFromTouch_condOk',function f(){
+addBase('update_focusWndFromTouch_condOk',function f(){
 	return TouchInput.isTriggered();
 }).
-add('update_focusWndFromTouch_do',function f(){
+addBase('update_focusWndFromTouch_do',function f(){
 	const cw=this._commandWindow;
 	{ const wnd=cw; if(wnd.isOpen()&&wnd.containsPoint_global(TouchInput)){
 		this.changeUiState_focusOnCmdWnd();
@@ -2703,10 +2703,10 @@ add('update_focusWndFromTouch_do',function f(){
 		return;
 	} }
 }).
-add('update_focusWndFromTouch',function f(){
+addBase('update_focusWndFromTouch',function f(){
 	if(this.update_focusWndFromTouch_condOk()) this.update_focusWndFromTouch_do();
 }).
-add('update',function f(){
+addWithBaseIfNotOwn('update',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.update_focusWndFromTouch();
 	return rtv;
@@ -6198,7 +6198,8 @@ get:function f(){
 new cfc(Scene_Boot.prototype).add('modTrait1',function f(dataobj,i,arr){
 	this.modTrait1_hpCostRate.apply(this,arguments);
 	return f.ori.apply(this,arguments);
-}).add('modTrait1_hpCostRate',function f(dataobj,i,arr){
+}).
+addBase('modTrait1_hpCostRate',function f(dataobj,i,arr){
 	const meta=dataobj&&dataobj.meta,ts=dataobj&&dataobj.traits; if(!meta||!ts) return;
 	const n=meta[f.tbl[0]]-0;
 	if(!isNaN(n)&&n!==1) ts.push({code:gbb[f.tbl[1]],dataId:0,value:n,});
@@ -6226,7 +6227,8 @@ get:function f(){
 new cfc(Scene_Boot.prototype).add('modTrait1',function f(dataobj,i,arr){
 	this.modTrait1_tpCostRate.apply(this,arguments);
 	return f.ori.apply(this,arguments);
-}).add('modTrait1_tpCostRate',function f(dataobj,i,arr){
+}).
+addBase('modTrait1_tpCostRate',function f(dataobj,i,arr){
 	const meta=dataobj&&dataobj.meta,ts=dataobj&&dataobj.traits; if(!meta||!ts) return;
 	const n=meta[f.tbl[0]]-0;
 	if(!isNaN(n)&&n!==1) ts.push({code:gbb[f.tbl[1]],dataId:0,value:n,});
@@ -7366,7 +7368,8 @@ new cfc(Game_Character.prototype).addBase('getPosKey',function(dx,dy){
 
 new cfc(Game_Map.prototype).addBase('getPosKey',function f(x,y){
 	return $dataMap&&$gameMap.roundX(0|x)+$dataMap.width*(($gameMap.roundY(0|y)<<2)|2);
-}).add('posKeyToXy',function f(posKey){
+}).
+addBase('posKeyToXy',function f(posKey){
 	// x,y in posKey is rounded, so they must be >= 0
 	return isNaN(posKey)?undefined:({
 		x:~~(posKey%$dataMap.width),
@@ -7545,7 +7548,8 @@ new cfc(Game_Followers.prototype).addBase('isSomeoneCollided',function f(x,y){
 [],
 ]);
 
-new cfc(Game_Event.prototype).add('moveStraight',function f(d){
+new cfc(Game_Event.prototype).
+addWithBaseIfNotOwn('moveStraight',function f(d){
 	const x=this.x,y=this.y;
 	const rtv=f.ori.apply(this,arguments);
 	if(this.isMovementSucceeded()){
@@ -7559,7 +7563,8 @@ new cfc(Game_Event.prototype).add('moveStraight',function f(d){
 	return rtv;
 }).addBase('moveFailOn',function f(lastX,lastY,moveDirection){
 }).addBase('moveSuccOn',function f(lastX,lastY,moveDirection){
-}).add('setPriorityType',function f(pri){
+}).
+addWithBaseIfNotOwn('setPriorityType',function f(pri){
 	const pri0=this._priorityType,x=this.x,y=this.y;
 	const rtv=f.ori.apply(this,arguments);
 	if(pri0===this._priorityType||!$gameMap) return rtv;
@@ -7841,7 +7846,8 @@ new cfc(Window_NumberInput.prototype).addBase('isCancelEnabled',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.terminateNumInput();
 	return rtv;
-}).add('terminateNumInput',function f(){
+}).
+addBase('terminateNumInput',function f(){
 	$gameMessage._numInputInpterpreter=undefined;
 });
 
@@ -7998,14 +8004,16 @@ t[1].tbl=t;
 if(1)new cfc(SceneManager).add('changeScene_do_before',function f(){
 	this.changeScene_do_before_fadingSceneChange();
 	return f.ori.apply(this,arguments);
-}).add('changeScene_do_before_fadingSceneChange',function f(){
+}).
+addBase('changeScene_do_before_fadingSceneChange',function f(){
 	this._fadingSceneChangePreSc=this._scene&&this._scene._prevScene;
 	this._fadingSceneChangeBmp=this.snap();
 }).add('changeScene_do_after',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.changeScene_do_after_fadingSceneChange();
 	return rtv;
-}).add('changeScene_do_after_fadingSceneChange',function f(){
+}).
+addBase('changeScene_do_after_fadingSceneChange',function f(){
 	const sc=this._fadingSceneChangePreSc;
 	if(!sc||sc!==this._scene) return;
 	this.addFadingSceneChangeSprite();
@@ -9304,16 +9312,16 @@ addBase('showLatencyMeter',function f(){
 getP;
 
 new cfc(Scene_Boot.prototype).
-add('terminate_showDebugInfo_condOk',function f(){
+addBase('terminate_showDebugInfo_condOk',function f(){
 	return window.isTest();
 }).
-add('terminate_showDebugInfo_do',function f(){
+addBase('terminate_showDebugInfo_do',function f(){
 	Graphics.showLatencyMeter();
 }).
-add('terminate_showDebugInfo',function f(){
+addBase('terminate_showDebugInfo',function f(){
 	if(this.terminate_showDebugInfo_condOk.apply(this,arguments)) this.terminate_showDebugInfo_do.apply(this,arguments);
 }).
-add('terminate',function f(){
+addWithBaseIfNotOwn('terminate',function f(){
 	this.terminate_showDebugInfo.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).

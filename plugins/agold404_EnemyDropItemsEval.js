@@ -86,7 +86,7 @@ add('onLoad_before_enemy',function f(obj,name,src,msg){
 	this.onLoad_enemy_genDropsEval.apply(this,arguments);
 	return rtv;
 }).
-add('onLoad_enemy_genDropsEval',function f(obj,name,src,msg){
+addBase('onLoad_enemy_genDropsEval',function f(obj,name,src,msg){
 	obj.forEach(f.tbl[3],this);
 },t).
 getP;

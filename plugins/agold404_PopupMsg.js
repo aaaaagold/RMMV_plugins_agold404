@@ -43,7 +43,8 @@ new cfc(p).add('update',function f(){
 	return rtv;
 },t,false,true);
 
-new cfc(Game_Temp.prototype).add('popupMsg',function f(msg,opt){
+new cfc(Game_Temp.prototype).
+addBase('popupMsg',function f(msg,opt){
 	// opt = {loc:"LU/LD/RU/RD/UL/DL/UR/DR"}
 	opt=opt||f.tbl[0];
 	if(!opt.loc) opt=Object.assign({loc:f.tbl[0].loc,},opt);
@@ -57,7 +58,8 @@ new cfc(Game_Temp.prototype).add('popupMsg',function f(msg,opt){
 	return wnd;
 },[
 {loc:"UR",},
-]).add('_popupMsg_getCont',function f(opt){
+]).
+addBase('_popupMsg_getCont',function f(opt){
 	// opt = {loc:"LU/LD/RU/RD/UL/DL/UR/DR"}
 	if(!f.tbl[1]){ f.tbl[1]={
 		UR:"UR",
@@ -177,11 +179,13 @@ DL:function(tbl,sp){
 undefined,
 ]);
 
-new cfc(SceneManager).add('onSceneChange',function f(){
-	const rtv=f.ori&&f.ori.apply(this,arguments);
+new cfc(SceneManager).
+addWithBaseIfNotOwn('onSceneChange',function f(){
+	const rtv=f.ori.apply(this,arguments);
 	this.onSceneChange_popupMsgs();
 	return rtv;
-}).add('onSceneChange_popupMsgs',function f(){
+}).
+addBase('onSceneChange_popupMsgs',function f(){
 	// addChild
 	return $gameTemp&&$gameTemp._popupMsg_getCont();
 });

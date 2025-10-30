@@ -82,7 +82,8 @@ new cfc(DataManager).add('onLoad_after_map',function f(obj){
 	const rtv=f.ori.apply(this,arguments);
 	this.onLoad_setInChrVision(obj);
 	return rtv;
-}).add('onLoad_setInChrVision',function f(obj){
+}).
+addBase('onLoad_setInChrVision',function f(obj){
 	obj.events.forEach(f.tbl[0]);
 },t=[
 evtd=>{ if(!evtd) return;
@@ -226,7 +227,8 @@ addBase('_inVision_parseFromRaw_blockedByEventEval',function f(rtv,lines,strt){
 }).addBase('inVision_setFromRaws',function f(raws){
 	this._inChrVisions=this.inVision_parseFromRaws(raws);
 	return this;
-}).add('update',function f(){
+}).
+addWithBaseIfNotOwn('update',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.update_inVision();
 	return rtv;

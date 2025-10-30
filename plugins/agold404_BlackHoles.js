@@ -12,7 +12,8 @@
 new cfc(Graphics).add('renderOtherEffects',function f(){
 	this.renderBlackHolesEffect();
 	return f.ori.apply(this,arguments);
-}).add('renderBlackHolesEffect',function f(){
+}).
+addBase('renderBlackHolesEffect',function f(){
 	const d=document;
 	if(!f.tbl[1]){
 		const div=d.ce('div').sa('style',this._canvas.ga('style'));
@@ -72,7 +73,8 @@ new cfc(Graphics).add('renderOtherEffects',function f(){
 undefined, // 1: canvas
 undefined, // 2: ctx
 0.25, // 3: dstScale
-]).add('renderBlackHolesEffect_drawHole1',function f(srcData,dstData,dstScale,alpha,holeX,holeY,holeR,holeCenterColor){
+]).
+addBase('renderBlackHolesEffect_drawHole1',function f(srcData,dstData,dstScale,alpha,holeX,holeY,holeR,holeCenterColor){
 	if(!(0<dstScale)||!(0<holeR)) return;
 	holeCenterColor=holeCenterColor||f.tbl[0];
 	
@@ -100,12 +102,16 @@ undefined, // 2: ctx
 	} }
 },[
 [0,0,0,255], // 0: default hole center color
-]).add('renderBlackHolesEffect_dstScale',()=>0.25);
+]).
+addBase('renderBlackHolesEffect_dstScale',()=>0.25).
+getP;
 
-new cfc(Game_Screen.prototype).add('renderBlackHolesEffect_getCont',function f(){
+new cfc(Game_Screen.prototype).
+addBase('renderBlackHolesEffect_getCont',function f(){
 	let rtv=this._renderBlackHolesEffectv; if(!rtv) rtv=this._renderBlackHolesEffectv=[];
 	return rtv;
-}).add('renderBlackHolesEffect_genHole',function f(holeXyr0,holeXyr1,fadeInFc,keepFc,fadeOutFc,opt){
+}).
+addBase('renderBlackHolesEffect_genHole',function f(holeXyr0,holeXyr1,fadeInFc,keepFc,fadeOutFc,opt){
 	if(!holeXyr0) holeXyr0=holeXyr1;
 	if(!holeXyr1) holeXyr1=holeXyr0;
 	if(!holeXyr0||!holeXyr1) return;

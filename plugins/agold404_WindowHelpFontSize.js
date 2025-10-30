@@ -32,7 +32,8 @@ function f(){
 t[2]();
 
 
-new cfc(Window_Help.prototype).add('standardFontSize',function f(){
+new cfc(Window_Help.prototype).
+addWithBaseIfNotOwn('standardFontSize',function f(){
 	const rtv=this.standardWindowHelpFontSize();
 	return rtv===undefined?f.ori.apply(this,arguments):rtv;
 }).

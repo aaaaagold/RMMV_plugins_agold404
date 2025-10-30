@@ -31,9 +31,9 @@ new cfc(p).add(k,function f(){
 k,
 ],false,true);
 }
-new cfc(p).add('initialize',function f(){
-	f.tbl[0].initialize.apply(this,arguments);
-},t).add('update',function f(){
+new cfc(p).
+_addBaseIfNotOwn('initialize',t).
+addBase('update',function f(){
 	this.children.slice().forEach(f.tbl[1].updateChild);
 },t).add('removeChild',function f(c){
 	const argumentsLength=arguments.length;
@@ -57,7 +57,8 @@ new cfc(p).add('initialize',function f(){
 	}
 	
         return c;
-},undefined,false,true).add('addChild',function f(c){
+},undefined,false,true).
+addBase('addChild',function f(c){
 	const argumentsLength=arguments.length;
 	if(1<argumentsLength) for(let i=0;i!==argumentsLength;++i) this.addChild(arguments[i]);
 	else{

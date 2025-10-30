@@ -380,7 +380,8 @@ undefined, // 0: mask bmp
 4, // 2: widerPoints width
 ]).addBase('calculateVertices_getNextId',function f(i){
 	return (i+1)&f.tbl[1];
-},t).add('calculateVertices',function f(){
+},t).
+addWithBaseIfNotOwn('calculateVertices',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	const vv=this.vertexData; if(!vv||!this.bouncingMaterial_isUnitComponent()) return rtv;
 	const myId=this.bouncingMaterial_getId()&f.tbl[1];

@@ -29,7 +29,7 @@ add('_updateCanvas',function f(){
 	this._updateCanvas_InputText_textareaRoot.apply(this,arguments);
 	return rtv;
 }).
-add('_updateCanvas_InputText_textareaRoot',function f(){
+addWithBaseIfNotOwn('_updateCanvas_InputText_textareaRoot',function f(){
 	const rtv=f.ori&&f.ori.apply(this,arguments);
 	if(this._inputText_textareaRoot) return;
 	const div=this._inputText_textareaRoot=document.ce('div').sa('style',this._canvas.ga('style'));

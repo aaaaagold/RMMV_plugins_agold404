@@ -360,9 +360,11 @@ p[k]=function(){
 // preventDefault
 new cfc(Input).add('_onKeyDown',function f(){
 	return editing?(editing>1?(editing=0):0):f.ori.apply(this,arguments);
-}).add('_agold404_SaveManager_getEditing',function f(){
+}).
+addBase('_agold404_SaveManager_getEditing',function f(){
 	return editing;
-}).add('_agold404_SaveManager_setEditing',function f(val){
+}).
+addBase('_agold404_SaveManager_setEditing',function f(val){
 	return editing=val;
 });
 

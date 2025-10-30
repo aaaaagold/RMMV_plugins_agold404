@@ -28,42 +28,51 @@ window[a.name]=a;
 const p=a.prototype=Object.create(a.ori.prototype);
 p.constructor=a;
 k='initialize';
-new cfc(p).add(k,function f(){
-	f.tbl[1][f.tbl[0]].apply(this,arguments);
+new cfc(p).
+addWithBaseIfNotOwn(k,function f(){
+	const rtv=f.ori.apply(this,arguments);
 	this._prevScene_store();
+	return rtv;
 },[
 k,
 a.ori.prototype,
 function(){ Scene_Base.prototype.stop.call(this); },
 ]);
 k='create';
-new cfc(p).add(k,function f(){
-	f.tbl[1][f.tbl[0]].apply(this,arguments);
+new cfc(p).
+addWithBaseIfNotOwn(k,function f(){
+	const rtv=f.ori.apply(this,arguments);
 	this.createWindows();
 	this._prevScene_restore();
+	return rtv;
 },[k,a.ori.prototype]);
-new cfc(p).add('updateActor',function f(){
+new cfc(p).
+addBase('updateActor',function f(){
 	
-},undefined,true,true).add('createWindows',function f(){
+}).
+addBase('createWindows',function f(){
 	this.createCommandWindow();
 	this.createFlashbackTextWindow();
 	this.loadImgs();
-}).add('createCommandWindow',function f(){
+}).
+addBase('createCommandWindow',function f(){
 	const wc=this._commandWindow=new Window_FlashbackText_command(0,0);
 	for(let x=0,arr=wc.makeCommandList.tbl;x!==arr.length;++x) wc.setHandler(arr[x].param[1], arr[x].func.bind(this));
 	this.addWindow(wc);
-},undefined,true,true).add('createFlashbackTextWindow',function f(){
+}).
+addBase('createFlashbackTextWindow',function f(){
 	const wt=this._flashbackTextWindow=new Window_FlashbackText();
 	wt.height=wt._windowHeight=Graphics.boxHeight-this._commandWindow.height;
 	wt.y=this._commandWindow.height;
 	this.addWindow(wt);
-}).add('start',function f(){
+}).
+addWithBaseIfNotOwn('start',function f(){
 	this._seEchoBack=$gameSystem&&$gameSystem.seEcho_opt_get&&$gameSystem.seEcho_opt_get();
 	const rtv=f.ori.apply(this,arguments);
 	this._flashbackTextWindow.scrollBottom().open();
 	return rtv;
 }).
-add('terminate',function f(){
+addWithBaseIfNotOwn('terminate',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.terminate_restoreSeEcho();
 	return rtv;
@@ -71,7 +80,8 @@ add('terminate',function f(){
 	if(!$gameSystem||!$gameSystem.seEcho_opt_set) return;
 	if(this._seEchoBack) $gameSystem.seEcho_opt_set(this._seEchoBack);
 	else $gameSystem.seEcho_opt_clear();
-}).add('loadImgs',function f(){
+}).
+addBase('loadImgs',function f(){
 	$gameTemp.flashbackText_getCont().forEach(f.tbl[0]);
 },[
 info=>{
@@ -79,10 +89,12 @@ info=>{
 	if(faceName) ImageManager.loadFace(faceName);
 },
 ]);
-new cfc(a).add('enableShortcutScenes_add',function f(...constructors){
+new cfc(a).
+addBase('enableShortcutScenes_add',function f(...constructors){
 	for(let x=0,xs=constructors.length;x!==xs;++x) f.tbl[0].add(constructors[x]);
 	return this;
-},enableShortcutScenes).add('enableShortcutScenes_del',function f(c){
+},enableShortcutScenes).
+addBase('enableShortcutScenes_del',function f(c){
 	for(let x=0,xs=constructors.length;x!==xs;++x) f.tbl[0].delete(constructors[x]);
 	return this;
 },enableShortcutScenes);
@@ -123,7 +135,8 @@ a.ori=Window_Message;
 window[a.name]=a;
 const p=a.prototype=Object.create(a.ori.prototype);
 p.constructor=a;
-new cfc(p).add('initMembers',function f(){
+new cfc(p).
+addWithBaseIfNotOwn('initMembers',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this._windowPauseSignSprite.visible=false;
 	this._lastRedrawFrame=Graphics.frameCount;
@@ -143,13 +156,16 @@ addBase('update',function f(){
 	Window_Base.prototype.update.apply(this,this,arguments);
 	this.redrawtxt();
 	this.processInputs();
-}).add('_update_calcHeights',function f(arr){
+}).
+addBase('_update_calcHeights',function f(arr){
 	return this._redrawtxt(arr,true);
-}).add('windowHeight',function f(){
+}).
+addBase('windowHeight',function f(){
 	return isNaN(this._windowHeight)?Graphics.boxHeight:this._windowHeight;
 }).add('updatePlacement',function f(){
 	
-},undefined,true,true).add('createSubWindows',function f(){
+},undefined,true,true).
+addBase('createSubWindows',function f(){
 	if(!f.tbl[0]){
 		const dummy={y:0,height:0,terminateMessage:none,};
 		f.tbl[0]={
@@ -163,7 +179,8 @@ addBase('update',function f(){
 },[
 undefined,
 ['_goldWindow','_choiceWindow','_numberWindow','_itemWindow',],
-]).add('subWindows',function f(){
+]).
+addBase('subWindows',function f(){
 	return f.tbl[0];
 },[
 [],
@@ -181,7 +198,7 @@ addRoof('processNormalCharacter',function f(textState){
 	this._flashbackContentXShifted=false;
 	return rtv;
 }).
-add('_redrawtxt',function f(arr,isCalcH){
+addBase('_redrawtxt',function f(arr,isCalcH){
 	const bak_faceName=$gameMessage._faceName;
 	if(!isCalcH) this.contents.clear();
 	const fh1=this.fittingHeight(1),lh=this.lineHeight();
@@ -246,7 +263,8 @@ add('_redrawtxt',function f(arr,isCalcH){
 	return dy;
 },[
 {x:0,nfDx:16,nfIcon:83,nfIconMulAlpha:0.625,nfIconDx:-16},
-]).add('redrawtxt',function f(forced){
+]).
+addBase('redrawtxt',function f(forced){
 	if(( !this._shouldRedraw ||
 		this._lastRedrawFrame===Graphics.frameCount ||
 		!this.isOpen() || 
@@ -282,7 +300,8 @@ addBase('setScrollSound',function f(newY,lastY){
 ]).
 addBase('setScrollBar',function f(y){
 	
-}).add('setScrollTxtY',function f(val){
+}).
+addBase('setScrollTxtY',function f(val){
 	if(val<0) val=0; // not using !(val>=0) for debug
 	if(this._scrollTxtY_max<val) val=this._scrollTxtY_max;
 	this.setScrollSound(val,this._scrollTxtY);
@@ -293,18 +312,21 @@ addBase('setScrollBar',function f(y){
 		this.downArrowVisible=val!==this._scrollTxtY_max;
 		this.setScrollBar(this._scrollTxtY);
 	}
-}).add('scrollBottom',function f(){
+}).
+addBase('scrollBottom',function f(){
 	if(!$gameTemp) return;
 	let val=this._update_calcHeights($gameTemp.flashbackText_getCont())-this.contentsHeight();
 	if(!(val>=0)) val=0;
 	this.setScrollTxtY(val);
 	return this;
-}).add('updateOpen',function f(){
+}).
+addWithBaseIfNotOwn('updateOpen',function f(){
 	const op=this._opening;
 	const rtv=f.ori.apply(this,arguments);
 	if(op && !this._opening) this._shouldRedraw=true;
 	return rtv;
-}).add('processInputs',function f(){
+}).
+addBase('processInputs',function f(){
 	let delta=TouchInput.wheelY;
 	if(TouchInput.isPressed()){
 		const dy=TouchInput.y-this._lastTouchedY;
@@ -325,7 +347,8 @@ addBase('setScrollBar',function f(y){
 		else delta=this._scrollTxtY_max-this._scrollTxtY||0;
 	}
 	this.setScrollTxtY(this._scrollTxtY+delta);
-},[16,]).add('processEscapeCharacter',function f(){
+},[16,]).
+addWithBaseIfNotOwn('processEscapeCharacter',function f(){
 	let tmp;
 	try{
 		return f.ori.apply(this,tmp=arguments);
@@ -340,14 +363,16 @@ t=undefined;
 new cfc(p).addBase('_processEscapeCharacter_withPictureBehind',none);
 }
 
-new cfc(Game_System.prototype).add('flashbackText_savedCont_get',function f(){
+new cfc(Game_System.prototype).
+addBase('flashbackText_savedCont_get',function f(){
 	let q=this._flashbackText_savedCont;
 	if(!(q instanceof Queue)) q=Object.assign(new Queue(),q);
 	this._flashbackText_savedCont=q;
 	return q;
 });
 
-new cfc(Game_Temp.prototype).add('flashbackText_add',function f(txt,face,fidx,nameField){
+new cfc(Game_Temp.prototype).
+addBase('flashbackText_add',function f(txt,face,fidx,nameField){
 	if($gameSystem && $gameSystem._flashbackText_disabled) return;
 	if(!f.tbl[0].re) f.tbl[0].re=/(?<!(\\))((\\\\)*)(\\([VPNvpn])\[(\d+)\])/g;
 	if(!f.tbl[0].re_discards) f.tbl[0].re_discards=/\f/g;
@@ -370,7 +395,8 @@ function f(){
 	return arguments[0];
 },
 10,
-]).add('_flashbackText_getCont',function f(){
+]).
+addBase('_flashbackText_getCont',function f(){
 	let rtv=this._flashbackTexts;
 	if(!rtv){
 		rtv=this._flashbackTexts=[];
@@ -380,25 +406,31 @@ function f(){
 	return rtv;
 },[
 function(x){ this.push(x); },
-]).add('flashbackText_getCont',function f(){
+]).
+addBase('flashbackText_getCont',function f(){
 	return this._flashbackText_getCont();
-}).add('flashbackText_clearAll',function f(){
+}).
+addBase('flashbackText_clearAll',function f(){
 	this.flashbackText_getCont().length=0;
 	return this;
-}).add('_flashbackText_getWindow',function f(){
+}).
+addBase('_flashbackText_getWindow',function f(){
 	const sc=SceneManager._scene;
 	let w=sc._window_flashbackText; if(!w) w=sc._window_flashbackText=new Window_FlashbackText(0,0,Graphics.boxWidth,Graphics.boxHeight);
 	return w;
-}).add('flashbackText_show',function f(){
+}).
+addBase('flashbackText_show',function f(){
 	return SceneManager.push(Scene_FlashbackText);
 	const w=this._flashbackText_getWindow();
 	SceneManager._scene.addWindow(w);
 	w.open();
 	w.scrollBottom()._shouldRedraw=true;
 	return w;
-}).add('flashbackText_isWindowClosed',function f(){
+}).
+addBase('flashbackText_isWindowClosed',function f(){
 	return this._flashbackText_getWindow().isClosed();
-});
+}).
+getP;
 
 
 new cfc(Window_Message.prototype).

@@ -32,7 +32,7 @@ new cfc(Game_Event.prototype).
 addBase('startEventAt',function f(x,y,p){
 	(p===undefined?$gameMap.eventsXy(x,y):$gameMap.eventsXy(x,y,p)).forEach(f.tbl[2],this);
 },t).
-add('updateMove_1stepDone',function f(){
+addWithBaseIfNotOwn('updateMove_1stepDone',function f(){
 	this.updateMove_eventTriggersEvents();
 	return f.ori.apply(this,arguments);
 }).
@@ -64,7 +64,7 @@ addBase('moveFailOn_triggerFront',function f(targetX,targetY){
 addBase('moveFailOn_initiativeTrigger',function f(targetX,targetY){
 	this.eventTriggersEvents_initiativeTrigger(targetX,targetY);
 }).
-add('updateJump_1stepDone',function f(){
+addWithBaseIfNotOwn('updateJump_1stepDone',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.updateJump_eventTriggersEvents();
 	return rtv;

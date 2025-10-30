@@ -14,13 +14,11 @@
 (()=>{ let k,r,t;
 
 const p=Spriteset_Base.prototype,pp=Sprite.prototype;
-new cfc(p).add('renderCanvas',p.renderCanvas===pp.renderCanvas?function(renderer){
-	return this._renderCanvas_split(Sprite.prototype.renderCanvas,arguments);
-}:function f(renderer){
+new cfc(p).
+addWithBaseIfNotOwn('renderCanvas',function f(renderer){
 	return this._renderCanvas_split(f.ori,arguments);
-}).add('renderWebGL',p.renderWebGL===pp.renderWebGL?function(renderer){
-	return this._renderWebGL_split(Sprite.prototype.renderWebGL,arguments);
-}:function f(renderer){
+}).
+addWithBaseIfNotOwn('renderWebGL',function f(renderer){
 	return this._renderWebGL_split(f.ori,arguments);
 });
 t=[
@@ -103,7 +101,8 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 		}
 		this._renderCanvas_clipByPath(ctx,tmpctx,points,width,height,renderFunc,argv);
 	}
-},t[0],true,true).add('_renderCanvas_clipByPath',function f(ctx,tmpctx,points,dx,dy,renderFunc,argv){
+},t[0],true,true).
+addBase('_renderCanvas_clipByPath',function f(ctx,tmpctx,points,dx,dy,renderFunc,argv){
 	// save before clipping
 	ctx.save();
 	ctx.transform.apply(ctx,[1,0,0,1,dx,dy,]);
@@ -115,7 +114,8 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 	//ctx.resetTransform(); // restored by ctx.restore();
 	// restore clipping
 	ctx.restore();
-}).add('_renderWebGL_split',function f(renderFunc,argv){
+}).
+addBase('_renderWebGL_split',function f(renderFunc,argv){
 	const gl=argv&&argv[0]&&argv[0].gl; if(!gl) return;
 	const rtv=renderFunc.apply(this,argv);
 	const oldShaderInfo=this._renderWebGL_split_saveShader(gl);
@@ -151,7 +151,8 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 		const r=Math.sin(Math.min(1,info.dur/info.durMax)*PI_2);
 		this._renderWebGL_split_applySplitShader1({pt:info.pt,slope:info.slope,width:r*info.widthMax,height:r*info.heightMax,},gl,renderFunc,argv);
 	}
-},t[1],true,true).add('_renderWebGL_split_applySplitShader1',function f(opt,gl,renderFunc,argv){
+},t[1],true,true).
+addBase('_renderWebGL_split_applySplitShader1',function f(opt,gl,renderFunc,argv){
 	opt=opt||{};
 	if(!f.tbl[0]) f.tbl[0]={x:Graphics.boxWidth>>1,y:Graphics.boxHeight>>1,_W2:2.0/Graphics.boxWidth,_H2:-2.0/Graphics.boxHeight,r:Graphics.boxHeight/Graphics.boxWidth};
 	const pt=opt.pt||f.tbl[0],slope=-opt.slope||0,width=opt.width||0,height=opt.height||0;
@@ -234,7 +235,8 @@ new cfc(p).add('_renderCanvas_split',function f(renderFunc,argv){
 	gl.clearColor(0.0, 0.0, 0.0, 0.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.drawElements(gl.TRIANGLES, ab_idxv.length, gl.UNSIGNED_SHORT, 0);
-},t[0]).add('_renderWebGL_split_getSplitShader',function f(gl){
+},t[0]).
+addBase('_renderWebGL_split_getSplitShader',function f(gl){
 	const progInfo=f.tbl[0]; if(progInfo.prog) return progInfo;
 	
 	const shaderV=progInfo.shaderV||(progInfo.shaderV=gl.createShader(gl.VERTEX_SHADER));
@@ -336,11 +338,13 @@ new cfc(SceneManager).add('splittedRenderedSpriteset_start',function f(dur,holdD
 	sps._splitHeightMax=height;
 	sps._splitEndFlashDur=endFlashDur;
 	sps._splitEndFlashColor=Array.from(endFlashColor||[]);
-},undefined,true,true).add('splittedRenderedSpriteset_gen',function f(order,dur,holdDur,ptx,pty,slope,width,height,endFlashDur,endFlashColor){
+},undefined,true,true).
+addBase('splittedRenderedSpriteset_gen',function f(order,dur,holdDur,ptx,pty,slope,width,height,endFlashDur,endFlashColor){
 	const sc=this._scene;
 	const sps=sc&&sc._spriteset; if(!sps) return;
 	return sps.render_splitInfo_add.apply(sps,arguments);
-}).add('splittedRenderedSpriteset_update',function f(){
+}).
+addBase('splittedRenderedSpriteset_update',function f(){
 	const sc=this._scene;
 	const sps=sc&&sc._spriteset; if(!sps) return;
 	if(this._splittedRenderedSpriteset_shouldReset){ this._splittedRenderedSpriteset_shouldReset=false; sps._splitHeight=sps._splitWidth=0; }

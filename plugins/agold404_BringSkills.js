@@ -147,14 +147,14 @@ addBase('bringSkills_getTotalAmount',function f(){
 getP;
 
 new cfc(Game_Actor.prototype).
-add('bringSkills_getCont',function f(skillId){
+addBase('bringSkills_getCont',function f(skillId){
 	let rtv=this._bringSkills_cont; if(!rtv) rtv=this._bringSkills_cont=[];
 	return rtv;
 }).
-add('bringSkills_clearBroughtSkills',function f(){
+addBase('bringSkills_clearBroughtSkills',function f(){
 	this.bringSkills_getCont().uniqueClear();
 }).
-add('bringSkills_bringSkills',function f(skillId){
+addBase('bringSkills_bringSkills',function f(skillId){
 	if(arguments.length===1){
 		// with check
 		const arr=this.bringSkills_getCont();
@@ -168,16 +168,16 @@ add('bringSkills_bringSkills',function f(skillId){
 		this.bringSkills_getCont().uniquePush(skillId);
 	}
 }).
-add('bringSkills_deBringSkills',function f(skillId){
+addBase('bringSkills_deBringSkills',function f(skillId){
 	for(let x=arguments.length;x--;){
 		const skillId=arguments[x]-0;
 		this.bringSkills_getCont().uniquePop(skillId);
 	}
 }).
-add('bringSkills_isSkillBrought',function f(skillId){
+addBase('bringSkills_isSkillBrought',function f(skillId){
 	return this.bringSkills_getCont().uniqueHas(skillId);
 }).
-add('bringSkills_getList',function f(){
+addBase('bringSkills_getList',function f(){
 	return this.bringSkills_getCont().slice();
 }).
 getP;
@@ -293,7 +293,7 @@ add('initialize',function f(){
 	this._bringSkills_optionAtLast=false;
 	return rtv;
 }).
-add('createSkillTypeWindow_bringSkills',function f(){
+addBase('createSkillTypeWindow_bringSkills',function f(){
 	this._skillTypeWindow.setHandler('bringSkills',this.commandBringSkills.bind(this));
 	this._skillTypeWindow._bringSkills_hideOpt=this._bringSkills_hideOpt;
 	this._skillTypeWindow._bringSkills_optionAtLast=this._bringSkills_optionAtLast;
@@ -400,7 +400,7 @@ addBase('bringSkills_isCurrentlyEnabled',function f(){
 	const enabled=ref&&ref._stypeId===f.tbl[7][0][3];
 	return enabled;
 },t).
-add('update',function f(){
+addWithBaseIfNotOwn('update',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.update_bringSkills.apply(this,arguments);
 	return rtv;

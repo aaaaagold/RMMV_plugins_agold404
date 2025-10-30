@@ -66,7 +66,8 @@ function(buffer){ buffer.stop(); },
 	return true;
 },[
 maxSameCntInSameFrame,
-],false,true).add('seCurrentFrame_clear',function f(){
+],false,true).
+addBase('seCurrentFrame_clear',function f(){
 	this._seCurrentFrame.clear();
 });
 new cfc(WebAudio.prototype).add('_startPlaying',function f(isLoop,offset){
@@ -88,9 +89,11 @@ new cfc(SceneManager).add('updateManagers',function f(){
 setInterval(t,1000/64);
 
 
-new cfc(Game_System.prototype).add('seEcho_opt_clear',function(){
+new cfc(Game_System.prototype).
+addBase('seEcho_opt_clear',function(){
 	this._seEcho_opt=undefined;
-}).add('seEcho_opt_set',function f(opt){
+}).
+addBase('seEcho_opt_set',function f(opt){
 	this._seEcho_opt={
 		delayFrame:Math.max(opt&&opt.delayFrame,1)||f.tbl[0].delayFrame,
 		minVol:opt&&opt.minVol||f.tbl[0].minVol,
@@ -104,22 +107,27 @@ minVol:1.0/128,
 nextVolRate:0.75,
 affectStaticSe:false,
 },
-]).add('seEcho_opt_get',function f(){
+]).
+addBase('seEcho_opt_get',function f(){
 	return this._seEcho_opt;
-}).add('seEcho_opt_getDelayFrame',function f(opt){
+}).
+addBase('seEcho_opt_getDelayFrame',function f(opt){
 	opt=opt||this._seEcho_opt;
 	return opt&&opt.delayFrame;
-}).add('seEcho_opt_getMinVol',function f(opt){
+}).
+addBase('seEcho_opt_getMinVol',function f(opt){
 	opt=opt||this._seEcho_opt;
 	return opt&&opt.minVol;
-}).add('seEcho_opt_getNextVolRate',function f(opt){
+}).
+addBase('seEcho_opt_getNextVolRate',function f(opt){
 	opt=opt||this._seEcho_opt;
 	return opt&&opt.nextVolRate;
-})
-.add('seEcho_opt_getAffectStaticSe',function f(opt){
+}).
+addBase('seEcho_opt_getAffectStaticSe',function f(opt){
 	opt=opt||this._seEcho_opt;
 	return opt&&opt.affectStaticSe;
-}).add('seEcho_echos_getCont',function f(){
+}).
+addBase('seEcho_echos_getCont',function f(){
 	let c=this._seEcho_echos; if(!c) c=this._seEcho_echos=new Heap(f.tbl[0]);
 	if(c.constructor!==Heap){
 		c=Object.assign(new Heap(f.tbl[0]),c);
@@ -129,7 +137,8 @@ affectStaticSe:false,
 	return c;
 },[
 (a,b)=>b._echoFrame-a._echoFrame, // 0: cmp3 for max heap
-]).add('seEcho_echos_add',function f(se){
+]).
+addBase('seEcho_echos_add',function f(se){
 	const opt=se._echoOpt||this.seEcho_opt_get(); if(!opt) return;
 	const info=Object.assign({},se);
 	info._echoOpt=opt;
@@ -137,9 +146,11 @@ affectStaticSe:false,
 	info._echoFrame=(se._echoFrame||Graphics.getSceneFrameCnt())+this.seEcho_opt_getDelayFrame(opt); if(!info._echoFrame) return;
 	this.seEcho_echos_getCont().push(info);
 	return info;
-}).add('seEcho_echos_clear',function f(){
+}).
+addBase('seEcho_echos_clear',function f(){
 	this.seEcho_echos_getCont().clear();
-}).add('seEcho_echos_play',function f(){
+}).
+addBase('seEcho_echos_play',function f(){
 	for(const h=this.seEcho_echos_getCont(),currFrame=Graphics.getSceneFrameCnt();h.length&&currFrame>=h.top._echoFrame;){
 		const curr=h.top; h.pop();
 		AudioManager.playSe(curr); // will add an echo

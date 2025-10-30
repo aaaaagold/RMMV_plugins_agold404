@@ -11,10 +11,12 @@ SceneManager.集氣_gen(345,234,0.5,4,Graphics.boxWidth>>1,Graphics.boxHeight>>1
 
 (()=>{ let k,r,t;
 
-new cfc(SceneManager).add('集氣_getCont',function f(){
+new cfc(SceneManager).
+addBase('集氣_getCont',function f(){
 	let rtv=this._集氣; if(!rtv) rtv=this._集氣=[];
 	return rtv;
-}).add('集氣_gen',function f(totalFrames,newChildFrames,childrenPerFrame,finalScale,x0,y0,mainPicPath,otherPicPaths,fadeOutFrames,fadeInFrames,initScale,opt){
+}).
+addBase('集氣_gen',function f(totalFrames,newChildFrames,childrenPerFrame,finalScale,x0,y0,mainPicPath,otherPicPaths,fadeOutFrames,fadeInFrames,initScale,opt){
 	/*
 	mainPicPath: string
 	otherPicPaths: [[scale,string], ... ]
@@ -70,9 +72,11 @@ childFrames:64,
 childSpeed:[1.0/256,1.0/16],
 childMaxAlpha:[0.25,0.75],
 },
-]).add('集氣_update_rootPosition',function f(info){
+]).
+addBase('集氣_update_rootPosition',function f(info){
 	if(info.follow){ const xy=info.follow.getGlobalPosition(); info.root.position.set(info.x0+(xy.x||0),info.y0+(xy.y||0)); }
-}).add('集氣_update',function f(){
+}).
+addBase('集氣_update',function f(){
 	let i=0,j=0,arr=this.集氣_getCont();
 	for(const sc=this._scene,sz=arr.length,pi2=Math.PI*2;j!==sz;++j){ const info=arr[j];
 		const sp=info.sp;
@@ -120,14 +124,16 @@ childMaxAlpha:[0.25,0.75],
 		arr[i++]=info;
 	}
 	arr.length=i;
-}).add('集氣_onload',function f(bmp){
+}).
+addBase('集氣_onload',function f(bmp){
 	this.anchor.set(0.5);
 	this._r=Math.max(bmp.width,bmp.height);
 }).add('updateScene',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.集氣_update();
 	return rtv;
-}).add('gathering_gen',function f(
+}).
+addBase('gathering_gen',function f(
 	totalFrames,newChildFrames,childrenPerFrame,finalScale,
 	x0,y0,
 	mainPicPath,otherPicPaths,
@@ -138,7 +144,8 @@ childMaxAlpha:[0.25,0.75],
 });
 
 t=[]; t.length=2;
-new cfc(Sprite.prototype).add('集氣_gen',t[0]=function f(
+new cfc(Sprite.prototype).
+addBase('集氣_gen',t[0]=function f(
 	totalFrames,newChildFrames,childrenPerFrame,finalScale,
 	x0,y0,
 	mainPicPath,otherPicPaths,
@@ -149,7 +156,8 @@ new cfc(Sprite.prototype).add('集氣_gen',t[0]=function f(
 	const rtv=a.集氣_gen.apply(a,arguments);
 	rtv.follow=this;
 	return rtv;
-}).add('gathering_gen',t[1]=function f(
+}).
+addBase('gathering_gen',t[1]=function f(
 	totalFrames,newChildFrames,childrenPerFrame,finalScale,
 	x0,y0,
 	mainPicPath,otherPicPaths,

@@ -131,14 +131,14 @@ add('onLoad_before_troop',function f(obj,name,src,msg){
 	this.onLoad_troop_pasteCommonEvents.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
-add('onLoad_troop_pasteCommonEvents',function f(obj,name,src,msg){
+addBase('onLoad_troop_pasteCommonEvents',function f(obj,name,src,msg){
 	obj.forEach(f.tbl[7],this);
 },t).
 add('onLoad_before_map',function f(obj,name,src,msg){
 	this.onLoad_map_pasteCommonEvents.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
-add('onLoad_map_pasteCommonEvents',function f(obj,name,src,msg){
+addBase('onLoad_map_pasteCommonEvents',function f(obj,name,src,msg){
 	obj.events.forEach(f.tbl[7],this);
 },t).
 getP;

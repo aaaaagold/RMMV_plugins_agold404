@@ -24,12 +24,14 @@ window[a.name]=a;
 const p=a.prototype=Object.create(a.ori.prototype);
 p.constructor=a;
 makeDummyWindowProto(p); // disable _updateContents
-new cfc(p).add('contentsWidth',function(){
+new cfc(p).
+addBase('contentsWidth',function(){
 	return this.width;
-}).add('contentsHeight',function(){
+}).
+addBase('contentsHeight',function(){
 	return this.height;
 }). // remove padding
-add('initialize',function f(x,y,w,h){
+addWithBaseIfNotOwn('initialize',function f(x,y,w,h){
 	const rtv=f.ori.apply(this,arguments);
 	this.initBars.apply(this,arguments);
 	return rtv;
@@ -94,7 +96,8 @@ r=Window_Base; (t=function f(){
 	
 	this.setRatio(curr);
 }).ori=r.prototype.update;
-new cfc(p).add('add類比條',function f(id,afterThis,x,y,width,height,func_ratioGetter,color01,rot){
+new cfc(p).
+addBase('add類比條',function f(id,afterThis,x,y,width,height,func_ratioGetter,color01,rot){
 	const sp=new Window_類比條(x,y,width,height);
 	makeDummyWindowProto(sp);
 	sp.children.map(f.tbl[0]);
@@ -115,11 +118,17 @@ new cfc(p).add('add類比條',function f(id,afterThis,x,y,width,height,func_rati
 		if(m.has(id)) this.del類比條(id,sp);
 		else m.set(id,sp);
 	}
-},[x=>x.visible=false, x=>x.anchor && (x.anchor.y=x.anchor.x=0.5), t, ]).add('get類比條',function(id){
+},[
+x=>x.visible=false,
+x=>x.anchor && (x.anchor.y=x.anchor.x=0.5),
+t,
+]).
+addBase('get類比條',function(id){
 	const sc=this._scene;
 	const m=sc&&sc._類比條;
 	return m&&m.get(id);
-}).add('del類比條',function(id,replaceTo){
+}).
+addBase('del類比條',function(id,replaceTo){
 	const sp=this.get類比條(id); if(!sp) return;
 	if(replaceTo) this._scene._類比條.set(id,replaceTo);
 	if(sp.parent) sp.parent.removeChild(sp);

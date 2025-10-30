@@ -32,7 +32,8 @@ new cfc(a.prototype).add('canPass',function f(x,y,d){
 	return d?d&1?this.canPassDiagonally(x,y,Game_CharacterBase.dir_h[d],Game_CharacterBase.dir_v[d]):f.ori.apply(this,arguments):false;
 }).add('moveStraight',function f(d){
 	return d?d&1?this.moveDiagonally(Game_CharacterBase.dir_h[d],Game_CharacterBase.dir_v[d]):f.ori.apply(this,arguments):undefined;
-}).add('moveDiagonally',function f(horz,vert){
+}).
+addBase('moveDiagonally',function f(horz,vert){
 	const dir0=this.direction();
 	const rtv=this.canPassDiagonally(this._x, this._y, horz, vert)?4:(!!this.canPass(this._x,this._y,horz))|((!!this.canPass(this._x,this._y,vert))<<1);
 	f.tbl[0][rtv].apply(this,arguments);
@@ -62,7 +63,8 @@ function f(horz,vert){
 ], // 0: doing the move
 a.dir_dx,
 a.dir_dy,
-],false,true).add('moveDiagonally_turnDir',function f(dir0,dx,dy){
+]).
+addBase('moveDiagonally_turnDir',function f(dir0,dx,dy){
 	let d=f.tbl[0][dy+1]; d=(d&&d[dx+1])|0;
 	const dir1=f.tbl[1][dir0>>1][d];
 	dir1 && this.setDirection(dir1);
@@ -75,11 +77,14 @@ a.dir_turn,
 	return rtv;
 }).add('canPassDiagonally',function f(x,y,h,v){
 	return h&&v&&!this.canDiag_get()?false:f.ori.apply(this,arguments);
-}).add('canDiag_set',function f(val){
+}).
+addBase('canDiag_set',function f(val){
 	return this._canDiag=val;
-},undefined,true,true).add('canDiag_get',function f(){
+}).
+addBase('canDiag_get',function f(){
 	return this._canDiag;
-});
+}).
+getP;
 }
 
 { const a=Game_Character;
@@ -97,13 +102,17 @@ a.dir_h,
 a.dir_v,
 a.dir_turn,
 ]
-new cfc(p).add('canPassDiagNumpad',function f(x,y,dir){
+new cfc(p).
+addBase('canPassDiagNumpad',function f(x,y,dir){
 	return this.canPassDiagonally(x,y,f.tbl[0][dir],f.tbl[1][dir]);
-},t).add('moveDiagNumpad',function f(d){ d|=0; if(!d) return 0;
+},t).
+addBase('moveDiagNumpad',function f(d){ d|=0; if(!d) return 0;
 	return this.moveDiagonally(f.tbl[0][d],f.tbl[1][d]);
-},t).add('moveTowardCharacter_findDirTo',function f(chr){
+},t).
+addBase('moveTowardCharacter_findDirTo',function f(chr){
 	return this.moveDiagNumpad(this.findDirTo([[chr.x,chr.y]]));
-}).add('moveTowardCharacters_findDirTo',function f(chrs){
+}).
+addBase('moveTowardCharacters_findDirTo',function f(chrs){
 	return this.moveDiagNumpad(this.findDirTo(chrs.map(f.tbl[0])));
 },[
 chr=>[chr.x,chr.y],
@@ -280,7 +289,8 @@ p.findDirTo.tbl=[
 ];
 }
 
-new cfc(Game_Player.prototype).add('findDirectionTo',function f(){
+new cfc(Game_Player.prototype).
+addWithBaseIfNotOwn('findDirectionTo',function f(){
 	return this.findDirTo([[arguments[0],arguments[1]]])||f.ori.apply(this,arguments);
 }).add('getInputDirection',function f(){
 	return Input.dir8;
@@ -309,7 +319,8 @@ skippable:true,
 t.list.push(t.list[0]);
 t.list[-1]=t.list[0];
 
-new cfc(Game_Character.prototype).add('turnTo',function f(arg0){
+new cfc(Game_Character.prototype).
+addBase('turnTo',function f(arg0){
 	if(arg0&&arg0.constructor===String){ const m=arg0.match(f.tbl[0]); if(m){
 		const rev=m[1]!==m[2],evt=(m[2]==='p')?$gamePlayer:this._mvToGetTrgt(m[2]);
 		if(!evt) return;
@@ -322,14 +333,17 @@ new cfc(Game_Character.prototype).add('turnTo',function f(arg0){
 },[
 /^evt (-?([0-9]+|p))$/,
 {2:2,4:4,6:6,8:8,},
-],true,true).add('setMoveRouteEmpty',function f(){
+]).
+addBase('setMoveRouteEmpty',function f(){
 	this._moveRoute=Game_Character.MOVEROUTE_EMPTY;
 	this._moveRouteIndex=-1;
-}).add('_mvToGetTrgt',function f(evtId){
+}).
+addBase('_mvToGetTrgt',function f(evtId){
 	if(evtId==='p') return $gamePlayer;
 	else if(evtId==-1) return this;
 	else return $gameMap && $gameMap._events && $gameMap._events[evtId];
-}).add('_mvToLoc',function f(x,y,dir,opt){
+}).
+addBase('_mvToLoc',function f(x,y,dir,opt){
 	if(this.x===x && this.y===y){ if(!opt||!opt.repeat--) this.setMoveRouteEmpty(); this.turnTo(dir); }
 	else{
 		let randOnNSteps=(opt&&opt.randOnNSteps);
@@ -342,7 +356,8 @@ new cfc(Game_Character.prototype).add('turnTo',function f(arg0){
 		if(isRandSteps){ opt._randOnNSteps=0; this.moveRandom(); }
 		else{ let d=this.findDirTo([[x,y]],undefined,opt)||this.findDirectionTo(x,y); this.moveDiagNumpad(d); }
 	}
-},undefined,true,true).add('moveToLoc',function f(evtId,x,y,dir,speed,opt){
+}).
+addBase('moveToLoc',function f(evtId,x,y,dir,speed,opt){
 	if(speed) this._moveSpeed=speed;
 	const evt=this._mvToGetTrgt(evtId);
 	if(evt){ x+=evt.x; y+=evt.y; }
@@ -358,12 +373,14 @@ new cfc(Game_Character.prototype).add('turnTo',function f(arg0){
 {code:Game_Character.ROUTE_SCRIPT,parameters:['let t=this._moveRoute.trgt; this._mvToLoc(t.x,t.y,t.d,t.o);']},
 Game_Character.MOVEROUTE_EMPTY.list[0],
 ],
-],true,true).add('move1ToLoc',function f(evtId,x,y,dir,speed,opt){
+]).
+addBase('move1ToLoc',function f(evtId,x,y,dir,speed,opt){
 	if(speed) this._moveSpeed=speed;
 	const evt=this._mvToGetTrgt(evtId);
 	if(evt){ x+=evt.x; y+=evt.y; }
 	return this._mvToLoc(x,y,dir,opt);
-});
+}).
+getP;
 
 new cfc(Game_Player.prototype).add('moveStraight',function f(d){
 	return d&1?this.moveDiagonally(Game_CharacterBase.dir_h[d],Game_CharacterBase.dir_v[d]):f.ori.apply(this,arguments);

@@ -37,7 +37,9 @@ addBase('modItem1_unionCnt',function f(dataobj,i,arr){
 	if(f.tbl[1] in meta) dataobj[f.tbl[0]]=JSON.parse(meta[f.tbl[1]]);
 },t);
 
-new cfc(Game_Party.prototype).
+{ const p=Game_Party.prototype;
+if(!p.unionCnt) p.unionCnt=function(){ return this.numItems.apply(this,arguments); };
+new cfc(p).
 add('unionCnt',function f(dataobj){
 	if(!(dataobj && (f.tbl[0] in dataobj))) return (f.ori||this.numItems).apply(this,arguments);
 	let cnt=0;
@@ -52,6 +54,7 @@ addBase('hasMaxItems',function f(dataobj){
 	return this.unionCnt(dataobj)>=(this.maxItems(dataobj)|0);
 }).
 getP;
+}
 
 
 })();

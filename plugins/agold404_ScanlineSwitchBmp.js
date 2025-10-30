@@ -10,13 +10,15 @@
 
 (()=>{ let k,r,t;
 
-new cfc(Sprite.prototype).add('_switchToBmp_defaultCallback',(self,info)=>{
+new cfc(Sprite.prototype).
+addBase('_switchToBmp_defaultCallback',(self,info)=>{
 	if(info.keep) return;
 	self.bitmap=info.sp.bitmap;
 	info.sp.destroy();
 	self.drawMask_clear();
 	self._switchToBmp_splitInfo=undefined;
-}).add('_switchToBmp',function f(direction,newBmp,dur,from,to,willKeep,callback_this_info){
+}).
+addBase('_switchToBmp',function f(direction,newBmp,dur,from,to,willKeep,callback_this_info){
 	if(!this.parent) return;
 	if(this._switchToBmp_sp) this._switchToBmp_sp.destroy();
 	const info=this._switchToBmp_splitInfo={
@@ -37,7 +39,8 @@ new cfc(Sprite.prototype).add('_switchToBmp_defaultCallback',(self,info)=>{
 	return info;
 },[
 function(bmp){ this.bmpWH={W:bmp.width,H:bmp.height,}; }, // 0: tell w,h
-]).add('switchToBmp_updateNewBitmapSprite',function f(info){
+]).
+addBase('switchToBmp_updateNewBitmapSprite',function f(info){
 	for(let x=0,arr=f.tbl[0],xs=arr.length;x!==xs;++x){
 		const attr=this[arr[x]];
 		info.sp[arr[x]].set(attr.x,attr.y);
@@ -45,7 +48,8 @@ function(bmp){ this.bmpWH={W:bmp.width,H:bmp.height,}; }, // 0: tell w,h
 	this.switchToBmp_updateFrame(info);
 },[
 ['position','scale','anchor',],
-]).add('switchToBmp_updateFrame',function f(info,frm,bmp){
+]).
+addBase('switchToBmp_updateFrame',function f(info,frm,bmp){
 	frm=frm||this._frame;
 	bmp=bmp||this.bitmap;
 	if(bmp&&info.bmpWH){
@@ -55,15 +59,18 @@ function(bmp){ this.bmpWH={W:bmp.width,H:bmp.height,}; }, // 0: tell w,h
 		const y=info.bmpWH.H*ry0;
 		info.sp.setFrame(x,y,info.bmpWH.W*rx1-x,info.bmpWH.H*ry1-y);
 	}else info.sp.setFrame(frm.x,frm.y,frm.width,frm.height);
-}).add('switchToBmp_vLine',function f(newBmp,dur,from,to,willKeep,callback){
+}).
+addBase('switchToBmp_vLine',function f(newBmp,dur,from,to,willKeep,callback){
 	return this._switchToBmp('x',newBmp,dur,from,to,willKeep,callback);
-}).add('switchToBmp_hLine',function f(newBmp,dur,from,to,willKeep,callback){
+}).
+addBase('switchToBmp_hLine',function f(newBmp,dur,from,to,willKeep,callback){
 	return this._switchToBmp('y',newBmp,dur,from,to,willKeep,callback);
 }).add('update',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.update_switchToBmp();
 	return rtv;
-}).add('update_switchToBmp',function f(){
+}).
+addBase('update_switchToBmp',function f(){
 	const info=this._switchToBmp_splitInfo;
 	if(!info||!(++info.dur<info.durMax)) return info&&info.sp&&info.callback&&info.callback(this,info);
 	const key=f.tbl[0][info.dir];
@@ -71,7 +78,8 @@ function(bmp){ this.bmpWH={W:bmp.width,H:bmp.height,}; }, // 0: tell w,h
 	this.switchToBmp_updateNewBitmapSprite(info);
 },[
 {x:'_update_switchToBmp_x',y:'_update_switchToBmp_y'},
-]).add('_update_switchToBmp_x',function f(info,d){
+]).
+addBase('_update_switchToBmp_x',function f(info,d){
 	const x=d;
 	const H=Graphics.height;
 	if(info.to<info.from){
@@ -81,7 +89,8 @@ function(bmp){ this.bmpWH={W:bmp.width,H:bmp.height,}; }, // 0: tell w,h
 		info.sp.drawMask_set(info.from,-H,x-info.from,H<<1);
 		this.drawMask_set(x,-H,info.to-x,H<<1);
 	}
-}).add('_update_switchToBmp_y',function f(info,d){
+}).
+addBase('_update_switchToBmp_y',function f(info,d){
 	const y=d;
 	const W=Graphics.width;
 	if(info.to<info.from){
@@ -93,10 +102,12 @@ function(bmp){ this.bmpWH={W:bmp.width,H:bmp.height,}; }, // 0: tell w,h
 	}
 });
 
-new cfc(Sprite_Battler.prototype).add('switchToBmp_updateFrame',function f(info){
+new cfc(Sprite_Battler.prototype).
+addBase('switchToBmp_updateFrame',function f(info){
 	const frm=this._effectTarget._frame;
 	return Sprite.prototype.switchToBmp_updateFrame.call(this,info,frm,this._effectTarget.bitmap);
-}).add('_switchToBmp_defaultCallback',(self,info)=>{
+}).
+addBase('_switchToBmp_defaultCallback',(self,info)=>{
 	if(info.keep) return;
 	self._effectTarget.bitmap=info.sp.bitmap;
 	info.sp.destroy();

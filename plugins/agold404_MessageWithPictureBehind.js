@@ -119,16 +119,21 @@ C:{
 },
 }, // 0: call picture funcs
 {L:"R",R:"L",_default:"L",}, // 1: L->R ; R->L
-]).add('processEscapeCharacter_withPictureBehind_common',function f(sp,info,bmpListener){
+]).
+addBase('processEscapeCharacter_withPictureBehind_common',function f(sp,info,bmpListener){
 	sp.visible=true;
 	const bmp=sp.bitmap=ImageManager.loadPicture(info.path);
 	if(bmpListener) bmp.addLoadListener(bmpListener);
 }).addBase('messageWithPictureBehind_clear',function f(){
 	f.tbl[0].C.func(this);
-},t).add('startMessage',function f(){
+},t).
+/*
+add('startMessage',function f(){
 	this.messageWithPictureBehind_clear();
 	return f.ori.apply(this,arguments);
-}).add('close',function f(){
+}).
+*/
+add('close',function f(){
 	this.messageWithPictureBehind_clear();
 	return f.ori.apply(this,arguments);
 });

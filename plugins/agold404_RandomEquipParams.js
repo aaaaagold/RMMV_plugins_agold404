@@ -567,7 +567,7 @@ addBase('randomEquipParams_onLayeredItemOk',function f(){
 	lw.refresh(); // list might be changed
 	
 }).
-add('onActorCancel',function f(){
+addWithBaseIfNotOwn('onActorCancel',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	const lw=this.randomEquipParams_isUsingLayeredWindows(); if(!lw) return rtv;
 	const iw=this._itemWindow;

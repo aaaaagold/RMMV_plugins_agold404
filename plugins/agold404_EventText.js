@@ -81,13 +81,15 @@ new cfc(Sprite_Character.prototype).add('setCharacter',function f(chr){
 	const rtv=f.ori.apply(this,arguments);
 	this.setChrTextv(chr.getTextv());
 	return rtv;
-}).add('setChrTextv',function f(arr){
+}).
+addBase('setChrTextv',function f(arr){
 	if(!arr) arr=f.tbl[0];
 	this._texta=arr._txtalign;
 	return this.setChrTxt(arr.join('\n'));
 },[
 [], // 0: empty textv
-]).add('setChrTxt',function f(txt){
+]).
+addBase('setChrTxt',function f(txt){
 	let wt=this._textWnd;
 	if(!wt){
 		if(!txt) return this;
@@ -151,7 +153,7 @@ add('setupPage',function f(){
 	this.setTextv(page&&page.textv&&page.textv.length?page.textv:undefined,true);
 	return rtv;
 }).
-add('getTextv',function f(){
+addWithBaseIfNotOwn('getTextv',function f(){
 	if(this._erased) return f.tbl[0];
 	return f.ori.apply(this,arguments);
 },[

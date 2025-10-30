@@ -39,13 +39,13 @@ window.isTest(),
 
 
 new cfc(Window_SkillList.prototype).
-add('maxCols',function f(){
+addBase('maxCols',function f(){
 	return useDefaultIfIsNaN(this._maxCols,f.tbl[1]._maxColsWindowSkillList);
 },t).
 getP;
 
 new cfc(Window_ItemList.prototype).
-add('maxCols',function f(){
+addBase('maxCols',function f(){
 	return useDefaultIfIsNaN(this._maxCols,f.tbl[1]._maxColsWindowItemList);
 },t).
 getP;

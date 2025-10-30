@@ -29,7 +29,8 @@ new cfc(Game_Event.prototype).add('setupPageSettings',function f(){
 	const page=f.ori.apply(this,arguments);
 	this.setThroughEvents(page);
 	return page;
-}).add('setThroughEvents',function f(page){
+}).
+addBase('setThroughEvents',function f(page){
 	const meta=this.getMeta();
 	this._throughEvents_player=getPropertyValue(meta,'throughPlayers',false);
 	this._throughEvents_allEvents=getPropertyValue(meta,'throughEventsAll',false);
@@ -47,13 +48,17 @@ new cfc(Game_Event.prototype).add('setupPageSettings',function f(){
 'throughEventsOnlyOnTags',
 ]).add('isCollidedWithPlayerCharacters',function f(x,y){
 	return this.isCollidedWith_isThroughPlayers()?false:f.ori.apply(this,arguments);
-}).add('isCollidedWith_isThroughPlayers',function f(){
+}).
+addBase('isCollidedWith_isThroughPlayers',function f(){
 	return this._throughEvents_player;
-}).add('isCollidedWith_throughEvents_isThroughAllEvents',function f(){
+}).
+addBase('isCollidedWith_throughEvents_isThroughAllEvents',function f(){
 	return this._throughEvents_allEvents;
-}).add('isCollidedWith_throughEvents_getMyTag',function f(){
+}).
+addBase('isCollidedWith_throughEvents_getMyTag',function f(){
 	return this._throughEvents_myTag;
-}).add('isCollidedWith_throughEvents_getThroughTags',function f(){
+}).
+addBase('isCollidedWith_throughEvents_getThroughTags',function f(){
 	return this._throughEvents_onlyOnTags;
 }).add('isCollidedWithEvents',function f(x,y){
 	if(this.isCollidedWith_throughEvents_isThroughAllEvents()) return false;
@@ -67,10 +72,8 @@ function f(tags,evt){
 ],true);
 
 const p=Game_Player.prototype;
-new cfc(p).add('isCollidedWithEvents',p.isCollidedWithEvents===Game_Character.prototype.isCollidedWithEvents?function f(x,y){
-	const res=Game_Character.prototype.isCollidedWithEvents.apply(this,arguments);
-	return res && $gameMap.eventsXyNtNp(x,y).some(f.tbl[0]);
-}:function f(x,y){
+new cfc(p).
+addWithBaseIfNotOwn('isCollidedWithEvents',function f(x,y){
 	const res=f.ori.apply(this,arguments);
 	return res && $gameMap.eventsXyNtNp(x,y).some(f.tbl[0]);
 },[

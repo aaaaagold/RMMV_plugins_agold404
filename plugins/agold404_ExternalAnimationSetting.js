@@ -95,7 +95,8 @@ new cfc(Sprite_Animation.prototype).add('setup',function f(target, animation, mi
 	const rtv=f.ori.apply(this,arguments);
 	this.concatAnimationFrame(animation);
 	return rtv;
-}).add('concatAnimationFrame',function f(ani,currSet){
+}).
+addBase('concatAnimationFrame',function f(ani,currSet){
 	const meta=ani&&ani.meta;
 	const raw=meta&&meta[f.tbl[0]]; if(!raw) return;
 	meta[f.tbl[0]]=undefined;
@@ -240,7 +241,8 @@ function f(a,b,r){ if(b==null) b=a;
 	return rtv;
 }, // 4: interpolate
 function f(s,m1,v,k){ if(v===this[1]&&!m1.has(k)) s.add(k); }, // 5: add it to set if it is "remove" and not presented in m1
-],false,true).add('parseAnimationPictures_loop',function f(arr,forced){
+],false,true).
+addBase('parseAnimationPictures_loop',function f(arr,forced){
 	if(!forced&&arr._looped) return; // already set
 	arr._looped=true;
 	const byFrames=arr._byFrames,endFrm=byFrames.length;
@@ -340,7 +342,8 @@ new cfc(Sprite_Animation.prototype).add('setup',function f(target, animation, mi
 	const rtv=f.ori.apply(this,arguments);
 	this.setupPictures(animation);
 	return rtv;
-}).add('setupPictures',function f(animation){
+}).
+addBase('setupPictures',function f(animation){
 	const arr=this._pictureArr=DataManager.parseAnimationPictures(animation);
 	if(!arr) return;
 	arr._bmp=new Map();
@@ -411,7 +414,8 @@ DataManager.parseAnimationPictures.tbl[3].positionReference,
 
 (()=>{ let k,r,t;
 
-new cfc(DataManager).add('parseAnimationSeAudios',function f(animation){
+new cfc(DataManager).
+addBase('parseAnimationSeAudios',function f(animation){
 	const meta=animation&&animation.meta;
 	if(!meta||!meta.seAudios) return;
 	let arr=animation.seAudios;
@@ -432,7 +436,8 @@ new cfc(DataManager).add('parseAnimationSeAudios',function f(animation){
 new cfc(Sprite_Animation.prototype).add('updateFrame',function f(){
 	this.updateFrame_seAudios();
 	return f.ori.apply(this,arguments);
-}).add('updateFrame_seAudios',function f(){
+}).
+addBase('updateFrame_seAudios',function f(){
 	const seAudios=DataManager.parseAnimationSeAudios(this._animation); if(!seAudios) return;
 	const byFrames=seAudios._byFrames;
 	const infos=byFrames&&byFrames[this.currentFrameIndex()]; if(!infos) return;

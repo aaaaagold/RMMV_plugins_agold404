@@ -14,13 +14,17 @@ new cfc(Game_Timer.prototype).add('initialize',function f(){
 	this._paused=false;
 	this._isInc=false;
 	return rtv;
-}).add('pause',function f(){
+}).
+addBase('pause',function f(){
 	this._paused=true;
-}).add('resume',function f(){
+}).
+addBase('resume',function f(){
 	this._paused=false;
-}).add('setInc',function f(){
+}).
+addBase('setInc',function f(){
 	this._isInc=true;
-}).add('setDec',function f(){
+}).
+addBase('setDec',function f(){
 	this._isInc=false;
 }).add('start',function f(count,isInc,paused){
 	const rtv=f.ori.apply(this,arguments);

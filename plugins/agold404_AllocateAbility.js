@@ -240,7 +240,8 @@ _s=>{
 	{ return eval(_s); }
 }, // 2: get func
 params._defaultCostPointFunction=()=>1, // 3: default cost func
-]).add('getResultItemsSetting',function f(){
+]).
+addBase('getResultItemsSetting',function f(){
 	if(f.tbl[0]) return f.tbl[0];
 	const rtv=[],obj=f.tbl[1];
 	const raw=JSON.parse(obj&&obj.ShowingResults||"[]");
