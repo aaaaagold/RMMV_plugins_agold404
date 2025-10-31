@@ -1143,6 +1143,7 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	}
 	return rtv;
 }).add('update',function f(){
+	// TODO: addRoof?
 	const rtv=f.ori.apply(this,arguments);
 	if(this.active) this.update_active();
 	if(this.isOpenAndActive()) this.update_openAndActive();
@@ -2208,6 +2209,31 @@ new cfc(p).add('_createAllParts',function f(){
 (()=>{ let k,r,t;
 
 
+new cfc(Window_ShopNumber.prototype).
+addBase('processNumberChange_condOk',function f(){
+	return this.isOpenAndActive();
+}).
+addBase('processNumberChange_do_getDelta',function f(){
+	let rtv=0;
+	if(Input.isRepeated('right')) rtv=this.processNumberChange_getNumberStepUnit.apply(this,arguments);
+	if(Input.isRepeated('left')) rtv=-this.processNumberChange_getNumberStepUnit.apply(this,arguments);
+	if(Input.isRepeated('up')) rtv=10*this.processNumberChange_getNumberStepUnit.apply(this,arguments);
+	if(Input.isRepeated('down')) rtv=-10*this.processNumberChange_getNumberStepUnit.apply(this,arguments);
+	return rtv;
+}).
+addBase('processNumberChange_do',function f(){
+	const delta=this.processNumberChange_do_getDelta();
+	this.changeNumber(delta);
+}).
+addBase('processNumberChange',function f(){
+	if(this.processNumberChange_condOk.apply(this,arguments)) this.processNumberChange_do.apply(this,arguments);
+}).
+addBase('processNumberChange_getNumberStepUnit',function f(){
+	return 10-9*!Input.isPressed('shift');
+}).
+getP;
+
+
 new cfc(Game_BattlerBase.prototype).
 addBase('statesContainer_cntStateId',function f(stateId){
 	return this.isStateAffected(stateId)|0;
@@ -2570,6 +2596,9 @@ addBase('getUiState',function f(){
 }).
 addBase('changeUiState_focusOnItemWnd',function f(){
 }).
+addBase('update_focusWndFromTouch_condOk',function f(){
+	return TouchInput.isTriggered();
+}).
 getP;
 
 new cfc(Scene_ItemBase.prototype).
@@ -2604,7 +2633,204 @@ addBase('changeUiState_focusOnItemWnd',function f(){
 },[
 'focusOnItemWnd',
 ]).
-getP
+getP;
+
+new cfc(Scene_Shop.prototype).
+add('create',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.create_tuneWindows.apply(this,arguments);
+	return rtv;
+}).
+addBase('create_tuneWindows',function f(){
+	this._categoryWindow.deselect();
+	this._commandWindow._dummyWindow=this._dummyWindow;
+	this._commandWindow._categoryWindow=this._categoryWindow;
+	this._commandWindow._sellWindow=this._sellWindow;
+	this._commandWindow.onNewSelect_adjustWindow();
+}).
+addBase('getCurrentAction',function f(){
+	return this._commandWindow.currentSymbol();
+}).
+addBase('changeUiState_focusOnCmdWnd',function f(){
+	this.setUiState(f.tbl[0]);
+	this._buyWindow.deactivate();
+	this._categoryWindow.activate(); // for updating help window => updating status window
+	this._categoryWindow.deselect();
+	this._categoryWindow.deactivate();
+	//this._categoryWindow.hide();
+	this._sellWindow.deactivate(); // prevent updating help window again => prevent updating status window
+	this._sellWindow.deselect();
+	//this._sellWindow.hide();
+	this._numberWindow.hide();
+	this._numberWindow.deactivate();
+	this._statusWindow.hide();
+	//this._dummyWindow.show();
+	this._commandWindow.activate();
+	this._commandWindow.onNewSelect_adjustWindow();
+},[
+'focusOnCmdWnd',
+]).
+addBase('onBuyCancel',function f(){
+	this.changeUiState_focusOnCmdWnd();
+}).
+addBase('onCategoryCancel',function f(){
+	this.changeUiState_focusOnCmdWnd();
+}).
+addBase('changeUiState_focusOnBuyWnd',function f(){
+	this.setUiState(f.tbl[0]);
+	this._commandWindow.deactivate();
+	this._buyWindow.activate();
+},[
+'focusOnBuyWnd',
+]).
+addBase('activateBuyWindow',function f(){
+	this._buyWindow.setMoney(this.money());
+	this._buyWindow.show();
+	this._buyWindow.activate();
+	this._statusWindow.show();
+}).
+addBase('changeUiState_focusOnCategoryWnd',function f(){
+	this.setUiState(f.tbl[0]);
+	if(!(this._categoryWindow.index()>=0)) this._categoryWindow.select(0);
+	this._commandWindow.deactivate();
+	this._buyWindow.hide();
+	this._buyWindow.deactivate();
+	this._sellWindow.deselect();
+	this._sellWindow.deactivate();
+	this._numberWindow.hide();
+	this._numberWindow.deactivate();
+	this._statusWindow.hide();
+	//this._dummyWindow.hide();
+	//this._categoryWindow.show();
+	//this._sellWindow.show();
+	this._categoryWindow.activate();
+},[
+'focusOnCategoryWnd',
+]).
+addBase('commandSell',function f(){
+	this.changeUiState_focusOnCategoryWnd();
+}).
+addBase('onSellCancel',function f(){
+	this.changeUiState_focusOnCategoryWnd();
+}).
+addBase('changeUiState_focusOnSellWnd',function f(){
+	this.setUiState(f.tbl[0]);
+	const buyw=this._buyWindow;
+	{
+		buyw.hide();
+		buyw.deactivate();
+	}
+	const ctw=this._categoryWindow;
+	{
+		ctw.deactivate();
+		ctw.show();
+	}
+	const cmdw=this._commandWindow;
+	{
+		cmdw.deactivate();
+	}
+	const numw=this._numberWindow;
+	{
+		numw.hide();
+		numw.deactivate();
+	}
+	const stw=this._statusWindow;
+	{
+		stw.hide();
+	}
+	const sellw=this._sellWindow;
+	{
+		sellw.refresh();
+		sellw.show();
+		sellw.activate();
+		const M=sellw.maxItems();
+		let currIdx=sellw.index();
+		if(!(currIdx>=0)) sellw.select(currIdx=0);
+		else if(!(currIdx<M)) sellw.select(currIdx=M-1);
+		sellw.activate();
+	}
+},[
+'focusOnSellWnd',
+]).
+addBase('changeUiState_focusOnItemWnd',function f(){
+	return this.changeUiState_focusOnSellWnd.apply(this,arguments);
+}).
+addBase('onCategoryOk',function f(){
+	this.changeUiState_focusOnItemWnd();
+}).
+addBase('activateSellWindow',function f(){
+	this.changeUiState_focusOnItemWnd();
+}).
+addBase('update_focusWndFromTouch_do_common',function f(){
+	const cmdw=this._commandWindow;
+	{ const wnd=cmdw; if(wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput)){
+		this.changeUiState_focusOnCmdWnd();
+		return wnd;
+	} }
+}).
+addBase('update_focusWndFromTouch_do_buy',function f(){
+	if(this.getCurrentAction()!==f.tbl[0]) return;
+	const buyw=this._buyWindow;
+	{ const wnd=buyw; if(wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput)){
+		this.changeUiState_focusOnBuyWnd();
+		return wnd;
+	} }
+},[
+'buy',
+]).
+addBase('update_focusWndFromTouch_do_sell',function f(){
+	if(this.getCurrentAction()!==f.tbl[0]) return;
+	const ctw=this._categoryWindow;
+	const sellw=this._sellWindow;
+	{ const wnd=ctw; if(wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput)){
+		this.changeUiState_focusOnCategoryWnd();
+		return wnd;
+	} }
+	{ const wnd=sellw; if(ctw.index()>=0&&wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput)){
+		this.changeUiState_focusOnItemWnd();
+		return wnd;
+	} }
+},[
+'sell',
+]).
+addBase('update_focusWndFromTouch_do',function f(){
+	return this.update_focusWndFromTouch_do_common.apply(this,arguments) ||
+		this.update_focusWndFromTouch_do_buy.apply(this,arguments) ||
+		this.update_focusWndFromTouch_do_sell.apply(this,arguments) ||
+		undefined;
+}).
+addBase('update_focusWndFromTouch',function f(){
+	if(this.update_focusWndFromTouch_condOk()) this.update_focusWndFromTouch_do();
+}).
+addWithBaseIfNotOwn('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.update_focusWndFromTouch();
+	return rtv;
+}).
+getP;
+
+new cfc(Window_ShopCommand.prototype).
+addWithBaseIfNotOwn('onNewSelect',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.onNewSelect_adjustWindow.apply(this,arguments);
+	return rtv;
+}).
+addBase('onNewSelect_adjustWindow',function f(){
+	if(this.currentSymbol()===f.tbl[0]){
+		if(this._dummyWindow) this._dummyWindow.hide();
+		if(this._categoryWindow) this._categoryWindow.show();
+		if(this._sellWindow) this._sellWindow.show();
+		if(this._buyWindow) this._buyWindow.hide();
+	}else{
+		if(this._categoryWindow) this._categoryWindow.hide();
+		if(this._sellWindow) this._sellWindow.hide();
+		if(this._dummyWindow) this._dummyWindow.show();
+		if(this._buyWindow) this._buyWindow.show();
+	}
+},[
+'sell', // 0: target
+]).
+getP;
 
 new cfc(Scene_Equip.prototype).
 addBase('changeUiState_focusOnSlotWnd',function f(){
@@ -2640,9 +2866,9 @@ addBase('changeUiState_focusOnItemWnd',function f(){
 	{
 		sw.deactivate();
 	}
-	const cw=this._commandWindow;
+	const cmdw=this._commandWindow;
 	{
-		cw.deactivate();
+		cmdw.deactivate();
 	}
 	const iw=this._itemWindow;
 	{
@@ -2683,24 +2909,21 @@ addWithBaseIfNotOwn('start',function f(){
 	this.changeUiState_focusOnCmdWnd();
 	return f.ori.apply(this,arguments);
 }).
-addBase('update_focusWndFromTouch_condOk',function f(){
-	return TouchInput.isTriggered();
-}).
 addBase('update_focusWndFromTouch_do',function f(){
 	const cw=this._commandWindow;
 	{ const wnd=cw; if(wnd.isOpen()&&wnd.containsPoint_global(TouchInput)){
 		this.changeUiState_focusOnCmdWnd();
-		return;
+		return wnd;
 	} }
 	const sw=this._slotWindow;
 	{ const wnd=sw; if(wnd.isOpen()&&wnd.containsPoint_global(TouchInput)){
 		this.changeUiState_focusOnSlotWnd();
-		return;
+		return wnd;
 	} }
 	const iw=this._itemWindow;
 	{ const wnd=iw; if(sw.index()>=0&&wnd.isOpen()&&wnd.containsPoint_global(TouchInput)){
 		this.changeUiState_focusOnItemWnd();
-		return;
+		return wnd;
 	} }
 }).
 addBase('update_focusWndFromTouch',function f(){
@@ -9216,6 +9439,13 @@ new cfc(Bitmap.prototype).add('_callLoadListeners',function f(){
 	return rtv;
 });
 }
+
+
+new cfc(Window_ShopSell.prototype).
+addBase('isEnabled',function f(item){
+	return item && 0<item.price && $gameParty && $gameParty.numItems(item);
+}).
+getP;
 
 
 new cfc(Game_BattlerBase.prototype).
