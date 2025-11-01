@@ -9513,7 +9513,7 @@ new cfc(Window_Selectable.prototype).addBase('maxPageRows',function(isReturnReal
 	return rtv;
 }).addBase('drawAllItems',function f(){
 	let rtv=0;
-	const idxB=this.topIndex(),sz=this.maxPageItems()+1,cnt=this.maxItems(); // +1 for non-align scrolling
+	const idxB=this.topIndex(),sz=this.maxPageItems()+(this.maxCols()||1),cnt=this.maxItems(); // + col num for non-align scrolling
 	for(let i=0;i<sz;++i) if(idxB+i<cnt) ++rtv,this.drawItem(idxB+i);
 	return rtv;
 });
