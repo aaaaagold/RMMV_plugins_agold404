@@ -279,15 +279,10 @@ addWithBaseIfNotOwn('onNewSelect',function f(){
 }).
 getP;
 
+
+{ const classes=[];
+
 { const a=class Window_randomEquipParams_EquipLayeredItem extends Window_EquipItem{
-//maxCols(){ return 2; }
-setRootItem(item){
-	this._rootItem=item;
-}
-includes(item){
-	if(!this._rootItem) return false;
-	return DataManager.duplicatedDataobj_getSrc(item)===this._rootItem;
-}
 makeItemList(){
 	this._data=[];
 	const m=this._layeredItemWindow_layerMap;
@@ -297,17 +292,10 @@ makeItemList(){
 	this._data.push(null);
 }
 };
+classes.push(a);
 window[a.name]=a; }
 
 { const a=class Window_randomEquipParams_ItemListLayeredItem extends Window_ItemList{
-//maxCols(){ return 2; }
-setRootItem(item){
-	this._rootItem=item;
-}
-includes(item){
-	if(!this._rootItem) return false;
-	return DataManager.duplicatedDataobj_getSrc(item)===this._rootItem;
-}
 makeItemList(){
 	this._data=[];
 	const m=this._layeredItemWindow_layerMap;
@@ -317,17 +305,10 @@ makeItemList(){
 	if(this._isCanIncludeNull) this._data.push(null);
 }
 };
+classes.push(a);
 window[a.name]=a; }
 
 { const a=class Window_randomEquipParams_ShopSellLayeredItem extends Window_ShopSell{
-//maxCols(){ return 2; }
-setRootItem(item){
-	this._rootItem=item;
-}
-includes(item){
-	if(!this._rootItem) return false;
-	return DataManager.duplicatedDataobj_getSrc(item)===this._rootItem;
-}
 makeItemList(){
 	this._data=[];
 	const m=this._layeredItemWindow_layerMap;
@@ -337,7 +318,46 @@ makeItemList(){
 	if(this._isCanIncludeNull) this._data.push(null);
 }
 };
+classes.push(a);
 window[a.name]=a; }
+
+// common tune
+{
+new cfc(Window_Base.prototype).
+addBase('randomEquipParams_layeredWindow_setRootItem',function f(item){
+	this._rootItem=item;
+}).
+addBase('randomEquipParams_layeredWindow_includes',function(item){
+	if(!this._rootItem) return false;
+	return DataManager.duplicatedDataobj_getSrc(item)===this._rootItem;
+}).
+getP;
+const setRootItem=function(item){
+	this.randomEquipParams_layeredWindow_setRootItem.apply(this,arguments);
+};
+const includes=function(item){
+	this.randomEquipParams_layeredWindow_includes.apply(this,arguments);
+};
+for(let x=classes.length;x--;){
+	const p=classes[x].prototype;
+	p.setRootItem=setRootItem;
+	p.includes=includes;
+	new cfc(p).
+	addWithBaseIfNotOwn('onclosed',function f(){
+		const rtv=f.ori.apply(this,arguments);
+		this.visible=false;
+		return rtv;
+	}).
+	addWithBaseIfNotOwn('open',function f(){
+		this.visible=true;
+		return f.ori.apply(this,arguments);
+	}).
+	getP;
+}
+} // common tune
+
+} // const classes
+
 
 new cfc(Scene_MenuBase.prototype).
 addBase('randomEquipParams_isUsingLayeredWindows',function f(){
