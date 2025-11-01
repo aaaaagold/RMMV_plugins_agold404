@@ -4187,7 +4187,7 @@ addBase('paramShortNameToId',function f(shortName){
 },[
 {
 "mhp":0,
-"mmp":0,
+"mmp":1,
 "atk":2,
 "def":3,
 "mat":4,
@@ -4196,6 +4196,23 @@ addBase('paramShortNameToId',function f(shortName){
 "luk":7,
 }, // 0: mapping table for basic params names
 ]).
+addBase('paramIdToShortName',function f(paramId){
+	return f.tbl[0][paramId];
+},t=[
+[
+"mhp",
+"mmp",
+"atk",
+"def",
+"mat",
+"mdf",
+"agi",
+"luk",
+], // 0: mapping table for basic params names
+]).
+addBase('paramsCnt',function f(){
+	return f.tbl[0].length;
+},t).
 getP;
 
 new cfc(Game_Actor.prototype).
