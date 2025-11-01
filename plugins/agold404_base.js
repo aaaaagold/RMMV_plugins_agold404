@@ -1368,6 +1368,26 @@ addBase('processEscapeCharacter',function(code,textState){
 	const func=Window_Base.escapeFunction_get(code);
 	if(func instanceof Function) return func.apply(this,arguments);
 }).
+addBase('drawTextExInfo_getCont',function f(){
+	let rtv=this._drawTextExInfo; if(!rtv) rtv=this._drawTextExInfo={};
+	return rtv;
+}).
+addBase('_drawTextExInfo_setKv',function f(key,val){
+	this.drawTextExInfo_getCont()[key]=val;
+	return this;
+}).
+addBase('_drawTextExInfo_getVal',function f(key){
+	return this.drawTextExInfo_getCont()[key];
+}).
+addBase('drawTextExInfo_setItem',function f(item){
+	this._drawTextExInfo_setKv(f.tbl[0],item);
+	return this;
+},t=[
+'_item', // 0: key
+]).
+addBase('drawTextExInfo_getItem',function f(item){
+	this._drawTextExInfo_getVal(f.tbl[0]);
+},t).
 getP;
 new cfc(Window_Base).
 addBase('escapeFunction_set',function f(code,func){
