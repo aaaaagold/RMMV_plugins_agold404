@@ -2594,6 +2594,9 @@ addBase('setUiState',function f(val){
 addBase('getUiState',function f(){
 	return this._uiState;
 }).
+addBase('isWndClicked',function f(wnd){
+	return wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput);
+}).
 addBase('changeUiState_focusOnItemWnd',function f(){
 }).
 addBase('update_focusWndFromTouch_condOk',function f(){
@@ -2610,6 +2613,24 @@ add('showSubWindow',function f(wnd){
 getP
 
 new cfc(Scene_Item.prototype).
+addBase('changeUiState_focusOnCategoryWnd',function f(){
+	this.setUiState(f.tbl[0]);
+	const aw=this._actorWindow;
+	{
+		aw.deactivate();
+		aw.close();
+	}
+	const iw=this._itemWindow;
+	{
+		iw.deactivate();
+	}
+	const cw=this._categoryWindow;
+	{
+		cw.activate();
+	}
+},[
+'focusOnCategoryWnd',
+]).
 addBase('changeUiState_focusOnItemWnd',function f(){
 	this.setUiState(f.tbl[0]);
 	const aw=this._actorWindow;
@@ -2633,6 +2654,42 @@ addBase('changeUiState_focusOnItemWnd',function f(){
 },[
 'focusOnItemWnd',
 ]).
+addBase('update_focusWndFromTouch_do_category',function f(){
+	const ctw=this._categoryWindow;
+	{ const wnd=ctw; if(this.isWndClicked(wnd)){
+		this.changeUiState_focusOnCategoryWnd();
+		return wnd;
+	} }
+}).
+addBase('update_focusWndFromTouch_do_itemList',function f(){
+	const iw=this._itemWindow;
+	{ const wnd=iw; if(this.isWndClicked(wnd)){
+		this.changeUiState_focusOnItemWnd();
+		return wnd;
+	} }
+}).
+addBase('update_focusWndFromTouch_do_actor',function f(){
+	const aw=this._actorWindow;
+	{ const wnd=aw; if(this.isWndClicked(wnd)){
+		//this.changeUiState_focusOnActorWnd();
+		return wnd;
+	} }
+}).
+addBase('update_focusWndFromTouch_do',function f(){
+	return undefined ||
+		this.update_focusWndFromTouch_do_actor.apply(this,arguments) ||
+		this.update_focusWndFromTouch_do_itemList.apply(this,arguments) ||
+		this.update_focusWndFromTouch_do_category.apply(this,arguments) ||
+		undefined;
+}).
+addBase('update_focusWndFromTouch',function f(){
+	if(this.update_focusWndFromTouch_condOk()) this.update_focusWndFromTouch_do();
+}).
+addWithBaseIfNotOwn('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.update_focusWndFromTouch();
+	return rtv;
+}).
 getP;
 
 new cfc(Scene_Shop.prototype).
@@ -2644,6 +2701,8 @@ add('create',function f(){
 addBase('create_tuneWindows',function f(){
 	this._categoryWindow.deselect();
 	this._commandWindow._dummyWindow=this._dummyWindow;
+	this._commandWindow._buyWindow=this._buyWindow;
+	this._commandWindow._statusWindow=this._statusWindow;
 	this._commandWindow._categoryWindow=this._categoryWindow;
 	this._commandWindow._sellWindow=this._sellWindow;
 	this._commandWindow.onNewSelect_adjustWindow();
@@ -2655,7 +2714,7 @@ addBase('changeUiState_focusOnCmdWnd',function f(){
 	this.setUiState(f.tbl[0]);
 	this._buyWindow.deactivate();
 	this._categoryWindow.activate(); // for updating help window => updating status window
-	this._categoryWindow.deselect();
+	//this._categoryWindow.deselect();
 	this._categoryWindow.deactivate();
 	//this._categoryWindow.hide();
 	this._sellWindow.deactivate(); // prevent updating help window again => prevent updating status window
@@ -2680,6 +2739,7 @@ addBase('changeUiState_focusOnBuyWnd',function f(){
 	this.setUiState(f.tbl[0]);
 	this._commandWindow.deactivate();
 	this._buyWindow.activate();
+	this._statusWindow.show();
 },[
 'focusOnBuyWnd',
 ]).
@@ -2763,7 +2823,7 @@ addBase('activateSellWindow',function f(){
 }).
 addBase('update_focusWndFromTouch_do_common',function f(){
 	const cmdw=this._commandWindow;
-	{ const wnd=cmdw; if(wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput)){
+	{ const wnd=cmdw; if(this.isWndClicked(wnd)){
 		this.changeUiState_focusOnCmdWnd();
 		return wnd;
 	} }
@@ -2771,7 +2831,7 @@ addBase('update_focusWndFromTouch_do_common',function f(){
 addBase('update_focusWndFromTouch_do_buy',function f(){
 	if(this.getCurrentAction()!==f.tbl[0]) return;
 	const buyw=this._buyWindow;
-	{ const wnd=buyw; if(wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput)){
+	{ const wnd=buyw; if(this.isWndClicked(wnd)){
 		this.changeUiState_focusOnBuyWnd();
 		return wnd;
 	} }
@@ -2782,11 +2842,11 @@ addBase('update_focusWndFromTouch_do_sell',function f(){
 	if(this.getCurrentAction()!==f.tbl[0]) return;
 	const ctw=this._categoryWindow;
 	const sellw=this._sellWindow;
-	{ const wnd=ctw; if(wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput)){
+	{ const wnd=ctw; if(this.isWndClicked(wnd)){
 		this.changeUiState_focusOnCategoryWnd();
 		return wnd;
 	} }
-	{ const wnd=sellw; if(ctw.index()>=0&&wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput)){
+	{ const wnd=sellw; if(ctw.index()>=0&&this.isWndClicked(wnd)){
 		this.changeUiState_focusOnItemWnd();
 		return wnd;
 	} }
@@ -2794,7 +2854,8 @@ addBase('update_focusWndFromTouch_do_sell',function f(){
 'sell',
 ]).
 addBase('update_focusWndFromTouch_do',function f(){
-	return this.update_focusWndFromTouch_do_common.apply(this,arguments) ||
+	return undefined ||
+		this.update_focusWndFromTouch_do_common.apply(this,arguments) ||
 		this.update_focusWndFromTouch_do_buy.apply(this,arguments) ||
 		this.update_focusWndFromTouch_do_sell.apply(this,arguments) ||
 		undefined;
@@ -2815,21 +2876,44 @@ addWithBaseIfNotOwn('onNewSelect',function f(){
 	this.onNewSelect_adjustWindow.apply(this,arguments);
 	return rtv;
 }).
+addBase('onNewSelect_adjustWindow_buy',function f(){
+	if(this._categoryWindow) this._categoryWindow.hide();
+	if(this._sellWindow) this._sellWindow.hide();
+	if(this._dummyWindow) this._dummyWindow.show();
+	if(this._buyWindow){ this._buyWindow.show(); this._buyWindow.refresh(); }
+	if(this._statusWindow) this._statusWindow.show();
+}).
+addBase('onNewSelect_adjustWindow_sell',function f(){
+	if(this._dummyWindow) this._dummyWindow.hide();
+	if(this._categoryWindow) this._categoryWindow.show();
+	if(this._sellWindow){ this._sellWindow.show(); this._sellWindow.refresh(); }
+	if(this._buyWindow) this._buyWindow.hide();
+	if(this._statusWindow) this._statusWindow.hide();
+}).
+addBase('onNewSelect_adjustWindow_cancel',function f(){
+	if(this._categoryWindow) this._categoryWindow.hide();
+	if(this._sellWindow) this._sellWindow.hide();
+	if(this._buyWindow) this._buyWindow.hide();
+	if(this._statusWindow) this._statusWindow.hide();
+	if(this._dummyWindow) this._dummyWindow.show();
+}).
 addBase('onNewSelect_adjustWindow',function f(){
-	if(this.currentSymbol()===f.tbl[0]){
-		if(this._dummyWindow) this._dummyWindow.hide();
-		if(this._categoryWindow) this._categoryWindow.show();
-		if(this._sellWindow) this._sellWindow.show();
-		if(this._buyWindow) this._buyWindow.hide();
-	}else{
-		if(this._categoryWindow) this._categoryWindow.hide();
-		if(this._sellWindow) this._sellWindow.hide();
-		if(this._dummyWindow) this._dummyWindow.show();
-		if(this._buyWindow) this._buyWindow.show();
-	}
+	const func=this[f.tbl[0][this.currentSymbol()]||f.tbl[0]._default];
+	return func&&func.apply(this,arguments);
 },[
-'sell', // 0: target
+{
+_default:'onNewSelect_adjustWindow_cancel',
+buy:'onNewSelect_adjustWindow_buy',
+sell:'onNewSelect_adjustWindow_sell',
+cancel:'onNewSelect_adjustWindow_cancel',
+}, // 0: cmd symbol to func. name
 ]).
+getP;
+
+new cfc(Window_ShopBuy.prototype).
+addBase('isEnabled',function f(item){
+	return item && $gameParty._gold>=this.price(item) && !$gameParty.hasMaxItems(item);
+}).
 getP;
 
 new cfc(Scene_Equip.prototype).
