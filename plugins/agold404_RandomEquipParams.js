@@ -142,6 +142,56 @@ addRoof('gainItem',function f(item,amount,includeEquip){
 }).
 getP;
 
+new cfc(DataManager).
+addBase('randomEquipParams_getParamsRange_format1',function f(item,theOneParamId){
+	const paramVals=item.params.slice();
+	const info=item.params.randomEquipParams_format1;
+	const ptMin=getNumOrEval(info.total[0]);
+	const ptMax=getNumOrEval(info.total[1]);
+	const paramIds=info.params.map(DataManager.paramShortNameToId).uniqueSort(cmpFunc_num);
+	const ratio=info.ratio;
+	
+	const isOne=theOneParamId>=0;
+	const rtv=[];
+	if(isOne){
+		rtv.push(0,0);
+		rtv[0]=rtv[1]=DataManager.getItem_paramPlus(item,theOneParamId)||0;
+		if(paramIds.uniqueHas(theOneParamId)){
+			const sn=DataManager.paramIdToShortName(theOneParamId);
+			const r=(sn in ratio)?ratio[sn]:1;
+			const v1=ptMin*r;
+			const v2=ptMax*r;
+			if(1<paramIds.length){
+				rtv[0]+=Math.min(v1,v2,0);
+				rtv[1]+=Math.max(v1,v2,0);
+			}else{
+				rtv[0]+=Math.min(v1,v2);
+				rtv[1]+=Math.max(v1,v2);
+			}
+		}
+	}else{ for(let paramId=0,sz=this.paramsCnt();paramId<sz;++paramId){
+		rtv.push(f.call(this,item,paramId));
+	} }
+	return rtv;
+}).
+addBase('randomEquipParams_getParamsRange_format2',function f(item,theOneParamId){
+	
+}).
+addBase('randomEquipParams_getParamsRange',function f(item,theOneParamId){
+	const isAll=!(theOneParamId>=0);
+	let rtv=this.randomEquipParams_getParamsRange_format1.apply(this,arguments);
+	{ const tmp=this.randomEquipParams_getParamsRange_format2.apply(this,arguments); if(tmp){
+	if(isAll){ for(let x=0,xs=rtv.length;x<xs;++x){
+		rtv[x][0]+=tmp[x][0];
+		rtv[x][1]+=tmp[x][1];
+	} }else{ rtv[0]+=tmp[0]; rtv[1]+=tmp[1]; }
+	} }
+	return rtv;
+},[
+[0,0,0,0, 0,0,0,0,], // 0: init arr
+]).
+getP;
+
 
 new cfc(Window_ItemList.prototype).
 addBase('randomEquipParams_isUsingLayeredWindows',function f(){
