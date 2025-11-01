@@ -21,6 +21,8 @@
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Note_dataobjExtInfo";
 const params=PluginManager.parameters(pluginName)||{};
 params._defaultExtInfoText=JSON.parse(params.DefaultExtInfoText||'""').replace(re_allR,'');
+params._windowOpenKey='shift';
+params._windowFloatKey='70'; // F
 
 
 t=[
@@ -137,7 +139,7 @@ addBase('dataobjExtInfo_adjustSubWindows',function f(){
 }).
 addBase('dataobjExtInfo_adjustSubWindowNote',function f(){
 	if(!this.item) return; // not usable
-	if(Input.isTriggered('shift')) this._dataobjExtInfo_showNote^=1;
+	if(Input.isTriggered(f.tbl[1]._windowOpenKey)) this._dataobjExtInfo_showNote^=1;
 	const item=this.item();
 	let extInfoText;
 	if(this._dataobjExtInfo_showNote){
@@ -161,11 +163,17 @@ addBase('dataobjExtInfo_adjustSubWindowNote',function f(){
 			wnd.x=rect.x+rect.width+pad-wnd.width;
 			wnd.y=rect.y+rect.height+pad;
 			const gp=wnd.getGlobalPosition();
+if(!Input.isPressed(f.tbl[1]._windowFloatKey)){
+			if(gp.y<0){
+				wnd.y-=gp.y;
+				gp.y=0;
+			}
 			const overY=gp.y+wnd.height-Graphics.height;
 			if(0<overY){
 				wnd.y-=Math.min(gp.y,overY);
 			}
 			if(gp.x<0) wnd.x-=gp.x;
+}
 	}else{
 		this.dataobjExtInfo_getSubWindow_note().close();
 	}
@@ -179,6 +187,12 @@ addBase('dataobjExtInfo_hasFunc',function f(){
 getP;
 
 new cfc(Window_ItemList.prototype).
+addBase('dataobjExtInfo_hasFunc',function f(){
+	return true;
+}).
+getP;
+
+new cfc(Window_ShopBuy.prototype).
 addBase('dataobjExtInfo_hasFunc',function f(){
 	return true;
 }).
