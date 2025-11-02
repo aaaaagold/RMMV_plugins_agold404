@@ -1316,6 +1316,8 @@ addBase('cloneTextInfo',function f(textState,reason){
 		index:textState.index,
 		index_start:textState.index_start,
 		index_end:textState.index_end,
+		left:textState.left,
+		right:textState.right,
 		fontSettings:this.cloneFontSettings(),
 		reason:reason,
 	});
@@ -1323,6 +1325,10 @@ addBase('cloneTextInfo',function f(textState,reason){
 addBase('setTextInfo',function f(textState,textInfo){
 	if(!textInfo) return;
 	this.applyFontSettings(textInfo.fontSettings);
+	textState.right=Math.max(textState.right-0||0,textInfo.right-0||0);
+	//textState.left=Math.min(textState.left-0||0,textInfo.left-0||0);
+	//textState.right=textInfo.right;
+	textState.left=textInfo.left;
 	textState.index_end=textInfo.index_end;
 	textState.index_start=textInfo.index_start;
 	textState.index=textInfo.index;
