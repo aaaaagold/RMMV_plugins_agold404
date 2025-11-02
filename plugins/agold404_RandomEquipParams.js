@@ -284,11 +284,7 @@ getP;
 
 { const a=class Window_randomEquipParams_EquipLayeredItem extends Window_EquipItem{
 makeItemList(){
-	this._data=[];
-	const m=this._layeredItemWindow_layerMap;
-	const itemList=m&&m.get(this._rootItem);
-	if(itemList) for(let x=0,xs=itemList.length;x<xs;++x) this._data.push(itemList[x]);
-	else this._data.push(this._rootItem); // no src
+	this.randomEquipParams_layeredWindow_makeItemList_common.apply(this,arguments);
 	this._data.push(null);
 }
 };
@@ -297,11 +293,7 @@ window[a.name]=a; }
 
 { const a=class Window_randomEquipParams_ItemListLayeredItem extends Window_ItemList{
 makeItemList(){
-	this._data=[];
-	const m=this._layeredItemWindow_layerMap;
-	const itemList=m&&m.get(this._rootItem);
-	if(itemList) for(let x=0,xs=itemList.length;x<xs;++x) this._data.push(itemList[x]);
-	else this._data.push(this._rootItem); // no src
+	this.randomEquipParams_layeredWindow_makeItemList_common.apply(this,arguments);
 	if(this._isCanIncludeNull) this._data.push(null);
 }
 };
@@ -310,11 +302,7 @@ window[a.name]=a; }
 
 { const a=class Window_randomEquipParams_ShopSellLayeredItem extends Window_ShopSell{
 makeItemList(){
-	this._data=[];
-	const m=this._layeredItemWindow_layerMap;
-	const itemList=m&&m.get(this._rootItem);
-	if(itemList) for(let x=0,xs=itemList.length;x<xs;++x) this._data.push(itemList[x]);
-	else this._data.push(this._rootItem); // no src
+	this.randomEquipParams_layeredWindow_makeItemList_common.apply(this,arguments);
 	if(this._isCanIncludeNull) this._data.push(null);
 }
 };
@@ -326,6 +314,13 @@ window[a.name]=a; }
 new cfc(Window_Base.prototype).
 addBase('randomEquipParams_layeredWindow_setRootItem',function f(item){
 	this._rootItem=item;
+}).
+addBase('randomEquipParams_layeredWindow_makeItemList_common',function(){
+	this._data=[];
+	const m=this._layeredItemWindow_layerMap;
+	const itemList=m&&m.get(this._rootItem);
+	if(itemList) for(let x=0,xs=itemList.length;x<xs;++x) this._data.push(itemList[x]);
+	else this._data.push(this._rootItem); // no src
 }).
 addBase('randomEquipParams_layeredWindow_includes',function(item){
 	if(!this._rootItem) return false;
@@ -360,6 +355,31 @@ for(let x=classes.length;x--;){
 
 
 new cfc(Scene_MenuBase.prototype).
+addBase('randomEquipParams_changeMethods_makeItemList_do',function f(){
+	// assigned to `_itemWindow.makeItemList_do`
+	const rtv=this.constructor.prototype.makeItemList_do.apply(this,arguments);
+	const lw=this.randomEquipParams_isUsingLayeredWindows();
+	if(!lw) return rtv;
+	const m=lw._layeredItemWindow_layerMap=lw._layeredItemWindow_layerMap||new Map();
+	m.clear();
+	const canUseItemsSet=this._canUseItemsSet=this._canUseItemsSet||new Set();
+	canUseItemsSet.clear();
+	const dst=this._data;
+	const bak=dst.slice();
+	dst.length=0;
+	for(let x=0,xs=bak.length;x<xs;++x){
+		if(bak[x]==null) continue;
+		const srcObj=DataManager.duplicatedDataobj_getSrc(bak[x])||bak[x];
+		if(!m.has(srcObj)){
+			dst.push(srcObj);
+			m.set(srcObj,[]);
+		}
+		if(lw.isEnabled(bak[x])) canUseItemsSet.add(srcObj);
+		m.get(srcObj).push(bak[x]);
+	}
+	this._data.sort(f.tbl[6]);
+	return rtv;
+},t).
 addBase('randomEquipParams_isUsingLayeredWindows',function f(){
 	const iw=this._itemWindow;
 	const func=iw&&iw.randomEquipParams_isUsingLayeredWindows;
@@ -395,9 +415,19 @@ addBase('randomEquipParams_createLayeredItemWindow_do',function f(ctor){
 	wnd._itemWindow=this._itemWindow;
 	this._itemWindow._layeredItemWindow=wnd;
 },t).
-addBase('randomEquipParams_createLayeredItemWindow',function f(isCanIncludeNull){
+addBase('randomEquipParams_getLayeredItemWindowConstructor',function f(){
+}).
+addBase('randomEquipParams_createLayeredItemWindow',function f(){
+	if(this.randomEquipParams_createLayeredItemWindow_condOk()){
+		this.randomEquipParams_createLayeredItemWindow_do(this.randomEquipParams_getLayeredItemWindowConstructor());
+	}
 }).
 addBase('randomEquipParams_createLayeredItemWindow_ensureExsit',function f(){
+	if(!this._layeredItemWindow){
+		this.randomEquipParams_createLayeredItemWindow_do(this.randomEquipParams_getLayeredItemWindowConstructor());
+		this.update();
+	}
+	return this._layeredItemWindow;
 }).
 addBase('changeUiState_toCloseLayeredItemWindow',function f(){
 	const lw=this.randomEquipParams_isUsingLayeredWindows(); if(!lw) return;
@@ -484,17 +514,8 @@ add('createItemWindow',function f(){
 	this.randomEquipParams_createLayeredItemWindow(true);
 	return rtv;
 }).
-addBase('randomEquipParams_createLayeredItemWindow',function f(isCanIncludeNull){
-	if(this.randomEquipParams_createLayeredItemWindow_condOk()){
-		this.randomEquipParams_createLayeredItemWindow_do(Window_randomEquipParams_EquipLayeredItem);
-	}
-}).
-addBase('randomEquipParams_createLayeredItemWindow_ensureExsit',function f(){
-	if(!this._layeredItemWindow){
-		this.randomEquipParams_createLayeredItemWindow_do(Window_randomEquipParams_EquipLayeredItem);
-		this.update();
-	}
-	return this._layeredItemWindow;
+addBase('randomEquipParams_getLayeredItemWindowConstructor',function f(){
+	return Window_randomEquipParams_EquipLayeredItem;
 }).
 add('refreshActor',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -567,7 +588,7 @@ add('createItemWindow',function f(){
 addBase('randomEquipParams_createItemWindow_modify_itemWindowMethods',function f(){
 	this._itemWindow.isEnabled=this.randomEquipParams_createItemWindow_method_isEnabled;
 	this._itemWindow.isCurrentItemEnabled=this.randomEquipParams_createItemWindow_method_isCurrentItemEnabled;
-	this._itemWindow.makeItemList_do=this.randomEquipParams_createItemWindow_method_makeItemList_do;
+	this._itemWindow.makeItemList_do=this.randomEquipParams_changeMethods_makeItemList_do;
 }).
 addBase('randomEquipParams_createItemWindow_method_isEnabled',function f(item){
 	// assigned to `_itemWindow.isEnabled`
@@ -577,42 +598,8 @@ addBase('randomEquipParams_createItemWindow_method_isCurrentItemEnabled',functio
 	// assigned to `_itemWindow.isCurrentItemEnabled`
 	return true;
 },t).
-addBase('randomEquipParams_createItemWindow_method_makeItemList_do',function f(){
-	// assigned to `_itemWindow.makeItemList_do`
-	const rtv=this.constructor.prototype.makeItemList_do.apply(this,arguments);
-	const lw=this.randomEquipParams_isUsingLayeredWindows();
-	if(!lw) return rtv;
-	const m=lw._layeredItemWindow_layerMap=lw._layeredItemWindow_layerMap||new Map();
-	m.clear();
-	const canUseItemsSet=this._canUseItemsSet=this._canUseItemsSet||new Set();
-	canUseItemsSet.clear();
-	const dst=this._data;
-	const bak=dst.slice();
-	dst.length=0;
-	for(let x=0,xs=bak.length;x<xs;++x){
-		if(bak[x]==null) continue;
-		const srcObj=DataManager.duplicatedDataobj_getSrc(bak[x])||bak[x];
-		if(!m.has(srcObj)){
-			dst.push(srcObj);
-			m.set(srcObj,[]);
-		}
-		if(lw.isEnabled(bak[x])) canUseItemsSet.add(srcObj);
-		m.get(srcObj).push(bak[x]);
-	}
-	this._data.sort(f.tbl[6]);
-	return rtv;
-},t).
-addBase('randomEquipParams_createLayeredItemWindow',function f(isCanIncludeNull){
-	if(this.randomEquipParams_createLayeredItemWindow_condOk()){
-		this.randomEquipParams_createLayeredItemWindow_do(Window_randomEquipParams_ItemListLayeredItem);
-	}
-}).
-addBase('randomEquipParams_createLayeredItemWindow_ensureExsit',function f(){
-	if(!this._layeredItemWindow){
-		this.randomEquipParams_createLayeredItemWindow_do(Window_randomEquipParams_ItemListLayeredItem);
-		this.update();
-	}
-	return this._layeredItemWindow;
+addBase('randomEquipParams_getLayeredItemWindowConstructor',function f(){
+	return Window_randomEquipParams_ItemListLayeredItem;
 }).
 add('changeUiState_focusOnCategoryWnd',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -697,44 +684,10 @@ addWithBaseIfNotOwn('createSellWindow',function f(){
 }).
 addBase('randomEquipParams_createSellWindow_modify_itemWindowMethods',function f(){
 	const iw=this._itemWindow;
-	iw.makeItemList_do=this.randomEquipParams_createSellWindow_method_makeItemList_do;
+	iw.makeItemList_do=this.randomEquipParams_changeMethods_makeItemList_do;
 }).
-addBase('randomEquipParams_createSellWindow_method_makeItemList_do',function f(){
-	// assigned to `_itemWindow.makeItemList_do`
-	const rtv=this.constructor.prototype.makeItemList_do.apply(this,arguments);
-	const lw=this.randomEquipParams_isUsingLayeredWindows();
-	if(!lw) return rtv;
-	const m=lw._layeredItemWindow_layerMap=lw._layeredItemWindow_layerMap||new Map();
-	m.clear();
-	const canUseItemsSet=this._canUseItemsSet=this._canUseItemsSet||new Set();
-	canUseItemsSet.clear();
-	const dst=this._data;
-	const bak=dst.slice();
-	dst.length=0;
-	for(let x=0,xs=bak.length;x<xs;++x){
-		if(bak[x]==null) continue;
-		const srcObj=DataManager.duplicatedDataobj_getSrc(bak[x])||bak[x];
-		if(!m.has(srcObj)){
-			dst.push(srcObj);
-			m.set(srcObj,[]);
-		}
-		if(lw.isEnabled(bak[x])) canUseItemsSet.add(srcObj);
-		m.get(srcObj).push(bak[x]);
-	}
-	this._data.sort(f.tbl[6]);
-	return rtv;
-},t).
-addBase('randomEquipParams_createLayeredItemWindow',function f(){
-	if(this.randomEquipParams_createLayeredItemWindow_condOk()){
-		this.randomEquipParams_createLayeredItemWindow_do(Window_randomEquipParams_ShopSellLayeredItem);
-	}
-}).
-addBase('randomEquipParams_createLayeredItemWindow_ensureExsit',function f(){
-	if(!this._layeredItemWindow){
-		this.randomEquipParams_createLayeredItemWindow_do(Window_randomEquipParams_ShopSellLayeredItem);
-		this.update();
-	}
-	return this._layeredItemWindow;
+addBase('randomEquipParams_getLayeredItemWindowConstructor',function f(){
+	return Window_randomEquipParams_ShopSellLayeredItem;
 }).
 addWithBaseIfNotOwn('changeUiState_focusOnCmdWnd',function f(){
 	const rtv=f.ori.apply(this,arguments);
