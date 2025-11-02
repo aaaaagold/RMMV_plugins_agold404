@@ -348,9 +348,16 @@ const activeAlphas=[
 0.75, // 0: deactivated window alpha // dpst or pak
 1, // 1: activated window alpha // dpst or pak
 ];
+Object.defineProperty(p,'_itemWindow',{
+	set:function(rhs){
+		return this._window_itemList_backpack=rhs;
+	},get:function(){
+		return this._window_itemList_backpack;
+	},configurable:true,
+});
 new cfc(p).
-addBase('initialize',function f(){
-	f.tbl[0][f._funcName].apply(this,arguments);
+addWithBaseIfNotOwn('initialize',function f(){
+	f.ori.apply(this,arguments);
 	this._depositoryId=$gameTemp._depositoryId;
 	this._depositoryOptions=$gameTemp._depositoryOptions;
 	this._catIdx={};
@@ -359,19 +366,19 @@ addBase('initialize',function f(){
 		const opt=this._depositoryOptions;
 		this._capacity=useDefaultIfIsNone(opt&&opt.capacity,undefined);
 	}
-},t=[
-a.ori.prototype,
-]).
-addBase('create',function f(){
-	f.tbl[0][f._funcName].apply(this,arguments);
+}).
+addWithBaseIfNotOwn('create',function f(){
+	const rtv=f.ori.apply(this,arguments);
 	this.createWindows();
 	this._prevScene_restore();
-},t).
-addBase('update',function f(){
+	this.tryCreateRandomParamsLayeredItemWindow();
+	return rtv;
+}).
+addWithBaseIfNotOwn('update',function f(){
 	this.update_backupSelects();
 	this.update_touch();
-	return f.tbl[0][f._funcName].apply(this,arguments);
-},t).
+	return f.ori.apply(this,arguments);
+}).
 addBase('update_backupSelects',function f(){
 	const dpst=this._window_itemList_depository,pak=this._window_itemList_backpack;
 	if(dpst.active) this._catIdx.depository=dpst.index();
@@ -379,29 +386,40 @@ addBase('update_backupSelects',function f(){
 }).
 addBase('update_touch',function f(){
 	const TI=TouchInput; if(!TI.isTriggered()) return;
+	if(this.update_touch_testLayeredItemWindow(TI)) return; // fit RandomParamsEquip
 	if(this.update_touch_testCategoryWindow(TI)) return;
 	if(this.update_touch_testDepositoryWindow(TI)) return;
 	if(this.update_touch_testBackpackWindow(TI)) return;
+}).
+addBase('update_touch_testLayeredItemWindow',function f(globalXy){
+	const func=this.randomEquipParams_isUsingLayeredWindows;
+	const lw=func&&func.call(this); if(!lw) return;
+	if(!lw.visible||lw.isClosed()) return;
+	if(lw.activive) return -2;
+	const xy=lw.toLocal(TouchInput);
+	if(!lw.containsPoint_local(xy)) return;
+	return true;
 }).
 addBase('update_touch_testWindowCommon',function f(wnd,globalXy,actFunc){
 	// actFunc = function(selectIndex){ ... }
 	if(!wnd.hitTest) return;
 	const xy=wnd.toLocal(globalXy);
+	if(!wnd.containsPoint_local(xy)) return;
 	const idx=wnd.hitTest(xy.x,xy.y);
-	if(!(idx>=0)) return;
 	if(wnd.active) return -2; // already activated. don't do more.
 	this._window_category.deactivate();
 	this._window_itemList_depository.deactivate();
 	this._window_itemList_backpack.deactivate();
 	wnd.activate();
 	if(actFunc) actFunc.call(this,idx);
-	return idx;
+	return true; // avoid 0
 }).
 addBase('update_touch_testCategoryWindow',function f(globalXy){
 	const wnd=this._window_category;
 	return this.update_touch_testWindowCommon(wnd,globalXy,f.tbl[0]);
 },[
 function f(idx){
+{ const func=this.changeUiState_toCloseLayeredItemWindow; func&&func.call(this); }
 	this._window_category.select(idx);
 	this.onCategoryOk();
 }, // 0: actFunc
@@ -411,6 +429,7 @@ addBase('update_touch_testDepositoryWindow',function f(globalXy){
 	return this.update_touch_testWindowCommon(this._window_itemList_depository,globalXy,f.tbl[0]);
 },[
 function f(idx){
+{ const func=this.changeUiState_toCloseLayeredItemWindow; func&&func.call(this); }
 this._window_itemList_backpack.alpha=f.tbl[0];
 this._window_itemList_depository.alpha=f.tbl[1];
 if(this._window_itemList_depository.index()===idx) TouchInput.clear();
@@ -422,6 +441,7 @@ addBase('update_touch_testBackpackWindow',function f(globalXy){
 	return this.update_touch_testWindowCommon(this._window_itemList_backpack,globalXy,f.tbl[0]);
 },[
 function f(idx){
+{ const func=this.changeUiState_toCloseLayeredItemWindow; func&&func.call(this); }
 this._window_itemList_depository.alpha=f.tbl[0];
 this._window_itemList_backpack.alpha=f.tbl[1];
 if(this._window_itemList_backpack.index()===idx) TouchInput.clear();
@@ -626,14 +646,24 @@ addBase('onListCancel_common',function f(now){
 	//now.deselect();
 	nxt.activate();
 },t).
-addBase('onBackpackListCancel',function f(){
+addBase('onItemCancel',function f(){
+	// fit RandomParamsEquip
 	this.onListCancel_common(this._window_itemList_backpack);
 }).
-addBase('onBackpackListOk',function f(){
+addBase('onItemOk',function f(){
+	// fit RandomParamsEquip
 	this.onCommonOk_item(
 		this._window_itemList_backpack,
 		$gameParty.depository_transIn,
 	);
+}).
+addBase('onBackpackListCancel',function f(){
+	// fit RandomParamsEquip
+	this.onItemCancel.apply(this,arguments);
+}).
+addBase('onBackpackListOk',function f(){
+	// fit RandomParamsEquip
+	this.onItemOk.apply(this,arguments);
 }).
 addBase('onDepositoryListCancel',function f(){
 	this.onListCancel_common(this._window_itemList_depository);
@@ -650,6 +680,87 @@ addBase('depository_makeDepositoryItemList',function f(){
 addBase('depository_drawDepositoryItemNumber',function f(item,x,y,width){
 	const wnd=this._window_itemList_depository;
 	if(wnd.needsNumber()) wnd.drawItemNumber_num(item,x,y,width,$gameParty.depository_getCnt(this._depositoryId,item));
+}).
+addBase('tryCreateRandomParamsLayeredItemWindow',function f(){
+	{ const func=this.randomEquipParams_createLayeredItemWindow_condOk;
+	if(!func||!func.call(this)) return; // not enabled
+	}
+	this._tryCreateRandomParamsLayeredItemWindow_createClassesIfNotExist();
+	
+	if(!this.randomEquipParams_createLayeredItemWindow_ensureExsit) return; // no plugin
+	const srcP=Scene_Item.prototype;
+	
+	for(let arr=f.tbl[0],xs=arr.length,x=0;x<xs;++x) this[arr[x]]=srcP[arr[x]];
+	new cfc(this).
+	addWithBaseIfNotOwn('onItemOk',f.tbl[1]).
+	addBase('changeUiState_focusOnItemWnd',function f(){
+		this._layeredItemWindow.close();
+		return this.changeUiState_focusOnBackpackWnd.apply(this,arguments);
+	}).
+	getP;
+	
+	//this.randomEquipParams_createItemWindow_modify_itemWindowMethods();
+	this._itemWindow.makeItemList_do=this.randomEquipParams_changeMethods_makeItemList_do;
+	this.randomEquipParams_createLayeredItemWindow();
+},[
+[
+//'randomEquipParams_createItemWindow_modify_itemWindowMethods',
+//'randomEquipParams_createItemWindow_method_isEnabled',
+//'randomEquipParams_createItemWindow_method_isCurrentItemEnabled',
+'randomEquipParams_createItemWindow_method_makeItemList_do',
+//'randomEquipParams_getLayeredItemWindowConstructor',
+//'changeUiState_focusOnCategoryWnd',
+//'onItemOk',
+//'changeUiState_focusOnItemWnd',
+//'changeUiState_focusOnLayeredItemWnd_otherWindowsDeactivate',
+'randomEquipParams_onLayeredItemOk',
+'randomEquipParams_onLayeredItemWindowClose',
+], // 0: method names
+function f(){
+	if(this._onItemOk_bypass) return f.ori.apply(this,arguments);
+	if(!this.randomEquipParams_isUsingLayeredWindows()) return f.ori.apply(this,arguments);
+	return this.randomEquipParams_onItemOk();
+}, // 1: onItemOk
+]).
+addBase('_tryCreateRandomParamsLayeredItemWindow_createClassesIfNotExist',function f(){
+	if(f.tbl[0]) return f.tbl[0];
+	//
+const a=class Window_randomEquipParams_DepositoryLayeredItem extends Window_Depository_BackpackItemList{
+maxCols(){ return 1; }
+makeItemList(){
+	this.randomEquipParams_layeredWindow_makeItemList_common.apply(this,arguments);
+	if(this._isCanIncludeNull) this._data.push(null);
+}
+};
+	const dstP=a.prototype,srcP=Window_randomEquipParams_ItemListLayeredItem.prototype;
+	dstP.setRootItem=srcP.setRootItem;
+	dstP.includes=srcP.includes;
+	new cfc(dstP).
+	addWithBaseIfNotOwn('onclosed',f.tbl[1]).
+	addWithBaseIfNotOwn('open',f.tbl[2]).
+	getP;
+window[a.name]=a;
+	//
+	return f.tbl[0]=a;
+},[
+undefined, // 0: class constructor
+function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.visible=false;
+	return rtv;
+}, // 1: onclosed
+function f(){
+	this.visible=true;
+	return f.ori.apply(this,arguments);
+}, // 2: open
+]).
+addBase('randomEquipParams_getLayeredItemWindowConstructor',function f(){
+	return Window_randomEquipParams_DepositoryLayeredItem;
+}).
+addBase('changeUiState_focusOnBackpackWnd',function f(){
+	this._window_category.deactivate();
+	this._window_itemList_depository.deactivate();
+	this._window_itemList_backpack.activate();
 }).
 getP;
 }
