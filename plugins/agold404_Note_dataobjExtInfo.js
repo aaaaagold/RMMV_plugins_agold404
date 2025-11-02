@@ -7,7 +7,7 @@
  * @param DefaultExtInfoText
  * @type note
  * @text default eval()-ed text
- * @desc a text to be eval()-ed and then be <extInfoText> ... </extInfoText>
+ * @desc a text to be eval()-ed and then be (conceptually) put into <extInfoText> ... </extInfoText>
  * @default ""
  * 
  * 
