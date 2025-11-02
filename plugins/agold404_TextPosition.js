@@ -48,10 +48,14 @@ addBase('processEscapeCharacter_textPosition',function f(code,textState){
 	if(strPos.start!==strt) return console.warn(code,f.tbl[1][0]);
 	const txt=JSON.parse(textState.text.slice(strPos.start,strPos.end));
 	const func=f.tbl[0][code];
+	//const br=textState.boundaryRight;
+	//const isMeasureOnly=textState.isMeasureOnly;
+	//if(isMeasureOnly) textState.boundaryRight=Math.max(br||0,textState.right,this.contentsWidth()); // incorrect
 	const res=func&&func.call(this,this.duplicateTextState(textState,{
 		text:txt,
 		index:0,
 	}),textState);
+	//if(isMeasureOnly) textState.boundaryRight=br; // incorrect
 	textState.index=strPos.end;
 	return res||this.processSubtext(txt,textState,({prefix:"\\"+code+":",suffix:"",arrange:JSON.stringify,}));
 },[
@@ -61,7 +65,7 @@ TXTLEFT:function(tmpState,textState){
 },
 TXTCENTER:function(tmpState,textState){
 	const left=useDefaultIfIsNaN(textState.boundaryLeft,0);
-	const right=useDefaultIfIsNaN(textState.boundaryRight,this.contentsWidth());
+	const right=useDefaultIfIsNaN(textState.boundaryRight,Math.max(this.contentsWidth(),0));
 	textState.x=(right-this.measure_drawTextEx(
 		tmpState.text,
 		tmpState.x,tmpState.y,
@@ -70,7 +74,8 @@ TXTCENTER:function(tmpState,textState){
 	)+left)/2;
 },
 TXTRIGHT:function(tmpState,textState){
-	textState.x=(useDefaultIfIsNaN(textState.boundaryRight,this.contentsWidth())-this.measure_drawTextEx(
+	const right=useDefaultIfIsNaN(textState.boundaryRight,Math.max(this.contentsWidth(),0));
+	textState.x=(right-this.measure_drawTextEx(
 		tmpState.text,
 		tmpState.x,tmpState.y,
 		undefined,undefined,
