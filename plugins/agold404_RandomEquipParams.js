@@ -63,17 +63,22 @@ addBase('randomEquipParams_format1_evalSetting',function f(dataobj,i,arr){
 	const meta=dataobj&&dataobj.meta; if(!meta) return;
 	const traits=dataobj.traits||(dataobj.traits=[]);
 	
-	const obj={};
+	const allObjs=[];
 	const codes=window.getXmlLikeStyleContent(dataobj.note,f.tbl[4]);
 	for(let ci=0,cs=codes.length,tmp;ci<cs;++ci){
 		const lines=codes[ci];
 		const info=JSON.parse(lines.join('\n'));
-		Object.assign(obj,info);
+		if(!info) continue;
+		if(info instanceof Array) allObjs.concat_inplace(info);
+		else allObjs.push(info);
 	}
-	if(obj.total&&obj.params){
-		if(!dataobj.params) dataobj.params=[];
+	if(!dataobj.params){ dataobj.params=[]; for(let x=DataManager.paramsCnt();x--;) dataobj.params[x]=0; }
+	for(let x=0,xs=allObjs.length;x<xs;++x){
+		const obj=allObjs[x];
+		if(!obj||!obj.total||!obj.params) continue;
 		if(!obj.ratio) obj.ratio={};
-		dataobj.params.randomEquipParams_format1=obj;
+		if(!dataobj.params.randomEquipParams_format1) dataobj.params.randomEquipParams_format1=[];
+		dataobj.params.randomEquipParams_format1.push(obj);
 	}
 },t).
 add('terminate_after',function f(){
@@ -100,29 +105,37 @@ addBase('randomEquipParams_createNew_format1',function f(item){
 	// return newly created obj
 	let rtv;
 	const paramVals=item.params.slice();
-	const info=item.params.randomEquipParams_format1;
-	const base=getNumOrEval(info.total[0]);
-	const d=getNumOrEval(info.total[1])-base+1;
+	const infos=item.params.randomEquipParams_format1;
+for(let x=0,xs=infos.length;x<xs;++x){
+	const info=item.params.randomEquipParams_format1[x];
+	const num0=getNumOrEval(info.total[0]);
+	const num1=getNumOrEval(info.total[1]);
+	const base=Math.min(num0,num1);
+	const max=Math.max(num0,num1);
+	const d=max-base+1;
 	const rndPt=Math.random()*d+base;
 	let pt=~~rndPt;
-	const randResInfo={pt:pt};
+	//const randResInfo={pt:pt};
 	const paramDsts=info.params;
+	const ratioIsNum=!isNaN(info.ratio);
+	const defaultRatio=ratioIsNum?info.ratio:1;
 	const ratio=info.ratio;
 	if(pt<0){ while(pt++){
 		const sel=paramDsts.rnd1();
 		const key=useDefaultIfIsNaN(DataManager.paramShortNameToId(sel),sel);
-		const ratio1=(sel in ratio)?ratio[sel]:1;
+		const ratio1=!ratioIsNum&&(sel in ratio)?ratio[sel]:defaultRatio;
 		paramVals[key]-=ratio1;
 	} }else{ while(pt--){
 		const sel=paramDsts.rnd1();
 		const key=useDefaultIfIsNaN(DataManager.paramShortNameToId(sel),sel);
-		const ratio1=(sel in ratio)?ratio[sel]:1;
+		const ratio1=!ratioIsNum&&(sel in ratio)?ratio[sel]:defaultRatio;
 		paramVals[key]+=ratio1;
 	} }
+}
 	
 	const overwriteInfo={
 		params:paramVals,
-		"randomEquipParams_randRes_format1":randResInfo,
+		//"randomEquipParams_randRes_format1":randResInfo,
 	};
 	if(DataManager.isWeapon(item)){
 		const res=$gameSystem.duplicatedWeapons_createNew(item.id,overwriteInfo);
@@ -144,21 +157,33 @@ getP;
 
 new cfc(DataManager).
 addBase('randomEquipParams_getParamsRange_format1',function f(item,theOneParamId){
-	const paramVals=item.params.slice();
-	const info=item.params.randomEquipParams_format1;
-	const ptMin=getNumOrEval(info.total[0]);
-	const ptMax=getNumOrEval(info.total[1]);
-	const paramIds=info.params.map(DataManager.paramShortNameToId).uniqueSort(cmpFunc_num);
-	const ratio=info.ratio;
-	
 	const isOne=theOneParamId>=0;
+	const paramVals=item.params.slice();
 	const rtv=[];
 	if(isOne){
 		rtv.push(0,0);
 		rtv[0]=rtv[1]=DataManager.getItem_paramPlus(item,theOneParamId)||0;
+	}else{
+		for(let paramId=0,sz=this.paramsCnt();paramId<sz;++paramId) rtv.push(f.call(this,item,paramId));
+		return rtv;
+	}
+	
+	const infos=item.params.randomEquipParams_format1;
+for(let x=0,xs=infos.length;x<xs;++x){
+	const info=infos[x];
+	const num0=getNumOrEval(info.total[0]);
+	const num1=getNumOrEval(info.total[1]);
+	const ptMin=Math.min(num0,num1);
+	const ptMax=Math.max(num0,num1);
+	const paramIds=info.params.map(DataManager.paramShortNameToId).uniqueSort(cmpFunc_num);
+	const ratioIsNum=!isNaN(info.ratio);
+	const defaultRatio=ratioIsNum?info.ratio:1;
+	const ratio=info.ratio;
+	
+	{
 		if(paramIds.uniqueHas(theOneParamId)){
 			const sn=DataManager.paramIdToShortName(theOneParamId);
-			const r=(sn in ratio)?ratio[sn]:1;
+			const r=!ratioIsNum&&(sn in ratio)?ratio[sn]:defaultRatio;
 			const v1=ptMin*r;
 			const v2=ptMax*r;
 			if(1<paramIds.length){
@@ -169,9 +194,8 @@ addBase('randomEquipParams_getParamsRange_format1',function f(item,theOneParamId
 				rtv[1]+=Math.max(v1,v2);
 			}
 		}
-	}else{ for(let paramId=0,sz=this.paramsCnt();paramId<sz;++paramId){
-		rtv.push(f.call(this,item,paramId));
-	} }
+	}
+}
 	return rtv;
 }).
 addBase('randomEquipParams_getParamsRange_format2',function f(item,theOneParamId){
