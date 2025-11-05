@@ -5714,6 +5714,82 @@ getP;
 
 { const p=Game_Action.prototype;
 new cfc(p).
+addBase('testItemEffectRecoverHp',function f(target,effect){
+	return target.hp < target.mhp || effect.value1 < 0 || effect.value2 < 0;
+}).
+addBase('_testItemEffectRecoverHp',function f(target,effect){
+	return this.testItemEffectRecoverHp.apply(this,arguments);
+}).
+addBase('testItemEffectRecoverMp',function f(target,effect){
+	return target.mp < target.mmp || effect.value1 < 0 || effect.value2 < 0;
+}).
+addBase('_testItemEffectRecoverMp',function f(target,effect){
+	return this.testItemEffectRecoverMp.apply(this,arguments);
+}).
+addBase('testItemEffectAddState',function f(target,effect){
+	return target.addNewState_condOk(effect.dataId);
+}).
+addBase('_testItemEffectAddState',function f(target,effect){
+	return this.testItemEffectAddState.apply(this,arguments);
+}).
+addBase('testItemEffectRemoveState',function f(target,effect){
+	return target.isStateAffected(effect.dataId);
+}).
+addBase('_testItemEffectRemoveState',function f(target,effect){
+	return this.testItemEffectRemoveState.apply(this,arguments);
+}).
+addBase('testItemEffectAddBuff',function f(target,effect){
+	return !target.isMaxBuffAffected(effect.dataId);
+}).
+addBase('_testItemEffectAddBuff',function f(target,effect){
+	return this.testItemEffectAddBuff.apply(this,arguments);
+}).
+addBase('testItemEffectAddDebuff',function f(target,effect){
+	return !target.isMaxDebuffAffected(effect.dataId);
+}).
+addBase('_testItemEffectAddDebuff',function f(target,effect){
+	return this.testItemEffectAddDebuff.apply(this,arguments);
+}).
+addBase('testItemEffectRemoveBuff',function f(target,effect){
+	return target.isBuffAffected(effect.dataId);
+}).
+addBase('_testItemEffectRemoveBuff',function f(target,effect){
+	return this.testItemEffectRemoveBuff.apply(this,arguments);
+}).
+addBase('testItemEffectRemoveDebuff',function f(target,effect){
+	return target.isDebuffAffected(effect.dataId);
+}).
+addBase('_testItemEffectRemoveDebuff',function f(target,effect){
+	return this.testItemEffectRemoveDebuff.apply(this,arguments);
+}).
+addBase('testItemEffectLearnSkill',function f(target,effect){
+	return target.isActor() && !target.isLearnedSkill(effect.dataId);
+}).
+addBase('_testItemEffectLearnSkill',function f(target,effect){
+	return this.testItemEffectLearnSkill.apply(this,arguments);
+}).
+addBase('testItemEffect',function f(target,effect){
+	const func=f.tbl[0].get(effect.code);
+	return !func||func.apply(this,arguments);
+},[
+new Map([
+	[Game_Action.EFFECT_RECOVER_HP, p._testItemEffectRecoverHp ],
+	[Game_Action.EFFECT_RECOVER_MP, p._testItemEffectRecoverMp ],
+	[Game_Action.EFFECT_ADD_STATE,    p._testItemEffectAddState    ],
+	[Game_Action.EFFECT_REMOVE_STATE, p._testItemEffectRemoveState ],
+	[Game_Action.EFFECT_ADD_BUFF,      p._testItemEffectAddBuff      ],
+	[Game_Action.EFFECT_ADD_DEBUFF,    p._testItemEffectAddDebuff    ],
+	[Game_Action.EFFECT_REMOVE_BUFF,   p._testItemEffectRemoveBuff   ],
+	[Game_Action.EFFECT_REMOVE_DEBUFF, p._testItemEffectRemoveDebuff ],
+	[Game_Action.EFFECT_LEARN_SKILL, p._testItemEffectLearnSkill ],
+]), // 0: tbl
+window.isTest(), // 1: isTest
+]).
+getP;
+}
+
+{ const p=Game_Action.prototype;
+new cfc(p).
 addBase('_itemEffectRecoverHp',function f(target,effect){
 	return this.itemEffectRecoverHp.apply(this,arguments);
 }).
