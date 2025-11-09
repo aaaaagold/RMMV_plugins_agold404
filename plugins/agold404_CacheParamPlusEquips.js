@@ -54,7 +54,7 @@ addBase('cacheParamPlusEquips_updateFromItemChange',function f(itemPre,itemNow){
 	for(let x=keys.length;x--;){
 		this.cacheParamPlusEquips_setVal(
 			keys[x],
-			(DataManager.getItem_paramPlus(itemNow,keys[x])-0||0)-(DataManager.getItem_paramPlus(itemPre,keys[x])-0||0),
+			(DataManager.getItemParamPlus(itemNow,keys[x])-0||0)-(DataManager.getItemParamPlus(itemPre,keys[x])-0||0),
 			true,
 		);
 	}
