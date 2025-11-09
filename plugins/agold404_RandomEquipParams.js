@@ -72,7 +72,7 @@ addBase('randomEquipParams_format1_evalSetting',function f(dataobj,i,arr){
 		if(info instanceof Array) allObjs.concat_inplace(info);
 		else allObjs.push(info);
 	}
-	if(!dataobj.params){ dataobj.params=[]; for(let x=DataManager.paramsCnt();x--;) dataobj.params[x]=0; }
+	if(!dataobj.params){ dataobj.params=[]; for(let x=DataManager.equipParamsCnt();x--;) dataobj.params[x]=0; }
 	for(let x=0,xs=allObjs.length;x<xs;++x){
 		const obj=allObjs[x];
 		if(!obj||!obj.total||!obj.params) continue;
@@ -158,17 +158,16 @@ getP;
 new cfc(DataManager).
 addBase('randomEquipParams_getParamsRange_format1',function f(item,theOneParamId){
 	const isOne=theOneParamId>=0;
-	const paramVals=item.params.slice();
 	const rtv=[];
 	if(isOne){
 		rtv.push(0,0);
-		rtv[0]=rtv[1]=DataManager.getItem_paramPlus(item,theOneParamId)||0;
 	}else{
-		for(let paramId=0,sz=this.paramsCnt();paramId<sz;++paramId) rtv.push(f.call(this,item,paramId));
+		for(let paramId=0,sz=this.equipParamsCnt();paramId<sz;++paramId) rtv.push(f.call(this,item,paramId));
 		return rtv;
 	}
 	
-	const infos=item.params.randomEquipParams_format1;
+	const infos=item&&item.params&&item.params.randomEquipParams_format1;
+	if(!infos) return;
 for(let x=0,xs=infos.length;x<xs;++x){
 	const info=infos[x];
 	const num0=getNumOrEval(info.total[0]);
@@ -203,13 +202,18 @@ addBase('randomEquipParams_getParamsRange_format2',function f(item,theOneParamId
 }).
 addBase('randomEquipParams_getParamsRange',function f(item,theOneParamId){
 	const isAll=!(theOneParamId>=0);
-	let rtv=this.randomEquipParams_getParamsRange_format1.apply(this,arguments);
-	{ const tmp=this.randomEquipParams_getParamsRange_format2.apply(this,arguments); if(tmp){
-	if(isAll){ for(let x=0,xs=rtv.length;x<xs;++x){
-		rtv[x][0]+=tmp[x][0];
-		rtv[x][1]+=tmp[x][1];
-	} }else{ rtv[0]+=tmp[0]; rtv[1]+=tmp[1]; }
-	} }
+	let rtv=[]; for(let t,x=this.equipParamsCnt();x--;){ t=this.getItemParamPlus(item,x); rtv[x]=[t,t]; }
+	const fromFormats=[];
+	fromFormats.push(this.randomEquipParams_getParamsRange_format1.apply(this,arguments));
+	fromFormats.push(this.randomEquipParams_getParamsRange_format2.apply(this,arguments));
+	for(let x=0,xs=fromFormats.length;x<xs;++x){
+		const tmp=fromFormats[x]; if(!tmp) continue;
+		if(isAll){ for(let x=0,xs=rtv.length;x<xs;++x){
+			if(!tmp[x]) continue;
+			rtv[x][0]+=tmp[x][0];
+			rtv[x][1]+=tmp[x][1];
+		} }else{ rtv[0]+=tmp[0]; rtv[1]+=tmp[1]; }
+	}
 	return rtv;
 },[
 [0,0,0,0, 0,0,0,0,], // 0: init arr
