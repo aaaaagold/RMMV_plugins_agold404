@@ -383,6 +383,10 @@ for(let x=classes.length;x--;){
 
 
 new cfc(Scene_MenuBase.prototype).
+addBase('randomEquipParams_createItemWindow_method_isCurrentItemEnabled',function f(item){
+	// assigned to `_itemWindow.isCurrentItemEnabled`
+	return true;
+},t).
 addBase('randomEquipParams_changeMethods_makeItemList_do',function f(){
 	// assigned to `_itemWindow.makeItemList_do`
 	const rtv=this.constructor.prototype.makeItemList_do.apply(this,arguments);
@@ -622,10 +626,6 @@ addBase('randomEquipParams_createItemWindow_method_isEnabled',function f(item){
 	// assigned to `_itemWindow.isEnabled`
 	return this._canUseItemsSet.has(item);
 },t).
-addBase('randomEquipParams_createItemWindow_method_isCurrentItemEnabled',function f(item){
-	// assigned to `_itemWindow.isCurrentItemEnabled`
-	return true;
-},t).
 addBase('randomEquipParams_getLayeredItemWindowConstructor',function f(){
 	return Window_randomEquipParams_ItemListLayeredItem;
 }).
@@ -712,6 +712,7 @@ addWithBaseIfNotOwn('createSellWindow',function f(){
 }).
 addBase('randomEquipParams_createSellWindow_modify_itemWindowMethods',function f(){
 	const iw=this._itemWindow;
+	iw.isCurrentItemEnabled=this.randomEquipParams_createItemWindow_method_isCurrentItemEnabled;
 	iw.makeItemList_do=this.randomEquipParams_changeMethods_makeItemList_do;
 }).
 addBase('randomEquipParams_getLayeredItemWindowConstructor',function f(){
