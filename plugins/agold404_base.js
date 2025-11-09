@@ -4205,6 +4205,10 @@ getP;
 
 new cfc(DataManager).
 addBase('getItem_paramPlus',function f(item,paramId){
+	if(window.isTest()) console.warn('[DEPRECATED] `DataManager.getItem_paramPlus`. use `DataManager.getItemParamPlus` instead.');
+	return this.getItemParamPlus.apply(this,arguments);
+}).
+addBase('getItemParamPlus',function f(item,paramId){
 	const params=item&&item.params;
 	return params&&params[paramId];
 }).
@@ -4236,7 +4240,7 @@ addBase('paramIdToShortName',function f(paramId){
 "luk",
 ], // 0: mapping table for basic params names
 ]).
-addBase('paramsCnt',function f(){
+addBase('equipParamsCnt',function f(){
 	return f.tbl[0].length;
 },t).
 getP;
@@ -4251,7 +4255,7 @@ addBase('paramPlus_equips',function f(paramId){
 	let rtv=0;
 	const arr=this.equips();
 	for(let x=0,xs=arr.length;x<xs;++x){ const item=arr[x]; if(item){
-		rtv+=DataManager.getItem_paramPlus(item,paramId)-0||0;
+		rtv+=DataManager.getItemParamPlus(item,paramId)-0||0;
 	} }
 	return rtv;
 }).
