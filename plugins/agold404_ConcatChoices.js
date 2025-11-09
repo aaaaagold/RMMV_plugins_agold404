@@ -89,4 +89,17 @@ if(0){
 function(chLabel){ this.push(chLabel); }, // 1: cmd102.param0.forEach
 ]);
 
+
+new cfc(Window_ChoiceList.prototype).
+add('selectDefault',function f(){
+	this.concatChoices_resetScroll.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('concatChoices_resetScroll',function f(){
+	this.select(0);
+}).
+getP
+
+
 })();
+
