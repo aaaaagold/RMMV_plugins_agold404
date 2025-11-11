@@ -158,6 +158,7 @@ addBase('dataobjExtInfo_adjustSubWindowNote',function f(){
 			}
 			wnd.drawTextEx(extInfoText,0,0);
 		}
+			// supposed global scale == 1
 			const pad=this.standardPadding();
 			const rect=this.itemRect_curr();
 			wnd.x=rect.x+rect.width+pad-wnd.width;
@@ -170,7 +171,12 @@ if(!Input.isPressed(f.tbl[1]._windowFloatKey)){
 			}
 			const overY=gp.y+wnd.height-Graphics.height;
 			if(0<overY){
-				wnd.y-=Math.min(gp.y,overY);
+				//const wndBtm=wnd.y+wnd.height;
+				const pad=this.standardPadding();
+				const testPt={x:rect.x+pad,y:rect.y+pad};
+				const gpRect=this.toGlobal(testPt);
+				if(gpRect.y>=wnd.height) wnd.y=testPt.y-wnd.height;
+				else wnd.y-=Math.min(gp.y,overY);
 			}
 			if(gp.x<0) wnd.x-=gp.x;
 }
