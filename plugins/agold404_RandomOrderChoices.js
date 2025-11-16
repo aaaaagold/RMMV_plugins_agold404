@@ -11,7 +11,7 @@
  */
 
 (()=>{ let k,r,t;
-const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Trait_statesStackTimes";
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_RandomOrderChoices";
 const params=PluginManager.parameters(pluginName)||{};
 params._globalChanges=JSON.parse(params.GlobalChanges||"0");
 
