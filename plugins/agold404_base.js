@@ -1615,7 +1615,8 @@ escapeFunction_set('WAIT',function f(code,textState){
 	this.startWait(this.obtainEscapeParam(textState));
 });
 //
-new cfc(Scene_Base.prototype).addBase('_prevScene_store',function f(){
+new cfc(Scene_Base.prototype).
+addBase('_prevScene_store',function f(noSnapBg){
 	// called when 'scene.initialize'
 	this._lastBgBm=SceneManager.backgroundBitmap();
 	this._oriStop=undefined;
@@ -1626,11 +1627,12 @@ new cfc(Scene_Base.prototype).addBase('_prevScene_store',function f(){
 			this._oriStop=sc.stop;
 			sc.stop=f.tbl[0];
 		}
-		SceneManager.snapForBackground();
+		if(!noSnapBg) SceneManager.snapForBackground();
 	}
 },[
 function(){ Scene_Base.prototype.stop.call(this); },
-]).addBase('_prevScene_restore',function f(){
+]).
+addBase('_prevScene_restore',function f(){
 	// called in 'scene.create', after background created
 	if(this._oriStop){
 		const sc=this._prevScene; // if this._oriStop!==undefined, sc!==undefined // already stopped 
@@ -1638,7 +1640,14 @@ function(){ Scene_Base.prototype.stop.call(this); },
 		else sc.stop=this._oriStop;
 	}
 	if(this._lastBgBm) SceneManager._backgroundBitmap=this._lastBgBm;
-},t);
+},t).
+addBase('popScene',function f(){
+	const oriVal=this._gotoViaPop;
+	this._gotoViaPop=true;
+	SceneManager.pop();
+	this._gotoViaPop=oriVal;
+}).
+getP;
 //
 // ==== dataArr mgr ====
 new cfc(DataManager).
@@ -2233,6 +2242,18 @@ new cfc(p).add('_createAllParts',function f(){
 // ---- ---- ---- ---- refine for future extensions
 
 (()=>{ let k,r,t;
+
+
+new cfc(SceneManager).
+addBase('snap',function f(sc){
+	sc=sc||this._scene;
+	return Bitmap.snap(sc);
+}).
+addBase('snapForBackground',function f(sc){
+	this._backgroundBitmap=this.snap(sc);
+	this._backgroundBitmap.blur();
+}).
+getP;
 
 
 new cfc(Window_ShopNumber.prototype).
@@ -6467,6 +6488,10 @@ new cfc(SceneManager).addBase('push',function f(sceneClass,shouldRecordCurrentSc
 		this._nextScene = null;
 		(this._scene=recordedPrevScene)._active=true;
 	}else{
+		if(recordedPrevScene && this._nextScene){
+			SceneManager.snapForBackground(this._scene);
+			this._nextScene._prevScene=this._scene;
+		}
 		this._scene = this._nextScene;
 		if(this._scene){
 			this._scene.attachReservation();
@@ -9701,6 +9726,21 @@ addBase('battleMembers',function() {
 getP;
 
 
+new cfc(Scene_Map.prototype).
+addBase('updateCallMenu',function f(){
+	if(this.isMenuEnabled()){
+		if(this.isMenuCalled()){
+			this.menuCalling=true;
+		}
+		if(this.menuCalling && !$gamePlayer.isMoving()){
+			this.callMenu();
+		}
+	}
+	this.menuCalling=false;
+}).
+getP;
+
+
 })(); // fix bug
 
 
@@ -9726,7 +9766,39 @@ for(let x=keys.length;x--;) if(p[keys[x]]===pp[keys[x]]) new cfc(p).addBase(keys
 
 })(); // final tune
 
-// ---- ---- ---- ---- 
+// ---- ---- ---- ---- new feature
+
+(()=>{ let k,r,t;
+
+
+new cfc(Scene_Menu.prototype).
+addWithBaseIfNotOwn('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._prevScene_store(true);
+	return rtv;
+}).
+addWithBaseIfNotOwn('create',function f(){
+	SceneManager.snapForBackground(this._prevScene);
+	const rtv=f.ori.apply(this,arguments);
+	this._prevScene_restore();
+	return rtv;
+}).
+addWithBaseIfNotOwn('stop',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._commandWindow.active=true;
+	return rtv;
+}).
+addWithBaseIfNotOwn('popScene',function f(){
+	Input.clear();
+	TouchInput.clear();
+	return f.ori.apply(this,arguments);
+}).
+getP;
+
+
+})(); // new feature
+
+// ---- ---- ---- ---- dbg
 
 (()=>{ let k,r,t;
 
@@ -9780,7 +9852,7 @@ addBase('getEvtCmdListScripts',function f(cmdList){
 getP;
 
 
-})();
+})(); // dbg
 
 // ---- ---- ---- ---- 
 
