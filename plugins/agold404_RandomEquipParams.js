@@ -32,6 +32,43 @@
  * if min (same as max) is string type, `eval()` is used to parse.
  * available params are: integers in range 0 to 7, or, "mhp" , "mmp" , "atk" , "def" , "mat" , "mdf" , "agi" , "luk"
  * 
+ * you can also use multiple <RandomTotalPointsOnSomeParams> ... </RandomTotalPointsOnSomeParams> for multiple rounds.
+ * or you can simply use array to specify multiple random rounds:
+ * 
+ * <RandomTotalPointsOnSomeParams>
+ * [
+ * {
+ *  "total":[min,max],
+ *  "ratio":{
+ *    "atk":5
+ *  },
+ *  "params":["atk","def", ... etc. ]
+ * },
+ *  // ...
+ * ]
+ * </RandomTotalPointsOnSomeParams>
+ * 
+ * 
+ * the following choose 1 setting from the given array to randomize the params.
+ * 
+ * <RandomSelectTotalPointsOnSomeParams>
+ * [
+ * {
+ *  "total":[min,max],
+ *  "ratio":{
+ *    "atk":5
+ *  },
+ *  "params":["atk","def", ... etc. ]
+ * },
+ *  // ...
+ * ]
+ * </RandomSelectTotalPointsOnSomeParams>
+ * 
+ * for each <RandomSelectTotalPointsOnSomeParams> , choose 1 setting.
+ * 
+ * 
+ * all results above will be summed together.
+ * 
  * 
  * This plugin can be renamed as you want.
  */
@@ -47,7 +84,10 @@ undefined,
 params,
 window.isTest(),
 undefined, // 3: reserved for kwpts
-["<RandomTotalPointsOnSomeParams>","</RandomTotalPointsOnSomeParams>"], // 4: xmlMark for random params
+[
+["<RandomTotalPointsOnSomeParams>","</RandomTotalPointsOnSomeParams>"],
+["<RandomSelectTotalPointsOnSomeParams>","</RandomSelectTotalPointsOnSomeParams>"],
+], // 4: xmlMark for random params
 'focusOnLayeredItemWnd', // 5: uiState
 (a,b)=>$gameParty.itemOrder_getOrder?$gameParty.itemOrder_getOrder(undefined,a)-$gameParty.itemOrder_getOrder(undefined,b):(a&&a.id)-(b&&b.id), // 6: cmp for sort
 ];
@@ -57,6 +97,7 @@ new cfc(Scene_Boot.prototype).
 add('modEquipment1',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.randomEquipParams_format1_evalSetting.apply(this,arguments);
+	this.randomEquipParams_format2_evalSetting.apply(this,arguments);
 	return rtv;
 },t).
 addBase('randomEquipParams_format1_evalSetting',function f(dataobj,i,arr){
@@ -64,7 +105,7 @@ addBase('randomEquipParams_format1_evalSetting',function f(dataobj,i,arr){
 	const traits=dataobj.traits||(dataobj.traits=[]);
 	
 	const allObjs=[];
-	const codes=window.getXmlLikeStyleContent(dataobj.note,f.tbl[4]);
+	const codes=window.getXmlLikeStyleContent(dataobj.note,f.tbl[4][0]);
 	for(let ci=0,cs=codes.length,tmp;ci<cs;++ci){
 		const lines=codes[ci];
 		const info=JSON.parse(lines.join('\n'));
@@ -79,6 +120,33 @@ addBase('randomEquipParams_format1_evalSetting',function f(dataobj,i,arr){
 		if(!obj.ratio) obj.ratio={};
 		if(!dataobj.params.randomEquipParams_format1) dataobj.params.randomEquipParams_format1=[];
 		dataobj.params.randomEquipParams_format1.push(obj);
+	}
+},t).
+addBase('randomEquipParams_format2_evalSetting',function f(dataobj,i,arr){
+	const meta=dataobj&&dataobj.meta; if(!meta) return;
+	const traits=dataobj.traits||(dataobj.traits=[]);
+	
+	const allObjs=[];
+	const codes=window.getXmlLikeStyleContent(dataobj.note,f.tbl[4][1]);
+	for(let ci=0,cs=codes.length,tmp;ci<cs;++ci){
+		const lines=codes[ci];
+		const info=JSON.parse(lines.join('\n'));
+		if(!info) continue;
+		allObjs.push(info);
+	}
+	if(!dataobj.params){ dataobj.params=[]; for(let x=DataManager.equipParamsCnt();x--;) dataobj.params[x]=0; }
+	for(let x=0,xs=allObjs.length;x<xs;++x){
+		let objs=allObjs[x];
+		if(!(objs instanceof Array)) objs=[objs];
+		let tmparr=[];
+		for(let oi=objs.length;oi--;){
+			const obj=objs[oi];
+			if(!obj||!obj.total||!obj.params) continue;
+			if(!obj.ratio) obj.ratio={};
+			tmparr.push(obj);
+		}
+		if(!dataobj.params.randomEquipParams_format2) dataobj.params.randomEquipParams_format2=[];
+		dataobj.params.randomEquipParams_format2.push(tmparr);
 	}
 },t).
 add('terminate_after',function f(){
@@ -101,13 +169,24 @@ getP;
 
 
 new cfc(Game_Party.prototype).
-addBase('randomEquipParams_createNew_format1',function f(item){
-	// return newly created obj
+addBase('randomEquipParams_createNew',function f(item){
+	// return newly created dataobj
 	let rtv;
 	const paramVals=item.params.slice();
-	const infos=item.params.randomEquipParams_format1;
-for(let x=0,xs=infos.length;x<xs;++x){
-	const info=item.params.randomEquipParams_format1[x];
+	const overwriteInfo={
+		params:paramVals,
+	};
+	if(DataManager.isWeapon(item)){
+		const res=$gameSystem.duplicatedWeapons_createNew(item.id,overwriteInfo);
+		rtv=$dataWeapons[res];
+	}else if(DataManager.isArmor(item)){
+		const res=$gameSystem.duplicatedArmors_createNew(item.id,overwriteInfo);
+		rtv=$dataArmors[res];
+	}
+	return rtv;
+}).
+addBase('randomEquipParams_apply1_format_1_2',function f(item,info){
+	const paramVals=item.params;
 	const num0=getNumOrEval(info.total[0]);
 	const num1=getNumOrEval(info.total[1]);
 	const base=Math.min(num0,num1);
@@ -131,45 +210,52 @@ for(let x=0,xs=infos.length;x<xs;++x){
 		const ratio1=!ratioIsNum&&(sel in ratio)?ratio[sel]:defaultRatio;
 		paramVals[key]+=ratio1;
 	} }
-}
-	
-	const overwriteInfo={
-		params:paramVals,
-		//"randomEquipParams_randRes_format1":randResInfo,
-	};
-	if(DataManager.isWeapon(item)){
-		const res=$gameSystem.duplicatedWeapons_createNew(item.id,overwriteInfo);
-		rtv=$dataWeapons[res];
-	}else if(DataManager.isArmor(item)){
-		const res=$gameSystem.duplicatedArmors_createNew(item.id,overwriteInfo);
-		rtv=$dataArmors[res];
-	}
-	return rtv;
+}).
+addBase('randomEquipParams_applyTo_format1',function f(itemNew,item){
+	// return item
+	const infos=item&&item.params&&item.params.randomEquipParams_format1;
+	if(infos){ for(let x=0,xs=infos.length;x<xs;++x){
+		const info=item.params.randomEquipParams_format1[x];
+		this.randomEquipParams_apply1_format_1_2(itemNew,info);
+	} }
+	return itemNew;
+}).
+addBase('randomEquipParams_applyTo_format2',function f(itemNew,item){
+	// return item
+	const infoss=item&&item.params&&item.params.randomEquipParams_format2;
+	if(infoss){ for(let x=0,xs=infoss.length;x<xs;++x){
+		const infos=item.params.randomEquipParams_format2[x];
+		const info=infos&&infos.rnd1();
+		this.randomEquipParams_apply1_format_1_2(itemNew,info);
+	} }
+	return itemNew;
 }).
 addRoof('gainItem',function f(item,amount,includeEquip){
-	if(amount>=1&&item&&item.params&&item.params.randomEquipParams_format1){
-		item=arguments[0]=this.randomEquipParams_createNew_format1.apply(this,arguments);
-		return f.apply(this,arguments);
+	if(amount>=1&&item&&item.params){
+		if(false ||
+			item.params.randomEquipParams_format1 ||
+			item.params.randomEquipParams_format2 ||
+		false){
+			const itemOri=item;
+			item=arguments[0]=this.randomEquipParams_createNew.apply(this,arguments);
+			this.randomEquipParams_applyTo_format1.call(this,item,itemOri);
+			this.randomEquipParams_applyTo_format2.call(this,item,itemOri);
+			return f.apply(this,arguments);
+		}
 	}
 	return f.ori.apply(this,arguments);
 }).
 getP;
 
 new cfc(DataManager).
-addBase('randomEquipParams_getParamsRange_format1',function f(item,theOneParamId){
+addBase('randomEquipParams_getParamsRange_info_format_1_2',function f(info,theOneParamId,rtv,){
+	if(!info) return rtv;
 	const isOne=theOneParamId>=0;
-	const rtv=[];
-	if(isOne){
-		rtv.push(0,0);
-	}else{
-		for(let paramId=0,sz=this.equipParamsCnt();paramId<sz;++paramId) rtv.push(f.call(this,item,paramId));
+	if(!isOne){
+		for(let paramId=0,sz=this.equipParamsCnt();paramId<sz;++paramId) f.call(this,paramId,rtv[paramId],info);
 		return rtv;
 	}
 	
-	const infos=item&&item.params&&item.params.randomEquipParams_format1;
-	if(!infos) return;
-for(let x=0,xs=infos.length;x<xs;++x){
-	const info=infos[x];
 	const num0=getNumOrEval(info.total[0]);
 	const num1=getNumOrEval(info.total[1]);
 	const ptMin=Math.min(num0,num1);
@@ -194,11 +280,55 @@ for(let x=0,xs=infos.length;x<xs;++x){
 			}
 		}
 	}
-}
+	return rtv;
+}).
+addBase('randomEquipParams_getParamsRange_format1',function f(item,theOneParamId){
+	const isOne=theOneParamId>=0;
+	const rtv=[];
+	if(isOne){
+		rtv.push(0,0);
+	}else{
+		for(let paramId=0,sz=this.equipParamsCnt();paramId<sz;++paramId) rtv.push(f.call(this,item,paramId));
+		return rtv;
+	}
+	
+	const infos=item&&item.params&&item.params.randomEquipParams_format1;
+	if(!infos) return;
+	for(let x=0,xs=infos.length;x<xs;++x){
+		const info=infos[x];
+		this.randomEquipParams_getParamsRange_info_format_1_2(info,theOneParamId,rtv,);
+	}
 	return rtv;
 }).
 addBase('randomEquipParams_getParamsRange_format2',function f(item,theOneParamId){
+	const isOne=theOneParamId>=0;
+	const rtv=[];
+	if(isOne){
+		rtv.push(0,0);
+	}else{
+		for(let paramId=0,sz=this.equipParamsCnt();paramId<sz;++paramId) rtv.push(f.call(this,item,paramId));
+		return rtv;
+	}
 	
+	const infoss=item&&item.params&&item.params.randomEquipParams_format2;
+	if(!infoss) return;
+	for(let x=0,xs=infoss.length;x<xs;++x){
+		const infos=infoss[x];
+		const overall=[];
+		for(let z=0,zs=infos.length;z<zs;++z){
+			const info=infos[z];
+			const tmp=this.randomEquipParams_getParamsRange_info_format_1_2(info,theOneParamId,[0,0],);
+			if(overall.length){
+				overall[0]=Math.min(overall[0],tmp[0]);
+				overall[1]=Math.max(overall[1],tmp[1]);
+			}else overall.concat_inplace(tmp);
+		}
+		if(overall.length){
+			rtv[0]+=overall[0];
+			rtv[1]+=overall[1];
+		}
+	}
+	return rtv;
 }).
 addBase('randomEquipParams_getParamsRange',function f(item,theOneParamId){
 	const isAll=!(theOneParamId>=0);
