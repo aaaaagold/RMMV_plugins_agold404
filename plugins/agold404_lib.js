@@ -174,7 +174,7 @@ p.uniqueHas=function(obj){
 	return this._map.has(obj);
 };
 p.uniquePush=function( /* obj , ... */ ){
-	for(let x=0;x!==arguments.length;++x){
+	for(let x=0,xs=arguments.length;x!==xs;++x){
 		const obj=arguments[x];
 		if(this.uniqueHas(obj)) continue;
 		this._map.set(obj,this.length);
@@ -1016,11 +1016,11 @@ p.scale=function(r,y){
 }
 
 const xyDist1=window.xyDist1=(a,b)=>{
-	let dx=a.x-b.x,dy=a.y-b.y;
+	const dx=a.x-b.x,dy=a.y-b.y;
 	return Math.abs(dx)+Math.abs(dy);
 };
 const xyDist2=window.xyDist2=(a,b)=>{
-	let dx=a.x-b.x,dy=a.y-b.y;
+	const dx=a.x-b.x,dy=a.y-b.y;
 	return dx*dx+dy*dy;
 };
 const useDefaultIfIsNaN=window.useDefaultIfIsNaN=(n,d)=>{
