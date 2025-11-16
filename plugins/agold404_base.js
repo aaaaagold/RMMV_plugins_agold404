@@ -5265,6 +5265,35 @@ new Map([
 (()=>{ let k,r,t;
 
 
+//window._dbg_totalTime=0;
+//window._dbg_totalCnt=0;
+new cfc(PIXI.glCore.GLTexture.prototype).
+addBase('upload',function f(source){
+//	const t0=performance.now();
+//if(window._useOri){
+//	f._dbg.apply(this,arguments);
+//}else{
+	this.bind();
+	
+	const gl = this.gl;
+	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
+	gl.texImage2D(gl.TEXTURE_2D, f.tbl[0], this.format, this.format, this.type, source);
+	
+	// if the source is a video, we need to use the videoWidth / videoHeight properties as width / height will be incorrect.
+	const newWidth = source.videoWidth || source.width;
+	const newHeight = source.videoHeight || source.height;
+	this.width = newWidth;
+	this.height = newHeight;
+//}
+//	const t1=performance.now();
+//	window._dbg_totalTime+=t1-t0;
+//	++window._dbg_totalCnt;
+},[
+0, // 0: n-th mipmap reduction level
+]).
+getP;
+
+
 new cfc(WebAudio.prototype).
 addBase('stop',function f(){
 	const arr=this._stopListeners;
@@ -5362,6 +5391,135 @@ addBase('_executeTint',function f(x, y, w, h){
 },[
 ["00","FF"], // 0: rgbColorChannel<0?
 ]).
+getP;
+
+
+new cfc(ShaderTilemap.prototype).
+addBase('_drawAutotile',function f(layer,tileId,dx,dy){
+	let autotileTable=Tilemap.FLOOR_AUTOTILE_TABLE;
+	const kind=Tilemap.getAutotileKind(tileId)|0;
+	const shape=Tilemap.getAutotileShape(tileId)|0;
+	const tx=kind&7;
+	const ty=kind>>3;
+	let setNumber=0;
+	let isTable=false;
+	const params={
+		bx:0,
+		by:0,
+		animX:0,
+		animY:0,
+	};
+
+	if(Tilemap.isTileA1(tileId)){
+		setNumber=0;
+		const func=f.tbl[0][kind];
+		if(func) func.call(this,params);
+		else{
+			params.bx=tx>>2<<3;
+			params.by=((ty<<1)+((tx>>1)&1))*3;
+			if(kind&1){
+				params.bx+=6;
+				autotileTable=Tilemap.WATERFALL_AUTOTILE_TABLE;
+				params.animY=1;
+			}else{
+				params.animX=2;
+			}
+		}
+	}else if(Tilemap.isTileA2(tileId)){
+		setNumber=1;
+		params.bx=tx<<1;
+		params.by=(ty-2)*3;
+		isTable=this._isTableTile(tileId);
+	}else if(Tilemap.isTileA3(tileId)){
+		setNumber=2;
+		params.bx=tx<<1;
+		params.by=(ty-6)<<1;
+		autotileTable = Tilemap.WALL_AUTOTILE_TABLE;
+	}else if(Tilemap.isTileA4(tileId)){
+		setNumber=3;
+		params.bx=tx<<1;
+		params.by=Math.floor((ty-10)*2.5 + (ty&1?0.5:0));
+		if(ty&1){
+			autotileTable=Tilemap.WALL_AUTOTILE_TABLE;
+		}
+	}
+
+	const table=autotileTable[shape];
+	const w1=this._tileWidth>>1;
+	const h1=this._tileHeight>>1;
+	const bx2=params.bx<<1;
+	const by2=params.by<<1;
+	const animX=params.animX;
+	const animY=params.animY;
+	for(let i=0;i<4;++i){
+		const qsx = table[i][0];
+		const qsy = table[i][1];
+		const sx1 = (bx2 + qsx) * w1;
+		const sy1 = (by2 + qsy) * h1;
+		const dx1 = dx + (i&1) * w1;
+		const dy1 = dy + (i>>1) * h1;
+		if(isTable && (qsy === 1 || qsy === 5)){
+			const qsx2 = qsx;
+			const qsy2 = 3;
+			if (qsy === 1) {
+				//qsx2 = [0, 3, 2, 1][qsx];
+				qsx2 = (4-qsx)&3;
+			}
+			const sx2 = (bx2 + qsx2) * w1;
+			const sy2 = (by2 + qsy2) * h1;
+			layer.addRect(setNumber, sx2, sy2, dx1, dy1, w1, h1, animX, animY);
+			layer.addRect(setNumber, sx1, sy1, dx1, dy1+(h1>>1), w1, (h1>>1), animX, animY);
+		}else{
+			layer.addRect(setNumber, sx1, sy1, dx1, dy1, w1, h1, animX, animY);
+		}
+	}
+},[
+[
+params=>{
+	params.animX=2;
+	params.by=0;
+}, // 0-0
+params=>{
+	params.animX=2;
+	params.by=3;
+}, // 0-1
+params=>{
+	params.bx=6;
+	params.by=0;
+}, // 0-2
+params=>{
+	params.bx=6;
+	params.by=3;
+}, // 0-3
+], // 0: A1 kinds
+]).
+getP;
+
+
+new cfc(Sprite_Animation.prototype).
+addBase('updatePosition',function(){
+	if(this._animation.position===3){
+		this.position.set(
+			this.parent.width>>1,
+			this.parent.height>>1,
+		);
+	}else{
+		const parent=this._target.parent;
+		const grandparent=parent?parent.parent:null;
+		let x=this._target.x;
+		let y=this._target.y;
+		if(this.parent===grandparent){
+			x+=parent.x;
+			y+=parent.y;
+		}
+		if(this._animation.position===0){
+			y-=this._target.height;
+		}else if(this._animation.position===1){
+			y-=this._target.height>>1;
+		}
+		this.position.set(x,y);
+	}
+}).
 getP;
 
 
