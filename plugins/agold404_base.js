@@ -1642,10 +1642,20 @@ addBase('_prevScene_restore',function f(){
 	if(this._lastBgBm) SceneManager._backgroundBitmap=this._lastBgBm;
 },t).
 addBase('popScene',function f(){
-	const oriVal=this._gotoViaPop;
+	const sm=SceneManager;
+	const oriVal=sm._gotoViaPopScene;
+	sm._gotoViaPopScene=true;
+	sm.pop();
+	sm._gotoViaPopScene=oriVal;
+}).
+getP;
+new cfc(SceneManager).
+add('pop',function f(){
+	const oriVal=this._gotoViaPopScene;
 	this._gotoViaPop=true;
-	SceneManager.pop();
+	const rtv=f.ori.apply(this,arguments);
 	this._gotoViaPop=oriVal;
+	return rtv;
 }).
 getP;
 //
@@ -6615,12 +6625,22 @@ new cfc(Window_Base.prototype).addBase('duplicateTextState',function(textState,a
 
 (()=>{ let k,r,t;
 
-new cfc(SceneManager).addBase('push',function f(sceneClass,shouldRecordCurrentScene){
+new cfc(SceneManager).
+addBase('push',function f(sceneClass,shouldRecordCurrentScene){
 	this._stack.push(this._scene.constructor);
+	const oriVal=this._gotoViaPush;
+	this._gotoViaPush=true;
 	this.goto(sceneClass,shouldRecordCurrentScene);
+	this._gotoViaPush=oriVal;
 	if(this._scene._prevScene || shouldRecordCurrentScene && this._nextScene) this._nextScene._prevScene=this._scene;
 	return this._nextScene && this._nextScene._prevScene;
-}).addBase('changeScene',function f(){
+}).
+add('goto',function f(sceneClass){
+	const rtv=f.ori.apply(this,arguments);
+	this._nextScene_pushScene=this._gotoViaPush && this._nextScene;
+	return rtv;
+}).
+addBase('changeScene',function f(){
 	if(this.changeScene_condOk()){
 		this.changeScene_do_before();
 		this.changeScene_do();
@@ -6646,7 +6666,7 @@ new cfc(SceneManager).addBase('push',function f(sceneClass,shouldRecordCurrentSc
 		this._nextScene = null;
 		(this._scene=recordedPrevScene)._active=true;
 	}else{
-		if(recordedPrevScene && this._nextScene){
+		if(recordedPrevScene && this._nextScene===this._nextScene_pushScene){
 			SceneManager.snapForBackground(this._scene);
 			this._nextScene._prevScene=this._scene;
 		}
@@ -6659,6 +6679,7 @@ new cfc(SceneManager).addBase('push',function f(sceneClass,shouldRecordCurrentSc
 			this.onSceneCreate();
 		}
 	}
+	this._nextScene_andShouldRecordPrevScene=undefined;
 	if(this._exiting){
 		if(f.tbl[0]){
 			--f.tbl[0];
@@ -9929,6 +9950,17 @@ for(let x=keys.length;x--;) if(p[keys[x]]===pp[keys[x]]) new cfc(p).addBase(keys
 (()=>{ let k,r,t;
 
 
+new cfc(Window_Selectable.prototype).
+add('deactivate',function f(){
+	if(this.active) this.deactivate_recordActiveWindow.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('deactivate_recordActiveWindow',function f(){
+	const sc=SceneManager._scene;
+	if(sc) sc._lastDeactiveWindow=this;
+}).
+getP;
+
 new cfc(Scene_Menu.prototype).
 addWithBaseIfNotOwn('initialize',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -9943,7 +9975,7 @@ addWithBaseIfNotOwn('create',function f(){
 }).
 addWithBaseIfNotOwn('stop',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	this._commandWindow.active=true;
+	const w=this._lastDeactiveWindow; if(w) w.active=true;
 	return rtv;
 }).
 addWithBaseIfNotOwn('popScene',function f(){
