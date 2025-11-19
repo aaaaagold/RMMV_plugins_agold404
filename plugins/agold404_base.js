@@ -5275,6 +5275,130 @@ new Map([
 (()=>{ let k,r,t;
 
 
+new cfc(Bitmap.prototype).addBase('isRequestReady',function f(){
+	return !f.tbl[0].has(this._loadingState);
+},[
+new Set([
+'pending',
+'requesting',
+'decrypting',
+]), // 0: not request ready states
+]).getP;
+
+new cfc(RequestQueue.prototype).
+addBase('_getCont_resetExtInfo',function f(){
+	const cont=this._queue; if(!cont) return;
+	const len=cont.length;
+	let ext=cont._extInfo;
+	if(!ext){ ext=cont._extInfo=({
+		pushSerial:0|0,
+		raiseSerial:0|0,
+		key2idx:new Map(),
+	}); }
+	ext.pushSerial&=0;
+	ext.raiseSerial&=0;
+	ext.key2idx.clear();
+	for(let x=0;x<len;++x){
+		ext.key2idx.set(cont[x].key,x);
+		if(0<cont[x].cmpVal) continue;
+		cont[x].cmpVal=--ext.pushSerial;
+	}
+	for(let x=len;x--;){ if(0<cont[x].cmpVal){
+		cont[x].cmpVal=++ext.raiseSerial;
+	} }
+}).
+addBase('_getCont',function f(){
+	// expected as Array
+	let rtv=this._queue;
+	if(!(rtv instanceof Array)) rtv=this._queue=[];
+	if(!rtv._extInfo) this._getCont_resetExtInfo();
+	return rtv;
+}).
+addBase('_cmpLt',function(idx1,idx2){
+	const cont=this._getCont();
+	return cont[idx1].cmpVal<cont[idx2].cmpVal;
+}).
+addBase('_float',function(idx){
+	const cont=this._getCont();
+	const m=cont._extInfo.key2idx;
+	while(idx){
+		const pIdx=(idx-1)>>1;
+		if(this._cmpLt(pIdx,idx)){
+			const tmp=cont[pIdx];
+			cont[pIdx]=cont[idx];
+			cont[idx]=tmp;
+			m.set(cont[idx].key,idx);
+			m.set(cont[pIdx].key,pIdx);
+			idx=pIdx;
+		}else break;
+	}
+}).
+addBase('_sink',function(idx){
+	const cont=this._getCont();
+	const len=cont.length;
+	const m=cont._extInfo.key2idx;
+	for(;;){
+		let next=idx;
+		const left=(idx<<1)+1;
+		const right=left+1;
+		if(left<len&&this._cmpLt(next,left)) next=left;
+		if(right<len&&this._cmpLt(next,right)) next=right;
+		
+		if(next===idx) break;
+		
+		const tmp=cont[next];
+		cont[next]=cont[idx];
+		cont[idx]=tmp;
+		const m=cont._extInfo.key2idx;
+		m.set(cont[idx].key,idx);
+		m.set(cont[next].key,next);
+		idx=next;
+	}
+}).
+addBase('enqueue',function f(key,value){
+	const cont=this._getCont();
+	const idx=cont.push({
+		key:key,
+		value:value,
+		cmpVal:--cont._extInfo.pushSerial,
+	})-1;
+	const m=cont._extInfo.key2idx;
+	m.set(key,idx);
+	this._float(idx);
+}).
+addBase('update',function f(){
+	const cont=this._getCont(); if(!cont.length) return;
+	let top=cont[0];
+	if(top.value.isRequestReady()){
+		cont._extInfo.key2idx.delete(top.key);
+		top=undefined;
+		cont[0]=cont.back;
+		cont.pop();
+		if(cont.length){
+			this._sink(0);
+			cont[0].value.startRequest();
+		}else{
+			this._getCont_resetExtInfo();
+		}
+	}else{
+		top.value.startRequest();
+	}
+}).
+addBase('raisePriority',function f(key){
+	const cont=this._getCont();
+	const idx=cont._extInfo.key2idx.get(key);
+	if(idx>=0){
+		cont[idx].cmpVal=++cont._extInfo.raiseSerial;
+		this._float(idx);
+	}
+}).
+addBase('clear',function f(){
+	this._queue.length=0;
+	this._getCont_resetExtInfo();
+}).
+getP;
+
+
 //window._dbg_totalTime=0;
 //window._dbg_totalCnt=0;
 new cfc(PIXI.glCore.GLTexture.prototype).
