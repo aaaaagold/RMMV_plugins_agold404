@@ -5275,7 +5275,8 @@ new Map([
 (()=>{ let k,r,t;
 
 
-new cfc(Bitmap.prototype).addBase('isRequestReady',function f(){
+new cfc(Bitmap.prototype).
+addBase('isRequestReady',function f(){
 	return !f.tbl[0].has(this._loadingState);
 },[
 new Set([
@@ -5992,6 +5993,74 @@ addBase('_createCanvas',function(width, height){
 	
 	this._setDirty();
 }).
+addBase('blur',function f(){
+	for(let i=this.blur_iterCnt();i--;){
+		this.blur_do1(i);
+	}
+	this._setDirty();
+}).
+addBase('blur_iterCnt',function f(){
+	return 5;
+}).
+addBase('blur_blurN',function f(){
+	return 3;
+}).
+addBase('blur_globalAlphaMultiplier',function f(){
+	return 1;
+}).
+addBase('blur_do1',function f(){
+	const w=this.width;
+	const h=this.height;
+	const canvas=this._canvas;
+	const context=this._context;
+	const tempCanvas=f.tbl[0];
+	const blurN=this.blur_blurN();
+	const blur2N=blurN<<1;
+	tempCanvas.width=w+blur2N;
+	tempCanvas.height=h+blur2N;
+	{
+		const tempContext=tempCanvas.getContext('2d');
+		tempContext.drawImage(canvas, 0, 0, w, h, blurN, blurN, w, h);
+		
+		tempContext.drawImage(canvas, 0, 0, w, 1, blurN, 0, w, blurN);
+		tempContext.drawImage(canvas, 0, h-1, w, 1, blurN, blurN+h, w, blurN);
+		
+		tempContext.drawImage(canvas, 0, 0, 1, h, 0, blurN, blurN, h);
+		tempContext.drawImage(canvas, w-1, 0, 1, h, blurN+w, blurN, blurN, h);
+		
+		tempContext.drawImage(canvas, 0, 0, 1, 1, 0, 0, blurN, blurN);
+		tempContext.drawImage(canvas, w-1, 0, 1, 1, blurN+w, 0, blurN, blurN);
+		tempContext.drawImage(canvas, 0, h-1, 1, 1, 0, blurN+h, blurN, blurN);
+		tempContext.drawImage(canvas, w-1, h-1, 1, 1, blurN+w, blurN+h, blurN, blurN);
+	}
+	const tempContext=tempCanvas.getContext('2d',f.tbl[1]);
+	
+	const r__05=this.blur_globalAlphaMultiplier() / (blur2N+1); // r**0.5 but lower
+	const tempCanvas2=f.tbl[2];
+	tempCanvas2.width=tempCanvas.width;
+	tempCanvas2.height=h;
+	{
+		const tempContext2=tempCanvas2.getContext('2d');
+		tempContext2.globalCompositeOperation = 'lighter';
+		tempContext2.globalAlpha = r__05;
+		for(let y=0;y<=blur2N;++y) tempContext2.drawImage(tempCanvas, 0, y, w+blur2N, h, 0, 0, w+blur2N, h);
+	}
+	const tempContext2=tempCanvas2.getContext('2d',f.tbl[1]);
+	
+	context.save();
+	context.fillStyle = 'black';
+	context.fillRect(0, 0, w, h);
+	context.globalCompositeOperation = 'lighter';
+	context.globalAlpha = r__05;
+	for(let x=0;x<=blur2N;++x) context.drawImage(tempCanvas2, x, 0, w, h, 0, 0, w, h);
+	context.restore();
+},[
+document.ce('canvas'), // 0: tempCanvas
+({
+	willReadFrequently:true,
+}), // 1: ctx settings
+document.ce('canvas'), // 2: tempCanvas2
+]).
 getP;
 
 
