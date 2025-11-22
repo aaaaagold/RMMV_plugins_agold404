@@ -242,16 +242,23 @@ add('startLoading',function f(){
 	return rtv;
 }).
 getP;
-new cfc(Graphics).addBase('_requestFullScreen',function(){
+new cfc(Graphics).
+addBase('_requestFullScreen',function(){
 	const element = getTopFrameWindow().document.body;
 	if(element.requestFullScreen) element.requestFullScreen();
 	else if(element.mozRequestFullScreen) element.mozRequestFullScreen();
 	else if(element.webkitRequestFullScreen) element.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
 	else if(element.msRequestFullscreen) element.msRequestFullscreen();
-}).addBase('_isFullScreen',function(){
+}).
+addBase('_isFullScreen',function(){
+	// means "can get in full screen"
 	const d=getTopFrameWindow().document;
 	return ( (d.fullScreenElement && d.fullScreenElement !== null) || (!d.mozFullScreen && !d.webkitFullscreenElement && !d.msFullscreenElement) );
-}).addBase('_cancelFullScreen',function(){
+}).
+addBase('isFullScreen',function f(){
+	return !this._isFullScreen();
+}).
+addBase('_cancelFullScreen',function(){
 	const d=getTopFrameWindow().document;
 	if(d.cancelFullScreen) d.cancelFullScreen();
 	else if(d.mozCancelFullScreen) d.mozCancelFullScreen();
