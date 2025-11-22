@@ -253,7 +253,7 @@ addBase('_requestFullScreen',function(){
 addBase('_isFullScreen',function(){
 	// means "can get in full screen"
 	const d=getTopFrameWindow().document;
-	return ( (d.fullScreenElement && d.fullScreenElement !== null) || (!d.mozFullScreen && !d.webkitFullscreenElement && !d.msFullscreenElement) );
+	return ( !d.fullScreenElement && !d.mozFullScreen && !d.webkitFullscreenElement && !d.msFullscreenElement );
 }).
 addBase('isFullScreen',function f(){
 	return !this._isFullScreen();
