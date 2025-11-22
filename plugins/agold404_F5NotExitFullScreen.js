@@ -53,7 +53,7 @@ Graphics._requestFullScreen=function(){
 Graphics._isFullScreen=function(){
 	// means "can get in full screen". thus current state is NOT fullscreen if return true.
 	const d=parentWindow.document;
-	return ( (d.fullScreenElement && d.fullScreenElement !== null) || (!d.mozFullScreen && !d.webkitFullscreenElement && !d.msFullscreenElement) );
+	return ( !d.fullScreenElement && !d.mozFullScreen && !d.webkitFullscreenElement && !d.msFullscreenElement );
 };
 Graphics._cancelFullScreen=function(){
 	const d=parentWindow.document;
