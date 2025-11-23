@@ -6042,7 +6042,7 @@ addBase('blur_do1',function f(){
 	}
 	const tempContext=tempCanvas.getContext('2d',f.tbl[1]);
 	
-	const r__05=this.blur_globalAlphaMultiplier() / (blur2N+1); // r**0.5 but lower
+	const r__05=this.blur_globalAlphaMultiplier() / (blur2N+1); // r**0.5
 	const tempCanvas2=f.tbl[2];
 	tempCanvas2.width=tempCanvas.width;
 	tempCanvas2.height=h;
