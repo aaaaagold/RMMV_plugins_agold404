@@ -10179,8 +10179,7 @@ addWithBaseIfNotOwn('stop',function f(){
 	return rtv;
 }).
 addWithBaseIfNotOwn('popScene',function f(){
-	Input.clear();
-	TouchInput.clear();
+	SceneManager.updateInputData();
 	return f.ori.apply(this,arguments);
 }).
 getP;
