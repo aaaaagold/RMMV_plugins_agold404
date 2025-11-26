@@ -7743,6 +7743,13 @@ p.createLoader=function(url, retryMethod, resignMethod, retryInterval){
 	return fname && fname.constructor===String && f.tbl.some(p=>fname.match(p));
 }).ori=undefined;
 t.tbl=[/^((blob|data):|\.\/\/)/,];
+(t=ResourceHandler.isEnemyUrl=function f(url){
+	if(url && url.constructor===String){
+		const m=url.match(f.tbl[0]);
+		return m&&f.tbl[1][1-!m[2]]+m[3];
+	}
+}).ori=undefined;
+t.tbl=[/^(img\/(sv_)?enemies\/)(.*)$/,["img/sv_enemies/","img/enemies/"],];
 (t=ResourceHandler.isBlobUrl=function f(url){
 	return url && url.constructor===String && url.match(f.tbl[0]);
 }).ori=undefined;
@@ -7758,6 +7765,7 @@ new cfc(Bitmap).addBase('giveUpUrl_getCont',function f(){
 }).addBase('giveUpUrl_getMod',function f(url){
 	return this.giveUpUrl_getCont().has(url)?ResourceHandler._emptyData.img:url;
 });
+Bitmap._enemyUrlOther_remapPath=new Map();
 new cfc(Bitmap.prototype).add('_onLoad',function f(){
 	{ const div=this._loader&&this._loader._div; if(div) Graphics.currentLoadErrorDivs_clear(div); }
 	return f.ori.apply(this,arguments);
@@ -7766,6 +7774,20 @@ new cfc(Bitmap.prototype).add('_onLoad',function f(){
 	ResourceHandler.setLoaderType('img');
 	const rtv=f.ori.apply(this,arguments);
 	ResourceHandler.setLoaderType(bakT);
+	return rtv;
+}).add('_requestImage',function f(url){
+	arguments[0]=url=Bitmap._enemyUrlOther_remapPath.get(url)||url;
+	return f.ori.apply(this,arguments);
+}).
+add('_onError',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	if(!rtv&&!this._tryEnemyUrlOther){ const enemyUrlOther=ResourceHandler.isEnemyUrl(this._url); if(enemyUrlOther){
+		this._tryEnemyUrlOther=true;
+		this._loader=undefined; // reset
+		Bitmap._enemyUrlOther_remapPath.set(this._url,enemyUrlOther);
+		this._requestImage(enemyUrlOther);
+		return true; // has special handling
+	} }
 	return rtv;
 }).add('_requestImage',function f(url){
 	const bakT=ResourceHandler.getLoaderType();
