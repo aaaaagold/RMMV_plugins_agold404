@@ -7709,6 +7709,7 @@ p.reloader_add=function(f){ this._reloaders.add(f); };
 p.reloader_del=function(f){ this._reloaders.delete(f); };
 p.setLoaderType=function(t){ this._loaderType=t; };
 p.getLoaderType=function(){ return this._loaderType; };
+p._defaultRetryInterval.length=0; // tell me why reload when error is determined.
 p.createLoader=function(url, retryMethod, resignMethod, retryInterval){
 	// create re-loader, actually
 	retryInterval=retryInterval||this._defaultRetryInterval;
