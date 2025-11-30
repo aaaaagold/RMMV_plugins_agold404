@@ -323,6 +323,7 @@ addBase('commandBringSkills',function f(){
 add('create',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.create_bringSkills.apply(this,arguments);
+	this.create_bringSkills_finalTune.apply(this,arguments);
 	return rtv;
 }).
 addBase('create_bringSkills',function f(){
@@ -353,6 +354,11 @@ addBase('create_bringSkills',function f(){
 	
 	const wndT=this._bringSkills_itemWindowType=new Window_Help(1);
 	this.addChild(wndT);
+}).
+addBase('create_bringSkills_finalTune',function f(){
+	if(this._bringSkills_hideOpt) return;
+	this.addChild(this._bringSkills_itemWindowAll);
+	this.addChild(this._bringSkills_itemWindowBrought);
 }).
 addBase('bringSkills_cmd_goBackToTypes',function f(){
 	const wndB=this._bringSkills_itemWindowBrought;
