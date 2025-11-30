@@ -159,6 +159,14 @@ add('eraseState',function f(stateId){
 }).
 getP;
 
+new cfc(Game_Actor.prototype).
+add('eraseState',function f(stateId){
+	const rtv=f.ori.apply(this,arguments);
+	if(0<this.statesContainer_cntStateId(stateId)) this.resetStateCounts(stateId); // step cnt
+	return rtv;
+}).
+getP;
+
 
 new cfc(Window_Base.prototype).
 add('drawStateIcon_drawMoreInfos_contents',function f(actor,stateId,x,y){
