@@ -4179,13 +4179,47 @@ addBase('addState',function(stateId) {
 			this.addNewState(stateId);
 			if(this._result) this._result.pushAddedState(stateId);
 			this.refresh();
+			this.onAddNewStateSucc.apply(this,arguments);
+		}else{
+			this.onAddNewStateFail.apply(this,arguments);
 		}
 		this.resetStateCounts(stateId);
+		this.onAddStateSucc.apply(this,arguments);
+	}else{
+		this.onAddStateFail.apply(this,arguments);
 	}
+		this.onAddState.apply(this,arguments);
 }).
 addBase('addNewState_condOk',function f(stateId){
 	return !this.isStateAffected(stateId);
 }).
+addBase('onAddNewStateSucc',none).
+addBase('onAddNewStateFail',none).
+addBase('onAddState',none).
+addBase('onAddStateSucc',none).
+addBase('onAddStateFail',none).
+add('removeState',function f(stateId){
+	const isAffected=this.isStateAffected(stateId);
+	const rtv=f.ori.apply(this,arguments);
+	if(isAffected){
+		this.onRemoveStateSucc.apply(this,arguments);
+	}else{
+		this.onRemoveStateFail.apply(this,arguments);
+	}
+		this.onRemoveState.apply(this,arguments);
+	return rtv;
+}).
+addBase('onRemoveState',none).
+addBase('onRemoveStateSucc',none).
+addBase('onRemoveStateFail',none).
+addWithBaseIfNotOwn('resetStateCounts',function f(stateId){
+	const oriVal=this._stateTurns[stateId]-0||0;
+	const rtv=f.ori.apply(this,arguments);
+	this._stateTurns[stateId]=Math.max(this._stateTurns[stateId],oriVal);
+	this.onResetStateCounts.apply(this,arguments);
+	return rtv;
+}).
+addBase('onResetStateCounts',none). // probably used for dbg
 getP;
 
 new cfc(Game_ActionResult.prototype).
