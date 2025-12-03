@@ -4064,19 +4064,30 @@ addBase('apply_onHit',function f(target){
 		if(result.critical) this.apply_onCritical.apply(this,arguments);
 		const value=this.makeDamageValue(target,result.critical);
 		this.executeDamage(target,value);
+		this.apply_onExecuteDamage.apply(this,arguments);
 	}
 	this._effectsOnTarget=target;
 	this.item().effects.forEach(f.tbl[0],this);
 	this._effectsOnTarget=undefined;
-	this.apply_onEffects.apply(this,arguments);
 	this.applyItemUserEffect(target);
+	this.apply_onEffects.apply(this,arguments);
 },[
 function f(effect){
 	this.applyItemEffect(this._effectsOnTarget,effect);
 }, // 0: forEach Effects
 ]).
 addBase('apply_onCritical',none).
+addBase('apply_onExecuteDamage',none).
 addBase('apply_onEffects',none).
+addBase('executeDamage',function f(target,value){
+	const result=target.result();
+	if(this.isHpEffect()){
+		this.executeHpDamage(target,value);
+	}
+	if(this.isMpEffect()){
+		this.executeMpDamage(target,value);
+	}
+}).
 getP;
 
 
