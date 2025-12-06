@@ -13,7 +13,7 @@
 k='initMembers';
 r=p[k]; (p[k]=function f(){
 	const rtv=f.ori.apply(this,arguments);
-	this._patternRect=[0,0,1,1];
+	this._patternRect=[0,0,1,1]; // 1,1 = ori pw,ph
 	return rtv;
 }).ori=r;
 (p.patternRect=function f(){
@@ -23,7 +23,6 @@ r=p[k]; (p[k]=function f(){
 
 new cfc(Sprite_Character.prototype).add('initMembers',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	this._patternRect=[0,0,1,1]; // 1,1 = ori pw,ph
 	return rtv;
 }).add('patternRect',function(){
 	return this._character.patternRect();
