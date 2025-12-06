@@ -4088,6 +4088,12 @@ addBase('executeDamage',function f(target,value){
 		this.executeMpDamage(target,value);
 	}
 }).
+addBase('onExecuteDamage',none).
+addRoof('executeDamage',function f(target,value){
+	const rtv=f.ori.apply(this,arguments);
+	this.onExecuteDamage.apply(this,arguments);
+	return rtv;
+}).
 getP;
 
 
