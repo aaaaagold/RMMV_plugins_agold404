@@ -3521,6 +3521,62 @@ child=>child.update&&child.update(), // 0: forEach
 );
 
 
+new cfc(Scene_Skill.prototype).
+add('createSkillTypeWindow',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	const hdlrs=this._skillTypeWindow._handlers;
+	hdlrs.left=hdlrs.pageup;
+	hdlrs.right=hdlrs.pagedown;
+	hdlrs.pageup=
+	hdlrs.pagedown=
+	undefined;
+	return rtv;
+}).
+addWithBaseIfNotOwn('update',function f(){
+	this.update_switchActor.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('update_switchActor_playSe',function f(){
+	SoundManager.playCursor();
+}).
+addBase('update_switchActor',function f(){
+	let isChangeTrigger=false;
+	
+	if(TouchInput.isTriggered() && this._statusWindow.containsPoint_global(TouchInput)){
+		isChangeTrigger=true;
+	}
+	
+	if(isChangeTrigger){
+		const actor=this.actor();
+		this.nextActor();
+		if(actor!==this.actor()){
+			// since rmmv built-in has using pagedown to do this, not adding onchange.
+			this.update_switchActor_playSe();
+		}
+	}
+}).
+getP;
+
+new cfc(Window_SkillType.prototype).
+addWithBaseIfNotOwn('processHandling_do',function f(){
+	if(!f.ori.apply(this,arguments)) return;
+	for(let arr=f.tbl[0],x=arr.length;x--;){
+		const key=arr[x];
+		if(this.isHandled(key) && Input.isTriggered(key)){
+			SoundManager.playCursor();
+			this.updateInputData();
+			this.deactivate();
+			this.callHandler(key);
+			return;
+		}
+	}
+	return true;
+},[
+['left','right',], // keys
+]).
+getP;
+
+
 new cfc(Window_Help.prototype).
 addBase('initialize',function f(numLines){
 	const x=this.initialX.apply(this,arguments);
