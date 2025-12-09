@@ -36,7 +36,7 @@ getP;
 
 
 new cfc(Game_Action.prototype).
-add('stateRemoveByRecover_onExecuteDamage',function f(target,value){
+addBase('stateRemoveByRecover_onExecuteDamage',function f(target,value){
 	if(!(value<0)) return;
 	const arr=[];
 	if(this.isHpRecover()){
