@@ -3207,13 +3207,17 @@ addBase('addKeyName',function f(keyCode,keyName){
 	this.keyMapper[keyCode]=keyName;
 	return this;
 }).addBase('_onKeyUp',function f(event){
-	return this._onKeyUp_do.apply(this,arguments);
+	return this._onKeyUp_condOk.apply(this,arguments)&&this._onKeyUp_do.apply(this,arguments);
+}).addBase('_onKeyUp_condOk',function f(event){
+	return true;
 }).addBase('_onKeyUp_do',function f(event){
 	const btnName=this._getKeyName(event);
 	this._currentState[btnName]=false;
 	if(event.keyCode===0) this.clear(); // it is said that: For QtWebEngine on OS X
 }).addBase('_onKeyDown',function f(event){
-	return this._onKeyDown_do.apply(this,arguments);
+	return this._onKeyDown_condOk.apply(this,arguments)&&this._onKeyDown_do.apply(this,arguments);
+}).addBase('_onKeyDown_condOk',function f(event){
+	return !this.isTexting();
 }).addBase('_onKeyDown_do',function f(event){
 	if (this._shouldPreventDefault(event.keyCode)) event.preventDefault();
 /*
