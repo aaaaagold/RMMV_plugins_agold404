@@ -58,6 +58,7 @@ addBase('initialize_opt',function f(x,y,w,h,opt){
 addBase('initialize_textarea',function f(x,y,w,h,opt){
 	const ta=this._textarea=document.ce('textarea');
 	for(let arr=f.tbl[0],x=arr.length;x--;) ta.style[arr[x][0]]=arr[x][1];
+	for(let arr=f.tbl[1],x=arr.length;x--;) ta.addEventListener(arr[x][0],arr[x][1]);
 },[
 [
 ['white-space','pre'],
@@ -67,7 +68,18 @@ addBase('initialize_textarea',function f(x,y,w,h,opt){
 ['border-width','0px'],
 ['margin','0px'],
 ['position','absolute'],
+['resize','none'],
 ], // 0: css [ [key,val] ]
+[
+['blur',e=>{
+	if(window.isTest()) console.log('[WindowInputText]','on textarea blur');
+	Input.isTexting_clear();
+},],
+['focus',e=>{
+	if(window.isTest()) console.log('[WindowInputText]','on textarea focus');
+	Input.isTexting_set();
+},],
+], // 1: event listeners
 ]).
 addBase('destroy',function f(opt){
 	this._textarea.parentNode && this._textarea.parentNode.removeChild(this._textarea);
