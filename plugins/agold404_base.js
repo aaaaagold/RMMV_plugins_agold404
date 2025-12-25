@@ -533,6 +533,21 @@ addBase('toMapXyReal',function f(overwriteTouchXy,overwriteMapXy){
 		y:$gameMap.roundY(overwriteMapXy._displayY+overwriteTouchXy.y/$gameMap.tileHeight ()),
 	}):({});
 }).
+addBase('_onMouseDown_condOk',function f(event){
+	return !Input.isTexting();
+}).
+addBase('_onMouseDown_do',function f(event){
+	if(event.button===0){
+		this._onLeftButtonDown(event);
+	}else if (event.button===1){
+		this._onMiddleButtonDown(event);
+	}else if(event.button===2){
+		this._onRightButtonDown(event);
+	}
+}).
+addBase('_onMouseDown',function f(event){
+	return this._onMouseDown_condOk.apply(this,arguments)&&this._onMouseDown_do.apply(this,arguments);
+}).
 /*
 addBase('_onMouseDown_preventDefault_condOk',function f(event){
 	const x=Graphics.pageToCanvasX(event.pageX);
@@ -551,7 +566,30 @@ add('_onMouseDown',function f(event){
 	return rtv;
 }).
 */
+addBase('_onPointerDown',function f(){
+	return this._onPointerDown_condOk.apply(this,arguments)&&this._onPointerDown_do.apply(this,arguments);
+}).
+addBase('_onPointerDown_condOk',function f(){
+	return !Input.isTexting();
+}).
+addBase('_onPointerDown_do',function f(){
+	if(event.pointerType==='touch'&&!event.isPrimary){
+		const x=Graphics.pageToCanvasX(event.pageX);
+		const y=Graphics.pageToCanvasY(event.pageY);
+		if(Graphics.isInsideCanvas(x,y)){
+			// For Microsoft Edge
+			this._onCancel(x,y);
+			event.preventDefault();
+		}
+	}
+}).
 addBase('_onTouchStart',function f(event){
+	return this._onTouchStart_condOk.apply(this,arguments)&&this._onTouchStart_do.apply(this,arguments);
+}).
+addBase('_onTouchStart_condOk',function f(event){
+	return !Input.isTexting();
+}).
+addBase('_onTouchStart_do',function f(event){
 	this._touched=true;
 	let preventDefaulted=false;
 	for(let i=0;i<event.changedTouches.length;++i){
@@ -6964,7 +7002,7 @@ addBase('changeScene',function f(){
 ).addBase('changeScene_do',function f(){
 	let recordedPrevScene;
 	if(this._scene){
-		if(!this._nextScene||!this._nextScene._prevScene){
+		if(!this._nextScene||this._nextScene._prevScene!==this._scene){
 			this._scene.terminate_before();
 			this._scene.terminate();
 			this._scene.terminate_after();
@@ -10248,7 +10286,12 @@ getP;
 new cfc(Scene_Menu.prototype).
 addWithBaseIfNotOwn('initialize',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	this._prevScene_store(true);
+	{
+		const sc=SceneManager._scene;
+		const pc=sc&&sc._prevScene;
+		const c=pc&&pc.constructor;
+		if(c!==this.constructor) this._prevScene_store(true);
+	}
 	return rtv;
 }).
 addWithBaseIfNotOwn('create',function f(){
