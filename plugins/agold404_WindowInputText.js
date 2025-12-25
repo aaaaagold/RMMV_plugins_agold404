@@ -77,6 +77,7 @@ addBase('initialize_textarea',function f(x,y,w,h,opt){
 },],
 ['focus',e=>{
 	if(window.isTest()) console.log('[WindowInputText]','on textarea focus');
+	TouchInput.clear();
 	Input.isTexting_set();
 },],
 ], // 1: event listeners
