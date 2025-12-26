@@ -26,13 +26,14 @@ window.isTest(),
 new cfc(Graphics).
 add('_updateCanvas',function f(){
 	const rtv=f.ori.apply(this,arguments);
-	this._updateCanvas_InputText_textareaRoot.apply(this,arguments);
+	this.windowInputText_updateCanvas_ensureTextareaRoot.apply(this,arguments);
 	return rtv;
 }).
-addWithBaseIfNotOwn('_updateCanvas_InputText_textareaRoot',function f(){
+addWithBaseIfNotOwn('windowInputText_updateCanvas_ensureTextareaRoot',function f(){
 	const rtv=f.ori&&f.ori.apply(this,arguments);
-	if(this._inputText_textareaRoot) return;
-	const div=this._inputText_textareaRoot=document.ce('div').sa('style',this._canvas.ga('style'));
+	let div=this._windowInputText_textareaRoot;
+	if(div) return div;
+	div=this._windowInputText_textareaRoot=document.ce('div').sa('style',this._canvas.ga('style'));
 	div.width=this._canvas.width;
 	div.height=this._canvas.height;
 	document.body.ac(div);
@@ -43,6 +44,10 @@ addWithBaseIfNotOwn('_updateCanvas_InputText_textareaRoot',function f(){
 },[
 4, // 0: zIndex
 ]).
+addBase('windowInputText_clearTextareaRoot',function f(){
+	this.windowInputText_updateCanvas_ensureTextareaRoot().rf(0);
+	return this;
+}).
 getP;
 
 { const a=class Window_InputText extends Window_Base{
@@ -50,12 +55,12 @@ getP;
 new cfc(a.prototype).
 addBase('initialize',function f(x,y,w,h,opt){
 	f._super[f._funcName].apply(this,arguments);
-	this.initialize_opt.apply(this,arguments);
+	this.windowInputText_initOpt.apply(this,arguments);
 }).
-addBase('initialize_opt',function f(x,y,w,h,opt){
-	this.initialize_textarea.apply(this,arguments);
+addBase('windowInputText_initOpt',function f(x,y,w,h,opt){
+	this.windowInputText_initTextarea.apply(this,arguments);
 }).
-addBase('initialize_textarea',function f(x,y,w,h,opt){
+addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 	const ta=this._textarea=document.ce('textarea');
 	for(let arr=f.tbl[0],x=arr.length;x--;) ta.style[arr[x][0]]=arr[x][1];
 	for(let arr=f.tbl[1],x=arr.length;x--;) ta.addEventListener(arr[x][0],arr[x][1]);
@@ -82,17 +87,18 @@ addBase('initialize_textarea',function f(x,y,w,h,opt){
 },],
 ], // 1: event listeners
 ]).
-addBase('destroy',function f(opt){
+addWithBaseIfNotOwn('destroy',function f(opt){
 	this._textarea.parentNode && this._textarea.parentNode.removeChild(this._textarea);
-	return f._super[f._funcName].apply(this,arguments);
+	return f.ori.apply(this,arguments);
 }).
-addBase('update',function f(){
-	f._super[f._funcName].apply(this,arguments);
-	this.update_textarea.apply(this,arguments);
+addWithBaseIfNotOwn('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.windowInputText_updateTextarea.apply(this,arguments);
+	return rtv;
 }).
-addBase('update_textarea',function f(){
+addBase('windowInputText_updateTextarea',function f(){
 	const ta=this._textarea;
-	if(!ta.parentNode) Graphics._inputText_textareaRoot.appendChild(ta);
+	if(!ta.parentNode) Graphics._windowInputText_textareaRoot.appendChild(ta);
 	const localRect=this.getRect_local();
 	const pad=this.padding;
 	const p0={x:localRect.x+pad,y:localRect.y+pad,};
@@ -111,6 +117,14 @@ addBase('update_textarea',function f(){
 getP;
 window[a.name]=a;
 }
+
+new cfc(SceneManager).
+addRoof('changeScene_do_after',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	Graphics.windowInputText_clearTextareaRoot();
+	return rtv;
+}).
+getP;
 
 
 })();
