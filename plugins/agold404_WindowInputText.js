@@ -13,6 +13,8 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_WindowInputText";
 const params=PluginManager.parameters(pluginName)||{};
+params._onWheel_fontSizeMinRemainedRatio=0.9375;
+params._onWheel_textareaMinRemainedRatio=0.75;
 
 
 t=[
@@ -64,16 +66,18 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 	const ta=this._textarea=document.ce('textarea');
 	for(let arr=f.tbl[0],x=arr.length;x--;) ta.style[arr[x][0]]=arr[x][1];
 	for(let arr=f.tbl[1],x=arr.length;x--;) ta.addEventListener(arr[x][0],arr[x][1]);
+	ta._wnd=this;
 },[
 [
 ['white-space','pre'],
 ['color','#FFF'],
 ['background-color','rgba(0,0,0,0)'],
-['padding','0px'],
+['padding','0px 0px 0px 2px'],
 ['border-width','0px'],
 ['margin','0px'],
 ['position','absolute'],
 ['resize','none'],
+['scrollbar-width','thin'],
 ], // 0: css [ [key,val] ]
 [
 ['blur',e=>{
@@ -88,6 +92,24 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 },],
 ['touchstart',
 t,],
+['wheel',e=>{
+	const dom=e.target;
+	const wndFontSize=useDefaultIfIsNaN(dom._wnd&&dom._wnd._taFontSize,1);
+	const minRemained=Math.ceil(wndFontSize*params._onWheel_fontSizeMinRemainedRatio);
+	const cw=dom.clientWidth;
+	const ch=dom.clientHeight;
+	const r=params._onWheel_textareaMinRemainedRatio;
+	const maxDx=Math.max(1,Math.min(~~(cw*r),cw-minRemained,));
+	const maxDy=Math.max(1,Math.min(~~(ch*r),ch-minRemained,));
+	const dx=e.deltaX;
+	const dy=e.deltaY;
+	const dxa=Math.abs(dx);
+	const dya=Math.abs(dy);
+	if(maxDx<dxa||maxDy<dya){
+		dom.scrollBy(dx/dxa*maxDx,dy/dya*maxDy);
+		e.preventDefault();
+	}
+},],
 ], // 1: event listeners
 ]).
 addWithBaseIfNotOwn('destroy',function f(opt){
@@ -116,7 +138,7 @@ addBase('windowInputText_updateTextarea',function f(){
 	css.top=g0.y*100/C.height+'%';
 	css.width=(g1.x-g0.x)*100/C.width+'%';
 	css.height=(g1.y-g0.y)*100/C.height+'%';
-	css.fontSize=this.standardFontSize()*ta.parentNode.offsetWidth/C.width+'px';
+	css.fontSize=(this._taFontSize=this.standardFontSize()*ta.parentNode.offsetWidth/C.width)+'px';
 	//if(this.contents) css.fontFamily=this.contents.fontFace; // will be GameFont
 }).
 getP;
