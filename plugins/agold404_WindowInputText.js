@@ -80,11 +80,14 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 	if(window.isTest()) console.log('[WindowInputText]','on textarea blur');
 	Input.isTexting_clear();
 },],
-['focus',e=>{
+['focus',t=e=>{
+	// also 'touchstart'
 	if(window.isTest()) console.log('[WindowInputText]','on textarea focus');
 	TouchInput.clear();
 	Input.isTexting_set();
 },],
+['touchstart',
+t,],
 ], // 1: event listeners
 ]).
 addWithBaseIfNotOwn('destroy',function f(opt){
@@ -98,7 +101,9 @@ addWithBaseIfNotOwn('update',function f(){
 }).
 addBase('windowInputText_updateTextarea',function f(){
 	const ta=this._textarea;
-	if(!ta.parentNode) Graphics._windowInputText_textareaRoot.appendChild(ta);
+	if(!ta.parentNode){
+		Graphics.windowInputText_updateCanvas_ensureTextareaRoot().appendChild(ta);
+	}
 	const localRect=this.getRect_local();
 	const pad=this.padding;
 	const p0={x:localRect.x+pad,y:localRect.y+pad,};
