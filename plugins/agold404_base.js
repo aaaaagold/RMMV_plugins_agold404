@@ -613,10 +613,22 @@ addBase('_onTouchStart_do',function f(event){
 	if (window.cordova || window.navigator.standalone) {
 		if(!preventDefaulted){ preventDefaulted=true; event.preventDefault(); }
 	}
+}).
+addBase('_onWheel_condOk',function f(evt){
+	return !Input.isTexting();
+}).
+addBase('_onWheel_do',function f(evt){
+	this._events.wheelX+=event.deltaX;
+	this._events.wheelY+=event.deltaY;
+	event.preventDefault();
+}).
+addBase('_onWheel',function f(evt){
+	return this._onWheel_condOk.apply(this,arguments)&&this._onWheel_do.apply(this,arguments);
 }).add('_onWheel',function f(evt){
 	if(this.bypassPreventDefault_wheel_get(evt)) evt.preventDefault=f.tbl[0];
 	return f.ori.apply(this,arguments);
 },t).addBase('bypassPreventDefault_wheel_get',function f(){
+	if(Input.isTexting()) return true;
 	return this._bypassPreventDefault_wheel||this._bypassPreventDefault_wheel_stackSize;
 }).addBase('bypassPreventDefault_wheel_set',function f(rhs){
 	return this._bypassPreventDefault_wheel=rhs;
