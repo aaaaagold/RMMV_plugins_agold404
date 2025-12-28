@@ -10331,6 +10331,21 @@ getP;
 (()=>{ let k,r,t;
 
 
+if(window.isTest()){
+const disabledPluginsRaw=getUrlParamVal('disabledPlugins');
+new cfc(PluginManager).
+add('parameters',function f(pluginName){
+	if(f.tbl[0].has(pluginName)){
+		throw new Error('use error to stop the script');
+	}
+	return f.ori.apply(this,arguments);
+},[
+new Set(disabledPluginsRaw&&disabledPluginsRaw.split(',')),
+]).
+getP;
+}
+
+
 new cfc(SceneManager).add('run',function f(){
 	setTimeout(exposeToTopFrame,f.tbl[0]);
 	return f.ori.apply(this,arguments);
