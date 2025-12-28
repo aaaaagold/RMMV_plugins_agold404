@@ -85,12 +85,14 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 	Input.isTexting_clear();
 },],
 ['focus',t=e=>{
-	// also 'touchstart'
-	if(window.isTest()) console.log('[WindowInputText]','on textarea focus');
+	// also 'touchstart' , 'pointerdown'
+	if(window.isTest()) console.log('[WindowInputText]','on textarea',e.type);
 	TouchInput.clear();
 	Input.isTexting_set();
 },],
 ['touchstart',
+t,],
+['pointerdown',
 t,],
 ['wheel',e=>{
 	const dom=e.target;
