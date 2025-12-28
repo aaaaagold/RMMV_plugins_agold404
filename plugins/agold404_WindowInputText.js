@@ -47,7 +47,16 @@ addWithBaseIfNotOwn('windowInputText_updateCanvas_ensureTextareaRoot',function f
 4, // 0: zIndex
 ]).
 addBase('windowInputText_clearTextareaRoot',function f(){
-	this.windowInputText_updateCanvas_ensureTextareaRoot().rf(0);
+	const root=this.windowInputText_updateCanvas_ensureTextareaRoot();
+	for(let arr=root.childNodes,x=arr.length;x--;){
+		const ta=arr[x];
+		ta._lastScroll=({
+			l:ta.scrollLeft,
+			t:ta.scrollTop,
+		});
+	}
+	root.rf(0);
+	// textareas blur if reomved from parentNode
 	return this;
 }).
 getP;
@@ -127,6 +136,12 @@ addBase('windowInputText_updateTextarea',function f(){
 	const ta=this._textarea;
 	if(!ta.parentNode){
 		Graphics.windowInputText_updateCanvas_ensureTextareaRoot().appendChild(ta);
+		if(ta._lastScroll){
+			ta.scrollTo(
+				ta._lastScroll.l,
+				ta._lastScroll.t,
+			);
+		}
 	}
 	const ref=this._windowSpriteContainer||this;
 	const localRect=ref.getRect_local();
