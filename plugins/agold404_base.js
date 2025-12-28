@@ -3999,6 +3999,31 @@ getP;
 
 
 new cfc(Game_Action.prototype).
+addBase('testApply_isBypassCheck',function f(target){
+	return $gameParty.inBattle() || this.isForOpponent();
+}).
+addBase('testApply_deadState',function f(target){
+	return this.isForDeadFriend() === trgt.isDead();
+}).
+addBase('testApply_effective',function f(target){
+	return (
+		this.isDamage() ||
+		(this.isHpRecover() && target.hp < target.mhp) ||
+		(this.isMpRecover() && target.mp < target.mmp) ||
+		this.hasItemAnyValidEffects(target)
+	);
+}).
+addBase('testApply',function f(target){
+	return (
+		this.testApply_isBypassCheck.apply(this,arguments) || (
+			this.testApply_deadState.apply(this,arguments) && this.testApply_effective.apply(this,arguments)
+		)
+	);
+}).
+getP;
+
+
+new cfc(Game_Action.prototype).
 addBase('itemEffectAddBuff',function(target,effect){
 	const chance=this.itemEffectAddBuff_calChance.apply(this,arguments);
 	if(this.itemEffectAddBuff_chanceCondOk(chance,arguments)){
