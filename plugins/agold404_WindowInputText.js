@@ -56,7 +56,7 @@ addBase('windowInputText_clearTextareaRoot',function f(){
 		});
 	}
 	root.rf(0);
-	// textareas blur if reomved from parentNode
+	// textareas blur automatically if reomved from parentNode
 	return this;
 }).
 getP;
@@ -94,7 +94,7 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 ['white-space','pre'],
 ['color','#FFF'],
 ['background-color','rgba(0,0,0,0)'],
-['padding','0px 0px 0px 2px'],
+['padding','0px 2px 0px 2px'],
 ['border-width','0px'],
 ['margin','0px'],
 ['position','absolute'],
@@ -141,6 +141,10 @@ t,
 ],
 ['keydown',e=>{
 	const dom=e.target;
+	if(!dom._wnd.isOpen()){
+		e.preventDefault();
+		return;
+	}
 	const kc=e.keyCode;
 	if(dom._okCallback){
 		if(dom._enterAsOk&&kc===13){
@@ -173,6 +177,16 @@ okCallbackAndLine1:e=>e.target.okCallback(),
 }), // 2: default opt callbacks
 /^arrowsToAdjustNumber(:([0-9]+|0x[0-9A-Fa-f]+|0o[0-7]+))?/, // 3: shift ratio, using line1 option
 ]).
+addWithBaseIfNotOwn('onclosed',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._textarea.blur();
+	return rtv;
+}).
+addWithBaseIfNotOwn('onopened',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._textarea.focus();
+	return rtv;
+}).
 addWithBaseIfNotOwn('destroy',function f(opt){
 	this._textarea.parentNode && this._textarea.parentNode.removeChild(this._textarea);
 	return f.ori.apply(this,arguments);
