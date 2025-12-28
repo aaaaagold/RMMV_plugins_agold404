@@ -616,7 +616,7 @@ okCallback:function(){
 	const wnd=this._wnd;
 	const self=wnd._scene;
 	const val=this.value-0;
-	if(self.onCommonOk_item(wnd._listWindow,wnd._selectFunc,this.value-0)){
+	if(self.onCommonOk_item(wnd._listWindow,wnd._selectFunc,this.value)){
 		// err
 	}else{
 		SoundManager.playOk();
@@ -694,7 +694,7 @@ addBase('onCommonOk_item',function f(wnd,func,amount){
 		return;
 	} }
 	let err;
-	amount=useDefaultIfIsNaN(amount-0,1);
+	if(amount===undefined) amount=1;
 	if(item && !(func.call($gameParty,this._depositoryId,item,amount,this._capacity)<0)){
 		this._window_itemList_backpack.refresh();
 		this._window_itemList_depository.refresh();
