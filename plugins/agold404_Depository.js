@@ -595,8 +595,9 @@ updatePolling:function(){
 	if(!this._listWindow||this._listWindow.isClosing()||this._listWindow.isClosed()) this.close();
 },
 cancelCallback:function(){
+	SoundManager.playCancel();
 	this._wnd.close();
-	this.blur();
+	//this.blur(); // too early
 },
 escAsCancel:true,
 okCallback:function(){
@@ -606,9 +607,10 @@ okCallback:function(){
 	if(self.onCommonOk_item(wnd._listWindow,wnd._selectFunc,this.value-0)){
 		// err
 	}else{
+		SoundManager.playOk();
 		wnd._listWindow.refresh();
 		wnd.close();
-		this.blur();
+		//this.blur(); // too early
 	}
 	wnd.deactivate(); // wait for using `onclosed()` to `activate()`
 },
@@ -616,6 +618,8 @@ enterAsOk:true,
 }), // 0: opt
 function(){
 	if(this._listWindow) this._listWindow.activate();
+	Input.isTexting_clear();
+	this._textarea.blur();
 }, // 1: onclosed
 ]).
 addBase('getWindowInputText',function f(){
@@ -665,8 +669,9 @@ addBase('onCommonOk_item',function f(wnd,func,amount){
 		);
 		wit.open();
 		const ta=wit._textarea;
-		ta.value=0;
+		ta.value=1;
 		ta.focus();
+		Input.isTexting_set();
 		return;
 	} }
 	let err;
