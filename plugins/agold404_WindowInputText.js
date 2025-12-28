@@ -128,12 +128,13 @@ addBase('windowInputText_updateTextarea',function f(){
 	if(!ta.parentNode){
 		Graphics.windowInputText_updateCanvas_ensureTextareaRoot().appendChild(ta);
 	}
-	const localRect=this.getRect_local();
+	const ref=this._windowSpriteContainer||this;
+	const localRect=ref.getRect_local();
 	const pad=this.padding;
 	const p0={x:localRect.x+pad,y:localRect.y+pad,};
 	const p1={x:localRect.x+localRect.width-pad,y:localRect.y+localRect.height-pad,};
-	const g0=this.toGlobal(p0);
-	const g1=this.toGlobal(p1);
+	const g0=ref.toGlobal(p0);
+	const g1=ref.toGlobal(p1);
 	const css=ta.style;
 	const C=Graphics._canvas;
 	css.left=g0.x*100/C.width+'%';
