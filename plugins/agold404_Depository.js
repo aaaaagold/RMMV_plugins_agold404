@@ -398,6 +398,8 @@ addBase('update_touch_testLayeredItemWindow',function f(globalXy){
 	if(lw.activive) return -2;
 	const xy=lw.toLocal(TouchInput);
 	if(!lw.containsPoint_local(xy)) return;
+	this.update_touch_closeAddons_windowInputText.apply(this,arguments);
+	lw.activate();
 	return true;
 }).
 addBase('update_touch_testWindowCommon',function f(wnd,globalXy,actFunc){
@@ -414,13 +416,23 @@ addBase('update_touch_testWindowCommon',function f(wnd,globalXy,actFunc){
 	if(actFunc) actFunc.call(this,idx);
 	return true; // avoid 0
 }).
+addBase('update_touch_closeAddons',function f(){
+	this.update_touch_closeAddons_layeredItemWindow.apply(this,arguments);
+	this.update_touch_closeAddons_windowInputText.apply(this,arguments);
+}).
+addBase('update_touch_closeAddons_layeredItemWindow',function f(){
+{ const func=this.changeUiState_toCloseLayeredItemWindow; func&&func.call(this); }
+}).
+addBase('update_touch_closeAddons_windowInputText',function f(){
+{ const wnd=this.getWindowInputText(); if(wnd){ wnd._listWindow=undefined; if(wnd.isClosed()){ wnd.open(); wnd.updateOpen(); } wnd.close(); } }
+}).
 addBase('update_touch_testCategoryWindow',function f(globalXy){
 	const wnd=this._window_category;
 	return this.update_touch_testWindowCommon(wnd,globalXy,f.tbl[0]);
 },[
 function f(idx){
 	//if(!(idx>=0)) return; // need to execute `this.onCategoryOk();` even idx is not valid
-{ const func=this.changeUiState_toCloseLayeredItemWindow; func&&func.call(this); }
+	this.update_touch_closeAddons.apply(this,arguments);
 	if(this._window_category.index()!==idx) SoundManager.playCursor(); // temp.
 	this._window_category.select(idx);
 	this.onCategoryOk();
@@ -431,7 +443,7 @@ addBase('update_touch_testDepositoryWindow',function f(globalXy){
 	return this.update_touch_testWindowCommon(this._window_itemList_depository,globalXy,f.tbl[0]);
 },[
 function f(idx){
-{ const func=this.changeUiState_toCloseLayeredItemWindow; func&&func.call(this); }
+	this.update_touch_closeAddons.apply(this,arguments);
 this._window_itemList_backpack.alpha=f.tbl[0];
 this._window_itemList_depository.alpha=f.tbl[1];
 if(this._window_itemList_depository.index()===idx) TouchInput.clear();
@@ -443,7 +455,7 @@ addBase('update_touch_testBackpackWindow',function f(globalXy){
 	return this.update_touch_testWindowCommon(this._window_itemList_backpack,globalXy,f.tbl[0]);
 },[
 function f(idx){
-{ const func=this.changeUiState_toCloseLayeredItemWindow; func&&func.call(this); }
+	this.update_touch_closeAddons.apply(this,arguments);
 this._window_itemList_depository.alpha=f.tbl[0];
 this._window_itemList_backpack.alpha=f.tbl[1];
 if(this._window_itemList_backpack.index()===idx) TouchInput.clear();
@@ -618,8 +630,9 @@ enterAsOk:true,
 }), // 0: opt
 function(){
 	if(this._listWindow) this._listWindow.activate();
-	Input.isTexting_clear();
 	this._textarea.blur();
+	Graphics._canvas.focus();
+	Input.isTexting_clear();
 }, // 1: onclosed
 ]).
 addBase('getWindowInputText',function f(){
@@ -660,6 +673,7 @@ addBase('refreshCapacityWindow',function f(){
 addBase('onCommonOk_item',function f(wnd,func,amount){
 	const item=wnd.item();
 	if(item && amount===undefined){ const wit=this.getWindowInputText(); if(wit){
+		wnd.deactivate();
 		wit._listWindow=wnd;
 		wit._selectFunc=func;
 		wit.width=wnd.width;
@@ -667,11 +681,16 @@ addBase('onCommonOk_item',function f(wnd,func,amount){
 			wnd.x,
 			wnd.y+wnd.height,
 		);
+		if(wit.isOpen()){
+			// restore so that onopened will be called.
+			wit.close();
+			wit.updateClose();
+		}
 		wit.open();
 		const ta=wit._textarea;
 		ta.value=1;
-		ta.focus();
-		Input.isTexting_set();
+		//ta.focus(); // in onopened
+		//Input.isTexting_set(); // too early
 		return;
 	} }
 	let err;
