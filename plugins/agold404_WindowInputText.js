@@ -73,9 +73,22 @@ addBase('windowInputText_initOpt',function f(x,y,w,h,opt){
 }).
 addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 	const ta=this._textarea=document.ce('textarea');
-	for(let arr=f.tbl[0],x=arr.length;x--;) ta.style[arr[x][0]]=arr[x][1];
-	for(let arr=f.tbl[1],x=arr.length;x--;) ta.addEventListener(arr[x][0],arr[x][1]);
+	const css=ta.style;
+	for(let arr=f.tbl[0],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
+	for(let arr=f.tbl[1],x=arr.length;x--;) ta.addEventListener(arr[x][0],arr[x][1],arr[x][2]);
 	ta._wnd=this;
+	if(opt){
+		this._updatePolling=opt.updatePolling;
+		if((ta._line1=opt.line1||"")) css['scrollbar-width']='none';
+		{ const m=ta._line1.match(f.tbl[3]); if(m){
+			ta._arrowsToAdjustNumber=useDefaultIfIsNaN(m[2]-0,1);
+		} }
+		if(opt.align) css['text-align']=opt.align;
+		ta._enterAsOk=opt.enterAsOk;
+		ta._escAsCancel=opt.escAsCancel;
+		ta._okCallback=opt.okCallback;
+		ta._cancelCallback=opt.cancelCallback;
+	}
 },[
 [
 ['white-space','pre'],
@@ -92,17 +105,21 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 ['blur',e=>{
 	if(window.isTest()) console.log('[WindowInputText]','on textarea blur');
 	Input.isTexting_clear();
-},],
+},
+],
 ['focus',t=e=>{
 	// also 'touchstart' , 'pointerdown'
 	if(window.isTest()) console.log('[WindowInputText]','on textarea',e.type);
 	TouchInput.clear();
 	Input.isTexting_set();
-},],
+},
+],
 ['touchstart',
-t,],
+t,
+],
 ['pointerdown',
-t,],
+t,
+],
 ['wheel',e=>{
 	const dom=e.target;
 	const wndFontSize=useDefaultIfIsNaN(dom._wnd&&dom._wnd._taFontSize,1);
@@ -120,8 +137,41 @@ t,],
 		dom.scrollBy(dx/dxa*maxDx,dy/dya*maxDy);
 		e.preventDefault();
 	}
-},],
+},
+],
+['keydown',e=>{
+	const dom=e.target;
+	const kc=e.keyCode;
+	if(dom._okCallback){
+		if(dom._enterAsOk&&kc===13){
+			dom._okCallback(e);
+		}
+	}
+	if(dom._cancelCallback){
+		if(dom._escAsCancel&&kc===27){
+			dom._cancelCallback(e);
+		}
+	}
+	if(dom._arrowsToAdjustNumber&&(kc===38||kc===40)){
+		const v0=dom.value-0;
+		if(!isNaN(v0)){
+			const unit=e.shiftKey?dom._arrowsToAdjustNumber:1;
+			if(kc===38) dom.value=v0+unit;
+			if(kc===40) dom.value=v0-unit;
+		}
+		e.preventDefault();
+	}
+	if(kc===13){
+		if(dom._line1) e.preventDefault();
+		return;
+	}
+},
+],
 ], // 1: event listeners
+({
+okCallbackAndLine1:e=>e.target.okCallback(),
+}), // 2: default opt callbacks
+/^arrowsToAdjustNumber(:([0-9]+|0x[0-9A-Fa-f]+|0o[0-7]+))?/, // 3: shift ratio, using line1 option
 ]).
 addWithBaseIfNotOwn('destroy',function f(opt){
 	this._textarea.parentNode && this._textarea.parentNode.removeChild(this._textarea);
@@ -130,6 +180,7 @@ addWithBaseIfNotOwn('destroy',function f(opt){
 addWithBaseIfNotOwn('update',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.windowInputText_updateTextarea.apply(this,arguments);
+	if(this._updatePolling) this._updatePolling.apply(this,arguments);
 	return rtv;
 }).
 addBase('windowInputText_updateTextarea',function f(){
