@@ -75,7 +75,7 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 	const ta=this._textarea=document.ce('textarea');
 	const css=ta.style;
 	for(let arr=f.tbl[0],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
-	for(let arr=f.tbl[1],x=arr.length;x--;) ta.addEventListener(arr[x][0],arr[x][1],arr[x][2]);
+	for(let arr=f.tbl[1],x=arr.length;x--;) ta.ae(arr[x][0],arr[x][1],arr[x][2]);
 	ta._wnd=this;
 	if(opt){
 		this._updatePolling=opt.updatePolling;
@@ -88,6 +88,26 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 		ta._escAsCancel=opt.escAsCancel;
 		ta._okCallback=opt.okCallback;
 		ta._cancelCallback=opt.cancelCallback;
+		if((ta._btns=opt.btns)){
+			const btnRoot=ta._btnRoot=document.ce('div');
+			const btnOk=document.ce('button').ac(document.ce('div').atxt('✅'));
+			const btnCancel=document.ce('button').ac(document.ce('div').atxt('⛔'));
+			btnRoot.ac(
+				btnRoot._cancel=btnCancel
+			).ac(
+				btnRoot._ok=btnOk
+			);
+			{ const css=btnRoot.style;
+			for(let arr=f.tbl[4],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
+			}
+			for(let arr=[btnOk,btnCancel,],x=arr.length;x--;){
+				arr[x]._ta=ta;
+				const css=arr[x].style;
+				for(let arr=f.tbl[5],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
+			}
+			btnOk.onclick=f.tbl[6].ok;
+			btnCancel.onclick=f.tbl[6].cancel;
+		}
 	}
 },[
 [
@@ -122,6 +142,15 @@ t,
 ],
 ['wheel',e=>{
 	const dom=e.target;
+	if(dom._arrowsToAdjustNumber){
+		if(e.deltaY){
+			const dValR=e.deltaY/Math.abs(e.deltaY);
+			dom.value-=dValR;
+			SoundManager.playCursor();
+			e.preventDefault();
+			return;
+		}
+	}
 	const wndFontSize=useDefaultIfIsNaN(dom._wnd&&dom._wnd._taFontSize,1);
 	const minRemained=Math.ceil(wndFontSize*params._onWheel_fontSizeMinRemainedRatio);
 	const cw=dom.clientWidth;
@@ -162,6 +191,7 @@ t,
 			const unit=e.shiftKey?dom._arrowsToAdjustNumber:1;
 			if(kc===38) dom.value=v0+unit;
 			if(kc===40) dom.value=v0-unit;
+			SoundManager.playCursor();
 		}
 		e.preventDefault();
 	}
@@ -176,6 +206,23 @@ t,
 okCallbackAndLine1:e=>e.target.okCallback(),
 }), // 2: default opt callbacks
 /^arrowsToAdjustNumber(:([0-9]+|0x[0-9A-Fa-f]+|0o[0-7]+))?/, // 3: shift ratio, using line1 option
+[
+['padding','0px'],
+['border-width','0px'],
+['margin','0px'],
+['position','absolute'],
+], // 4: btn root css [ [key,val] ]
+[
+['padding','0px'],
+//['border-width','2px'],
+['margin','0px'],
+['position','absolute'],
+['text-align','center'],
+], // 5: btn css [ [key,val] ]
+({
+ok:function f(){ return this._ta._okCallback&&this._ta._okCallback(); },
+cancel:function f(){ return this._ta._cancelCallback&&this._ta._cancelCallback(); },
+}), // 6: btn onclick callbacks
 ]).
 addWithBaseIfNotOwn('onclosed',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -200,13 +247,15 @@ addWithBaseIfNotOwn('update',function f(){
 addBase('windowInputText_updateTextarea',function f(){
 	const ta=this._textarea;
 	if(!ta.parentNode){
-		Graphics.windowInputText_updateCanvas_ensureTextareaRoot().appendChild(ta);
+		const root=Graphics.windowInputText_updateCanvas_ensureTextareaRoot();
+		root.ac(ta);
 		if(ta._lastScroll){
 			ta.scrollTo(
 				ta._lastScroll.l,
 				ta._lastScroll.t,
 			);
 		}
+		if(ta._btnRoot) root.ac(ta._btnRoot);
 	}
 	const ref=this._windowSpriteContainer||this;
 	const localRect=ref.getRect_local();
@@ -219,11 +268,200 @@ addBase('windowInputText_updateTextarea',function f(){
 	const C=Graphics._canvas;
 	css.left=g0.x*100/C.width+'%';
 	css.top=g0.y*100/C.height+'%';
-	css.width=(g1.x-g0.x)*100/C.width+'%';
-	css.height=(g1.y-g0.y)*100/C.height+'%';
+	const W=g1.x-g0.x;
+	const H=g1.y-g0.y;
+	css.width="calc( "+(W*100/C.width+'%')+" - 4px )"; // padding 2px * left+right
+	css.height=H*100/C.height+'%';
 	css.fontSize=(this._taFontSize=this.standardFontSize()*ta.parentNode.offsetWidth/C.width)+'px';
 	//if(this.contents) css.fontFamily=this.contents.fontFace; // will be GameFont
-}).
+	if(ta._btnRoot){ if(!(0<W&&0<H)) ta._btnRoot.style.display='none'; else{
+		ta._btnRoot.style.display='';
+		const func=f.tbl[0][ta._btns];
+		if(func) func(f.tbl[0],this,C,g0,g1,ta,ta._btnRoot,this._taFontSize);
+	} }
+},[
+({
+'top-v':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	tbl0['-root-TB'](tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize);
+	btnRoot.style.top=g0.y*100/C.height+'%';
+	{ const css=btnRoot._ok.style;
+	css.width='100%';
+	css.height=fontSize+'px';
+	css.top='';
+	css.bottom=fontSize+'px';
+	css.left='';
+	css.right='';
+	}
+	{ const css=btnRoot._cancel.style;
+	css.width='100%';
+	css.height=fontSize+'px';
+	css.top='';
+	css.bottom='0px';
+	css.left='';
+	css.right='';
+	}
+},
+'top-h':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	tbl0['-root-TB'](tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize);
+	btnRoot.style.top=g0.y*100/C.height+'%';
+	{ const css=btnRoot._ok.style;
+	css.width='50%';
+	css.height=fontSize+'px';
+	css.top='';
+	css.bottom='0px';
+	css.left='';
+	css.right='0px';
+	}
+	{ const css=btnRoot._cancel.style;
+	css.width='50%';
+	css.height=fontSize+'px';
+	css.top='';
+	css.bottom='0px';
+	css.left='0px';
+	css.right='';
+	}
+},
+'bottom-v':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	tbl0['-root-TB'](tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize);
+	btnRoot.style.top=g1.y*100/C.height+'%';
+	{ const css=btnRoot._ok.style;
+	css.width='100%';
+	css.height=fontSize+'px';
+	css.top='0px';
+	css.bottom='';
+	css.left='';
+	css.right='';
+	}
+	{ const css=btnRoot._cancel.style;
+	css.width='100%';
+	css.height=fontSize+'px';
+	css.top=fontSize+'px';
+	css.bottom='';
+	css.left='';
+	css.right='';
+	}
+},
+'bottom-h':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	tbl0['-root-TB'](tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize);
+	btnRoot.style.top=g1.y*100/C.height+'%';
+	{ const css=btnRoot._ok.style;
+	css.width='50%';
+	css.height=fontSize+'px';
+	css.top='0px';
+	css.bottom='';
+	css.left='';
+	css.right='0px';
+	}
+	{ const css=btnRoot._cancel.style;
+	css.width='50%';
+	css.height=fontSize+'px';
+	css.top='0px';
+	css.bottom='';
+	css.left='0px';
+	css.right='';
+	}
+},
+'left-v':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	tbl0['-root-LR'](tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize);
+	btnRoot.style.left=g0.x*100/C.width+'%';
+	{ const css=btnRoot._ok.style;
+	css.width=fontSize+'px';
+	css.height='50%';
+	css.top='0px';
+	css.bottom='';
+	css.left='';
+	css.right='0px';
+	}
+	{ const css=btnRoot._cancel.style;
+	css.width=fontSize+'px';
+	css.height='50%';
+	css.top='';
+	css.bottom='0px';
+	css.left='';
+	css.right='0px';
+	}
+},
+'left-h':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	tbl0['-root-LR'](tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize);
+	btnRoot.style.left=g0.x*100/C.width+'%';
+	{ const css=btnRoot._ok.style;
+	css.width=fontSize+'px';
+	css.height='100%';
+	css.top='';
+	css.bottom='';
+	css.left='';
+	css.right='0px';
+	}
+	{ const css=btnRoot._cancel.style;
+	css.width=fontSize+'px';
+	css.height='100%';
+	css.top='';
+	css.bottom='';
+	css.left='';
+	css.right=fontSize+'px';
+	}
+},
+'right-v':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	tbl0['-root-LR'](tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize);
+	btnRoot.style.left=g1.x*100/C.width+'%';
+	{ const css=btnRoot._ok.style;
+	css.width=fontSize+'px';
+	css.height='50%';
+	css.top='0px';
+	css.bottom='';
+	css.left='0px';
+	css.right='';
+	}
+	{ const css=btnRoot._cancel.style;
+	css.width=fontSize+'px';
+	css.height='50%';
+	css.top='';
+	css.bottom='0px';
+	css.left='0px';
+	css.right='';
+	}
+},
+'right-h':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	tbl0['-root-LR'](tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize);
+	btnRoot.style.left=g1.x*100/C.width+'%';
+	{ const css=btnRoot._ok.style;
+	css.width=fontSize+'px';
+	css.height='100%';
+	css.top='';
+	css.bottom='';
+	css.left=fontSize+'px';
+	css.right='';
+	}
+	{ const css=btnRoot._cancel.style;
+	css.width=fontSize+'px';
+	css.height='100%';
+	css.top='';
+	css.bottom='';
+	css.left='0px';
+	css.right='';
+	}
+},
+'-root-LR':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	{ const css=btnRoot.style;
+	css.width='0px';
+	css.height=(g1.y-g0.y)*100/C.height+'%';
+	css.top=g0.y*100/C.height+'%';
+	css.bottom='';
+	//css.left='';
+	css.right='';
+	}
+},
+'-root-TB':(tbl0,wnd,C,g0,g1,ta,btnRoot,fontSize)=>{
+	const css=btnRoot.style;
+	css.width=(g1.x-g0.x)*100/C.width+'%';
+	css.height='0px';
+	//css.top='';
+	css.bottom='';
+	css.left=g0.x*100/C.width+'%';
+	css.right='';
+},
+}), // 0: adj btns pos
+]).
 getP;
 window[a.name]=a;
 }
