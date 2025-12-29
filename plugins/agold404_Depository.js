@@ -627,6 +627,7 @@ okCallback:function(){
 	wnd.deactivate(); // wait for using `onclosed()` to `activate()`
 },
 enterAsOk:true,
+btns:"left-h",
 }), // 0: opt
 function(){
 	if(this._listWindow) this._listWindow.activate();
@@ -688,6 +689,7 @@ addBase('onCommonOk_item',function f(wnd,func,amount){
 		}
 		wit.open();
 		const ta=wit._textarea;
+		ta._btns=wnd.x>=wit.standardFontSize()*2?'left-h':'right-h';
 		ta.value=1;
 		//ta.focus(); // in onopened
 		//Input.isTexting_set(); // too early
