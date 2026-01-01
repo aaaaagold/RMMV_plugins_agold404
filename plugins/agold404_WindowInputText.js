@@ -129,6 +129,12 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 ],
 ['focus',t=e=>{
 	// also 'touchstart' , 'pointerdown'
+	const dom=e.target;
+	if(!dom._wnd.isOpen()){
+		e.preventDefault();
+		// when wnd.onopen dom calls focus()
+		return;
+	}
 	if(window.isTest()) console.log('[WindowInputText]','on textarea',e.type);
 	TouchInput.clear();
 	Input.isTexting_set();
