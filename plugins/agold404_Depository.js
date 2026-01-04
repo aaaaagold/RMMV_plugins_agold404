@@ -433,8 +433,7 @@ addBase('update_touch_testCategoryWindow',function f(globalXy){
 function f(idx){
 	//if(!(idx>=0)) return; // need to execute `this.onCategoryOk();` even idx is not valid
 	this.update_touch_closeAddons.apply(this,arguments);
-	if(this._window_category.index()!==idx) SoundManager.playCursor(); // temp.
-	this._window_category.select(idx);
+	this._window_category.playerSelect(idx);
 	this.onCategoryOk();
 }, // 0: actFunc
 ]).
@@ -861,3 +860,4 @@ getP;
 }
 
 })();
+
