@@ -510,7 +510,7 @@ f.tbl=[
 keyName,
 enableShortcutScenes,
 ];
-Input.addKeyName(key.toUpperCase().charCodeAt(),keyName);
+Input.addKeyName(key.toUpperCase().codePointAt(),keyName);
 new cfc(Scene_Boot.prototype).
 add('terminate_after',function f(){
 	const rtv=f.ori.apply(this,arguments);
