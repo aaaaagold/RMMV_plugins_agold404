@@ -610,7 +610,7 @@ addWithBaseIfNotOwn('update_active',function f(){
 	this._isSimpleTreeMode^=1;
 	this.updateCursor();
 	this.refresh();
-	SoundManager.playCursor();
+	this.playCursorSe();
 }).
 addWithBaseIfNotOwn('onSelect',function f(){
 	const rtv=f.ori.apply(this,arguments);
