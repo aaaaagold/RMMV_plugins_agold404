@@ -38,6 +38,8 @@ addWithBaseIfNotOwn('windowInputText_updateCanvas_ensureTextareaRoot',function f
 	div=this._windowInputText_textareaRoot=document.ce('div').sa('style',this._canvas.ga('style'));
 	div.width=this._canvas.width;
 	div.height=this._canvas.height;
+	const t=document.ce('template');
+	document.body.ac(div._templateRoot=t);
 	document.body.ac(div);
 	this.addAsGameCanvas(div);
 	div.style.zIndex=f.tbl[0];
@@ -71,44 +73,13 @@ addBase('initialize',function f(x,y,w,h,opt){
 addBase('windowInputText_initOpt',function f(x,y,w,h,opt){
 	this.windowInputText_initTextarea.apply(this,arguments);
 }).
-addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
-	const ta=this._textarea=document.ce('textarea');
+addBase('windowInputText_initTextarea_getTemplate',function f(x,y,w,h,opt){
+	const templateRoot=Graphics.windowInputText_updateCanvas_ensureTextareaRoot()._templateRoot;
+	let ta=templateRoot._ta; if(ta) return ta;
+	templateRoot.ac(ta=templateRoot._ta=document.ce('textarea'));
 	const css=ta.style;
 	for(let arr=f.tbl[0],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
-	for(let arr=f.tbl[1],x=arr.length;x--;) ta.ae(arr[x][0],arr[x][1],arr[x][2]);
-	ta._wnd=this;
-	if(opt){
-		this._updatePolling=opt.updatePolling;
-		if((ta._line1=opt.line1||"")) css['scrollbar-width']='none';
-		{ const m=ta._line1.match(f.tbl[3]); if(m){
-			ta._arrowsToAdjustNumber=useDefaultIfIsNaN(m[2]-0,1);
-		} }
-		if(opt.align) css['text-align']=opt.align;
-		ta._enterAsOk=opt.enterAsOk;
-		ta._escAsCancel=opt.escAsCancel;
-		ta._okCallback=opt.okCallback;
-		ta._cancelCallback=opt.cancelCallback;
-		if((ta._btns=opt.btns)){
-			const btnRoot=ta._btnRoot=document.ce('div');
-			const btnOk=document.ce('button').ac(document.ce('div').atxt('✅'));
-			const btnCancel=document.ce('button').ac(document.ce('div').atxt('⛔'));
-			btnRoot.ac(
-				btnRoot._cancel=btnCancel
-			).ac(
-				btnRoot._ok=btnOk
-			);
-			{ const css=btnRoot.style;
-			for(let arr=f.tbl[4],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
-			}
-			for(let arr=[btnOk,btnCancel,],x=arr.length;x--;){
-				arr[x]._ta=ta;
-				const css=arr[x].style;
-				for(let arr=f.tbl[5],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
-			}
-			btnOk.onclick=f.tbl[6].ok;
-			btnCancel.onclick=f.tbl[6].cancel;
-		}
-	}
+	return ta;
 },[
 [
 ['white-space','pre'],
@@ -121,6 +92,11 @@ addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
 ['resize','none'],
 ['scrollbar-width','thin'],
 ], // 0: css [ [key,val] ]
+]).
+addBase('windowInputText_initTextarea_applyEventListner',function f(x,y,w,h,opt){
+	const ta=this._textarea;
+	for(let arr=f.tbl[0],x=arr.length;x--;) ta.ae(arr[x][0],arr[x][1],arr[x][2]);
+},[
 [
 ['blur',e=>{
 	if(window.isTest()) console.log('[WindowInputText]','on textarea blur');
@@ -207,29 +183,68 @@ t,
 	}
 },
 ],
-], // 1: event listeners
-({
-okCallbackAndLine1:e=>e.target.okCallback(),
-}), // 2: default opt callbacks
-/^arrowsToAdjustNumber(:([0-9]+|0x[0-9A-Fa-f]+|0o[0-7]+))?/, // 3: shift ratio, using line1 option
+], // 0: event listeners
+]).
+addBase('windowInputText_initTextarea_applyOpt',function f(x,y,w,h,opt){
+	if(!opt) return;
+	const ta=this._textarea;
+	const css=ta.style;
+	this._updatePolling=opt.updatePolling;
+	if((ta._line1=opt.line1||"")) css['scrollbar-width']='none';
+	{ const m=ta._line1.match(f.tbl[0]); if(m){
+		ta._arrowsToAdjustNumber=useDefaultIfIsNaN(m[2]-0,1);
+	} }
+	if(opt.align) css['text-align']=opt.align;
+	ta._enterAsOk=opt.enterAsOk;
+	ta._escAsCancel=opt.escAsCancel;
+	ta._okCallback=opt.okCallback;
+	ta._cancelCallback=opt.cancelCallback;
+	if((ta._btns=opt.btns)){
+		const btnRoot=ta._btnRoot=document.ce('div');
+		const btnOk=document.ce('button').ac(document.ce('div').atxt('✅'));
+		const btnCancel=document.ce('button').ac(document.ce('div').atxt('⛔'));
+		btnRoot.ac(
+			btnRoot._cancel=btnCancel
+		).ac(
+			btnRoot._ok=btnOk
+		);
+		{ const css=btnRoot.style;
+		for(let arr=f.tbl[1],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
+		}
+		for(let arr=[btnOk,btnCancel,],x=arr.length;x--;){
+			arr[x]._ta=ta;
+			const css=arr[x].style;
+			for(let arr=f.tbl[2],x=arr.length;x--;) css[arr[x][0]]=arr[x][1];
+		}
+		btnOk.onclick=f.tbl[3].ok;
+		btnCancel.onclick=f.tbl[3].cancel;
+	}
+},[
+/^arrowsToAdjustNumber(:([0-9]+|0x[0-9A-Fa-f]+|0o[0-7]+))?/, // 0: shift ratio, using line1 option
 [
 ['padding','0px'],
 ['border-width','0px'],
 ['margin','0px'],
 ['position','absolute'],
-], // 4: btn root css [ [key,val] ]
+], // 1: btn root css [ [key,val] ]
 [
 ['padding','0px'],
 //['border-width','2px'],
 ['margin','0px'],
 ['position','absolute'],
 ['text-align','center'],
-], // 5: btn css [ [key,val] ]
+], // 2: btn css [ [key,val] ]
 ({
 ok:function f(){ return this._ta._okCallback&&this._ta._okCallback(); },
 cancel:function f(){ return this._ta._cancelCallback&&this._ta._cancelCallback(); },
-}), // 6: btn onclick callbacks
+}), // 3: btn onclick callbacks
 ]).
+addBase('windowInputText_initTextarea',function f(x,y,w,h,opt){
+	const ta=this._textarea=this.windowInputText_initTextarea_getTemplate.apply(this,arguments).cloneNode();
+	ta._wnd=this;
+	this.windowInputText_initTextarea_applyEventListner.apply(this,arguments);
+	this.windowInputText_initTextarea_applyOpt.apply(this,arguments);
+}).
 addWithBaseIfNotOwn('onclosed',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this._textarea.blur();
