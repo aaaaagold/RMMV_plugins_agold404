@@ -1116,7 +1116,21 @@ new cfc(Window_Help.prototype).addBase('setText',function f(text,forceUpdate,out
 	return this.drawTextEx(this._text, this.textPadding(), 0, undefined,undefined,out_textState);
 });
 //
-new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
+new cfc(Window_Selectable.prototype).
+addBase('playCursorSe',function(){
+	return SoundManager.playCursor();
+}).
+addBase('playerSelect',function(idx){
+	const idx0=this.index();
+	this.select.apply(this,arguments); // set `this._indexOld`
+	this.onPlayerSelect.apply(this,arguments);
+	if(idx0!==idx) this.onPlayerNewSelect(this,arguments);
+}).
+addBase('onPlayerSelect',none).
+addBase('onPlayerNewSelect',function(idx0){
+	SoundManager.playCursor();
+}).
+addBase('cursorDown',function(wrap){
 	const index=this.index();
 	const maxItems=this.maxItems();
 	const maxCols=this.maxCols();
@@ -1127,9 +1141,11 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 		else if(this.cursorDown_canLoop(wrap)) nextIndex=index%maxCols;
 		if(nextIndex>=0) this.select(nextIndex);
 	}
-}).addBase('cursorDown_canLoop',t=function f(wrap){
+}).
+addBase('cursorDown_canLoop',t=function f(wrap){
 	return !!wrap;
-}).addBase('cursorUp',function(wrap){
+}).
+addBase('cursorUp',function(wrap){
 	const index=this.index();
 	const maxItems=this.maxItems();
 	const maxCols=this.maxCols();
@@ -1144,54 +1160,85 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 		}
 		if(nextIndex>=0) this.select(nextIndex);
 	}
-}).addBase('cursorUp_canLoop',t
-).addBase('cursorRight',function(wrap){
+}).
+addBase('cursorUp_canLoop',t).
+addBase('cursorRight',function(wrap){
 	const index=this.index();
 	const maxItems=this.maxItems();
 	if(this.maxCols()>=2 && (index+1<maxItems||this.cursorRight_canLoop(wrap))) this.select((index+1)%maxItems);
-}).addBase('cursorRight_canLoop',t
-).addBase('cursorLeft',function f(wrap){
+}).
+addBase('cursorRight_canLoop',t).
+addBase('cursorLeft',function f(wrap){
 	const index=this.index();
 	const maxItems=this.maxItems();
 	if(this.maxCols()>=2 && (index>=1||this.cursorLeft_canLoop(wrap))) this.select((index-1+maxItems)%maxItems);
-}).addBase('cursorLeft_canLoop',t
-).add('processCursorMove',function f(){
+}).
+addBase('cursorLeft_canLoop',t).
+addBase('processCursorMove',function f(){
+	return this.processCursorMove_condOk.apply(this,arguments) && this.processCursorMove_do.apply(this,arguments);
+}).
+addBase('processCursorMove_condOk',function f(){
+	return this.isCursorMovable();
+}).
+addBase('processCursorMove_do',function f(){
+	if(Input.isRepeated('down')) this.cursorDown(Input.isTriggered('down')); 
+	if(Input.isRepeated('up')) this.cursorUp(Input.isTriggered('up'));
+	if(Input.isRepeated('right')) this.cursorRight(Input.isTriggered('right'));
+	if(Input.isRepeated('left')) this.cursorLeft(Input.isTriggered('left'));
+	if(!this.isHandled('pagedown') && Input.isTriggered('pagedown')) this.cursorPagedown();
+	if(!this.isHandled('pageup') && Input.isTriggered('pageup')) this.cursorPageup();
+}).
+add('processCursorMove_do',function f(){
 	const idx=this.index();
 	const rtv=f.ori.apply(this,arguments);
-	if(this.isCursorMovable()){
-		const idx2=this.index();
+	if(idx===this.index()){
 		f.tbl[0].forEach(f.tbl[1],this);
-		if(idx===idx2){
-			f.tbl[2].forEach(f.tbl[3],this);
-			if(idx!==this.index()) SoundManager.playCursor();
-		}
+		f.tbl[2].forEach(f.tbl[3],this);
 	}
 	return rtv;
-},t=[[[35,'end',function(){
+},t=[
+[
+[35,'end',function(){
 	const M=this.maxItems(); // if(!(0<M)) return; // called in 'this.isCursorMovable'
 	this.select(M-1);
-}],[36,'home',function(){
+}],
+[36,'home',function(){
 	const M=this.maxItems(); // if(!(0<M)) return; // called in 'this.isCursorMovable'
 	this.select(0);
-}],],function(info){
+}], // 0: end / home
+],
+function(info){
 	if(Input.isTriggered(info[1])) info[2].call(this);
-},[[33,'pageup',function(){
+},
+[
+[33,'pageup',function(){
 	this.cursorPageup();
-}],[34,'pagedown',function(){
+}],
+[34,'pagedown',function(){
 	this.cursorPagedown();
-}],],function(info){
+}],
+], // 2: page up / down
+function(info){
 	if( !this.isHandled(info[1]) && Input.isRepeated(info[1]) && !Input.isTriggered(info[1]) ) info[2].call(this);
-},]).add('cursorPageup',function f(){
+},
+]).
+addRoof('processCursorMove_do',function f(){
+	const idx=this.index();
+	const rtv=f.ori.apply(this,arguments);
+	if(idx!==this.index()) this.playCursorSe(); // they are using .select() so let's do it here
+}).
+add('cursorPageup',function f(){
 	const idx=this.index();
 	const rtv=f.ori.apply(this,arguments);
 	if(idx>=0 && idx===this.index()){
-		// no longer than a page
+		// not longer than a page
 		const C=this.maxCols();
 		if(idx>=C) this.select(idx%C);
 		else this.select(0); // hit on top
 	}
 	return rtv;
-}).add('cursorPagedown',function f(){
+}).
+add('cursorPagedown',function f(){
 	const idx=this.index();
 	const rtv=f.ori.apply(this,arguments);
 	if(idx>=0 && idx===this.index()){
@@ -1199,17 +1246,20 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 		if(0<M) this.select(M-1);
 	}
 	return rtv;
-}).add('update',function f(){
+}).
+add('update',function f(){
 	// TODO: addRoof?
 	const rtv=f.ori.apply(this,arguments);
 	if(this.active) this.update_active();
 	if(this.isOpenAndActive()) this.update_openAndActive();
 	return rtv;
-}).addBase('update_active',none
-).addBase('update_openAndActive',none
-).addBase('itemRect_curr',function f(){
+}).
+addBase('update_active',none).
+addBase('update_openAndActive',none).
+addBase('itemRect_curr',function f(){
 	return this.itemRect(this.index());
-}).addBase('itemRect_scrollRectInView',function f(rect){
+}).
+addBase('itemRect_scrollRectInView',function f(rect){
 	let scy=this._scrollY;
 	const maxH=this.contentsHeight(); if(!(0<maxH)) return; // initialize
 	const top=rect.y;
@@ -1220,17 +1270,20 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	if(scy===this._scrollY) return;
 	this._scrollY=scy;
 	this.refresh(); // scrolled, refresh
-}).addBase('ensureCursorVisible',function f(){
+}).
+addBase('ensureCursorVisible',function f(){
 	if(!(this.index()>=0)) return;
 	const rect=this.itemRect_curr(); // origin: scrolled origin
 	this.itemRect_scrollRectInView(rect);
 	//this.refresh(); // this will call `makeItemList`
 	this.updateCursor();
-}).addBase('scrollDist',function f(){
+}).
+addBase('scrollDist',function f(){
 	return f.tbl[0];
 },[
 32,
-]).addBase('scrollDown',function f(){
+]).
+addBase('scrollDown',function f(){
 	if(!(this.index()>=0)) return;
 	let scy=this._scrollY;
 	const maxCols=this.maxCols();
@@ -1243,7 +1296,8 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	this._scrollY=scy;
 	this.refresh();
 	this.updateCursor();
-}).addBase('scrollUp',function f(){
+}).
+addBase('scrollUp',function f(){
 	if(!(this.index()>=0)) return;
 	let scy=this._scrollY;
 	const rectBeg=this.itemRect(0);
@@ -1254,7 +1308,8 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	this._scrollY=scy;
 	this.refresh();
 	this.updateCursor();
-}).addBase('itemRect',function f(index){
+}).
+addBase('itemRect',function f(index){
 	const rect = new Rectangle();
 	const maxCols = this.maxCols();
 	rect.width = this.itemWidth();
@@ -1262,11 +1317,14 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	rect.x = index % maxCols * (rect.width + this.spacing()) - this._scrollX;
 	rect.y = ~~(index / maxCols) * (rect.height + this.itemSpacingY()) - this._scrollY; // it's too much if over int32, so let it bug.
 	return rect;
-}).addBase('itemSpacingY',function f(){
+}).
+addBase('itemSpacingY',function f(){
 	return 0;
-}).addBase('topRow',function f(){
+}).
+addBase('topRow',function f(){
 	return Math.floor(this._scrollY/(this.itemHeight()+this.itemSpacingY()));
-}).addBase('updateArrows',function f(){
+}).
+addBase('updateArrows',function f(){
 	if(!this.openness) return;
 	let scy=this._scrollY;
 	const rectBeg=this.itemRect(0);
@@ -1274,7 +1332,8 @@ new cfc(Window_Selectable.prototype).addBase('cursorDown',function(wrap){
 	const rectBtm=this.itemRect(maxCols*~~((this.maxItems()+maxCols-1)/maxCols)-maxCols);
 	this.downArrowVisible=this.contentsHeight()<rectBtm.y+rectBtm.height;
 	this.upArrowVisible=rectBeg.y<0;
-}).add('select',function f(idx){
+}).
+add('select',function f(idx){
 	const oldIdx=this._indexOld=this._index;
 	const rtv=f.ori.apply(this,arguments);
 	this.onSelect.apply(this,arguments);
@@ -10185,7 +10244,7 @@ new cfc(Window_Selectable.prototype).addBase('maxPageRows',function(isReturnReal
 	rect.x+=c.x;
 	rect.y+=c.y;
 	return rect.overlap(c);
-}).add('processCursorMove',function f(){
+}).add('processCursorMove_do',function f(){
 	const idx=this.index();
 	const rtv=f.ori.apply(this,arguments);
 	if(isNaN(this.index())) this.select(idx);
