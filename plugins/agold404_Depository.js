@@ -17,6 +17,9 @@
  */
 
 (()=>{ let k,r,t;
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Depository";
+const params=PluginManager.parameters(pluginName)||{};
+
 
 new cfc(Game_Party.prototype).
 addBase('_depository_getContAll',function f(){
@@ -280,7 +283,7 @@ _switchToWindow(nxt,wrap){
 	nxt.alpha=a0;
 	this.alpha=a1;
 	nxt.activate();
-	SoundManager.playCursor();
+	this.playCursorSe();
 	this._onSwitchToWindow(nxt);
 }
 };
