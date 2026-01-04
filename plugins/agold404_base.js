@@ -2509,6 +2509,7 @@ addBase('drawStateIcon_drawMoreInfos_settings',function f(actor,stateId,x,y){
 	this.contents.outlineWidth=this.drawActorIcons_drawMoreInfos_outlineWidth.apply(this,arguments);
 }).
 addBase('drawStateIcon_drawMoreInfos_contents',function f(actor,stateId,x,y){
+	if(!$dataStates[stateId]||!$dataStates[stateId].autoRemovalTiming) return;
 	const fontSize=this.currentFontSize();
 	const padding=this.drawActorIcons_drawMoreInfos_padding.apply(this,arguments);
 	this.drawText(actor._stateTurns[stateId],
