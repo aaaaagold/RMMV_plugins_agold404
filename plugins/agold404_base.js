@@ -1128,7 +1128,7 @@ addBase('playerSelect',function(idx){
 }).
 addBase('onPlayerSelect',none).
 addBase('onPlayerNewSelect',function(idx0){
-	SoundManager.playCursor();
+	this.playCursorSe();
 }).
 addBase('cursorDown',function(wrap){
 	const index=this.index();
