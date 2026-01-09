@@ -5064,6 +5064,14 @@ getP;
 }
 
 
+Game_Character.prototype.actor=undefined;
+new cfc(Game_Player.prototype).
+addBase('actor',function f(){
+	return $gameParty.leader();
+}).
+getP;
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
