@@ -253,6 +253,10 @@ p.kvGetIdx=function(key){
 p.kvGetVal=function(key){
 	if(this.kvHas(key)) return this._kvMap.get(key)[2];
 };
+p.kvGetKeyByIdx=p.kvGetKey;
+p.kvGetValByIdx=function(idx){
+	return this[idx][2];
+};
 p.kvPush=function(k,v){
 	// this[*] === [idx,key,val]
 	if(this.kvHas(k)) this._kvMap.get(k)[2]=v;
