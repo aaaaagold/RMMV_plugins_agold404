@@ -5004,13 +5004,15 @@ addBase('onActorsChanged_enable',function(){
 addBase('onActorsChanged_disable',function(){
 	this._isDisablingOnActorsChanged=true;
 }).
-addBase('onActorsChanged_isDisabled',function(){
-	return this._isDisablingOnActorsChanged;
+addBase('onActorsChanged_condOk',function(){
+	return !this._isDisablingOnActorsChanged;
 }).
-addBase('onActorsChanged',function f(actorId){
-	if(this.onActorsChanged_isDisabled()) return;
+addBase('onActorsChanged_do',function f(actorId){
 	$gamePlayer.refresh();
 	$gameMap.requestRefresh();
+}).
+addBase('onActorsChanged',function f(actorId){
+	return this.onActorsChanged_condOk.apply(this,arguments)&&this.onActorsChanged_do.apply(this,arguments)
 }).
 addBase('addActor_condOk',function f(actorId){
 	return this._actorsTbl_cnt(actorId)===0;
@@ -5043,6 +5045,9 @@ addBase('removeActor',function(actorId){
 }).
 addBase('onRemoveActor',function f(actorId){
 	this.onActorsChanged(actorId);
+}).
+addBase('hasActor',function f(actorId){
+	return this._actorsTbl_cnt(actorId)!==0;
 }).
 getP;
 
@@ -10326,18 +10331,61 @@ getP;
 
 
 new cfc(Game_Party.prototype).
-addBase('battleMembers',function() {
+addBase('battleMembersCache_get',function(){
+	return $gameTemp._cache_battleMembers;
+}).
+addBase('battleMembersCache_set',function(data){
+	$gameTemp._cache_battleMembers=data;
+	return this;
+}).
+addBase('battleMembers',function(){
+	let rtv=this.battleMembersCache_get(); if(rtv) return rtv;
+	this.battleMembersCache_set(rtv=[]);
+	rtv._set=new Set();
 	const maxBattleMembers=this.maxBattleMembers();
 	const allMembers=this.allMembers();
-	const rtv=[];
 	if(rtv.length<allMembers.length){ for(let x=0,xs=allMembers.length;x<xs;++x){
 		const actor=allMembers[x];
 		if(actor.isAppeared()){
+			rtv._set.add(actor);
 			rtv.push(actor);
 			if(rtv.length>=maxBattleMembers) break;
 		}
 	} }
+	Object.freeze(rtv._set);
+	Object.freeze(rtv);
 	return rtv;
+}).
+addBase('_tuneCache_battleMembers',function f(){
+	this.battleMembersCache_set(undefined);
+}).
+add('onActorsChanged_do',function f(actorId){
+	this._tuneCache_battleMembers.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('battleMembers_hasActor',function(actor){
+	const c=this.battleMembers();
+	const s=c&&c._set;
+	return s&&s.has(actor);
+}).
+getP;
+
+new cfc(Game_Actor.prototype).
+addWithBaseIfNotOwn('hide',function f(){
+	const isHidden=this.isHidden();
+	const rtv=f.ori.apply(this,arguments);
+	if(!isHidden!==!this.isHidden()) this.clearBattleMembersCacheIfInMembers();
+	return rtv;
+}).
+addWithBaseIfNotOwn('appear',function f(){
+	const isHidden=this.isHidden();
+	const rtv=f.ori.apply(this,arguments);
+	if(!isHidden!==!this.isHidden()) this.clearBattleMembersCacheIfInMembers();
+	return rtv;
+}).
+addBase('clearBattleMembersCacheIfInMembers',function f(){
+	const party=this.friendUnit();
+	if(party&&party.hasActor(this.actorId())) party.battleMembersCache_set(undefined);
 }).
 getP;
 
