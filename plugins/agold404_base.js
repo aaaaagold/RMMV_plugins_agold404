@@ -5049,6 +5049,113 @@ addBase('onRemoveActor',function f(actorId){
 addBase('hasActor',function f(actorId){
 	return this._actorsTbl_cnt(actorId)!==0;
 }).
+addBase('actor',function f(idx){
+	const actorId=this._actors[idx];
+	return actorId&&$gameActors.actor(actorId);
+}).
+getP;
+
+
+new cfc(Game_Party.prototype).
+addBase('battleMembersCache_get',function(){
+	return $gameTemp._cache_battleMembers;
+}).
+addBase('battleMembersCache_set',function(data){
+	$gameTemp._cache_battleMembers=data;
+	return this;
+}).
+addBase('battleMembers',function(){
+	let rtv=this.battleMembersCache_get(); if(rtv) return rtv;
+	this.battleMembersCache_set(rtv=[]);
+	rtv._set=new Set();
+	const maxBattleMembers=this.maxBattleMembers();
+	const allMembers=this.allMembers();
+	if(rtv.length<allMembers.length){ for(let x=0,xs=allMembers.length;x<xs;++x){
+		const actor=allMembers[x];
+		if(actor.isAppeared()){
+			rtv._set.add(actor);
+			rtv.push(actor);
+			if(rtv.length>=maxBattleMembers) break;
+		}
+	} }
+	Object.freeze(rtv._set);
+	Object.freeze(rtv);
+	return rtv;
+}).
+addBase('_tuneCache_battleMembers',function f(){
+	this.battleMembersCache_set(undefined);
+}).
+add('onActorsChanged_do',function f(actorId){
+	this._tuneCache_battleMembers.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('battleMembers_hasActor',function(actor){
+	const c=this.battleMembers();
+	const s=c&&c._set;
+	return s&&s.has(actor);
+}).
+getP;
+
+new cfc(Game_Actor.prototype).
+addWithBaseIfNotOwn('hide',function f(){
+	const isHidden=this.isHidden();
+	const rtv=f.ori.apply(this,arguments);
+	if(!isHidden!==!this.isHidden()) this.clearBattleMembersCacheIfInMembers();
+	return rtv;
+}).
+addWithBaseIfNotOwn('appear',function f(){
+	const isHidden=this.isHidden();
+	const rtv=f.ori.apply(this,arguments);
+	if(!isHidden!==!this.isHidden()) this.clearBattleMembersCacheIfInMembers();
+	return rtv;
+}).
+addBase('isBattleMember',function f(){
+	const party=this.friendsUnit();
+	return party&&party.hasActor(this.actorId());
+}).
+addBase('clearBattleMembersCacheIfInMembers',function f(){
+	if(this.isBattleMember()) this.friendUnit().battleMembersCache_set(undefined);
+}).
+getP;
+
+new cfc(Game_Follower.prototype).
+addBase('actor',function f(){
+	return $gameParty.actor(this._memberIndex);
+}).
+getP;
+
+new cfc(Game_Followers.prototype).
+add('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.matchMembersCnt();
+	return rtv;
+}).
+addBase('matchMembersCnt',function f(){
+	if(!SceneManager.isScene_map()) return;
+	const tm=SceneManager.getTilemap();
+	const members=$gameParty.allMembers();
+	const mc=members.length;
+	const arr=this._data;
+	if(mc>=2){ for(;;){
+		const idx=arr.length+1;
+		if(idx>=mc) break;
+		const last=arr.back;
+		const flwr=new Game_Follower(idx);
+		flwr.locate(last.x,last.y);
+		flwr.refresh();
+		arr.push(flwr);
+		$gamePlayer.getSprite().setCharacter(flwr);
+		tm.addChild(new Sprite_Character($gamePlayer));
+	} }
+	for(;;){
+		const len=arr.length;
+		if(!len||len<mc) break;
+		const flwr=arr.back;
+		const sp=flwr.getSprite();
+		if(sp) sp.parent.removeChild(sp);
+		arr.pop();
+	}
+}).
 getP;
 
 
@@ -10327,66 +10434,6 @@ undefined, // 0-4:
 [new Set(['left','center','right',]),'left'], // 0-5: valid align values
 ], // 0: valid values
 ]).
-getP;
-
-
-new cfc(Game_Party.prototype).
-addBase('battleMembersCache_get',function(){
-	return $gameTemp._cache_battleMembers;
-}).
-addBase('battleMembersCache_set',function(data){
-	$gameTemp._cache_battleMembers=data;
-	return this;
-}).
-addBase('battleMembers',function(){
-	let rtv=this.battleMembersCache_get(); if(rtv) return rtv;
-	this.battleMembersCache_set(rtv=[]);
-	rtv._set=new Set();
-	const maxBattleMembers=this.maxBattleMembers();
-	const allMembers=this.allMembers();
-	if(rtv.length<allMembers.length){ for(let x=0,xs=allMembers.length;x<xs;++x){
-		const actor=allMembers[x];
-		if(actor.isAppeared()){
-			rtv._set.add(actor);
-			rtv.push(actor);
-			if(rtv.length>=maxBattleMembers) break;
-		}
-	} }
-	Object.freeze(rtv._set);
-	Object.freeze(rtv);
-	return rtv;
-}).
-addBase('_tuneCache_battleMembers',function f(){
-	this.battleMembersCache_set(undefined);
-}).
-add('onActorsChanged_do',function f(actorId){
-	this._tuneCache_battleMembers.apply(this,arguments);
-	return f.ori.apply(this,arguments);
-}).
-addBase('battleMembers_hasActor',function(actor){
-	const c=this.battleMembers();
-	const s=c&&c._set;
-	return s&&s.has(actor);
-}).
-getP;
-
-new cfc(Game_Actor.prototype).
-addWithBaseIfNotOwn('hide',function f(){
-	const isHidden=this.isHidden();
-	const rtv=f.ori.apply(this,arguments);
-	if(!isHidden!==!this.isHidden()) this.clearBattleMembersCacheIfInMembers();
-	return rtv;
-}).
-addWithBaseIfNotOwn('appear',function f(){
-	const isHidden=this.isHidden();
-	const rtv=f.ori.apply(this,arguments);
-	if(!isHidden!==!this.isHidden()) this.clearBattleMembersCacheIfInMembers();
-	return rtv;
-}).
-addBase('clearBattleMembersCacheIfInMembers',function f(){
-	const party=this.friendUnit();
-	if(party&&party.hasActor(this.actorId())) party.battleMembersCache_set(undefined);
-}).
 getP;
 
 
