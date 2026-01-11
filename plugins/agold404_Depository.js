@@ -127,21 +127,29 @@ addBase('depository_onDelCont',function f(id){
 }).
 addBase('depository_transIn',function f(id,itemData,cnt,totalCapacity){
 	// move items into depository
-	cnt=cnt-0||0;
+	if(f.tbl[0].has(cnt)) cnt=$gameParty.numItems(itemData);
+	else cnt=cnt-0||0;
 	totalCapacity=useDefaultIfIsNone(totalCapacity,undefined);
 	if(cnt<0) return this.depository_transOut(id,itemData,-cnt);
 	if(totalCapacity<this.depository_getTotalCapacityUsed(id)+this.depository_getItemCapacityCost(itemData)*cnt) return -1;
 	if(!(cnt>=0&&this.numItems(itemData)>=cnt)) return -1;
 	this.depository_add(id,itemData,cnt);
 	this.gainItem(itemData,-cnt);
-}).
+},t=[
+new Set([
+"max",
+"MAX",
+"Max",
+]), // 0: max
+]).
 addBase('depository_transOut',function f(id,itemData,cnt){
 	// move items out from depository
-	cnt=cnt-0||0;
+	if(f.tbl[0].has(cnt)) cnt=this.depository_getCnt(id,itemData);
+	else cnt=cnt-0||0;
 	if(cnt<0) return this.depository_transIn(id,itemData,-cnt);
 	if(!(cnt>=0)||this.depository_del(id,itemData,cnt)<0) return -1;
 	this.gainItem(itemData,cnt);
-}).
+},t).
 addBase('depository_getItemList',function f(id,isPrintingRawData){
 	return isPrintingRawData?this._depository_getContById(id):this._depository_getContById(id).map(f.tbl[1]);
 },[
@@ -692,13 +700,13 @@ addBase('onCommonOk_item',function f(wnd,func,amount){
 		wit.open();
 		const ta=wit._textarea;
 		ta._btns=wnd.x>=wit.standardFontSize()*2?'left-h':'right-h';
-		ta.value=1;
+		ta.value="max";
 		//ta.focus(); // in onopened
 		//Input.isTexting_set(); // too early
 		return;
 	} }
 	let err;
-	if(amount===undefined) amount=1;
+	if(amount===undefined) amount=Input.isPressed('shift')?"max":1;
 	if(item && !(func.call($gameParty,this._depositoryId,item,amount,this._capacity)<0)){
 		this._window_itemList_backpack.refresh();
 		this._window_itemList_depository.refresh();
