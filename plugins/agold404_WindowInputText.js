@@ -126,8 +126,9 @@ t,
 	const dom=e.target;
 	if(dom._arrowsToAdjustNumber){
 		if(e.deltaY){
-			const dValR=e.deltaY/Math.abs(e.deltaY);
+			const dValR=Math.round((Input.isPressed('shift')?dom._arrowsToAdjustNumber:1)*(e.deltaY/Math.abs(e.deltaY)));
 			dom.value-=dValR;
+			if(isNaN(dom.value)) dom.value=0;
 			SoundManager.playCursor();
 			e.preventDefault();
 			return;
@@ -173,6 +174,9 @@ t,
 			const unit=e.shiftKey?dom._arrowsToAdjustNumber:1;
 			if(kc===38) dom.value=v0+unit;
 			if(kc===40) dom.value=v0-unit;
+			SoundManager.playCursor();
+		}else{
+			dom.value=0;
 			SoundManager.playCursor();
 		}
 		e.preventDefault();
