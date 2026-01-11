@@ -457,6 +457,7 @@ function f(idx){
 this._window_itemList_backpack.alpha=f.tbl[0];
 this._window_itemList_depository.alpha=f.tbl[1];
 if(this._window_itemList_depository.index()===idx) TouchInput.clear();
+	this.createWindow_operationHelp_setState("inDepository");
 }, // 0: actFunc
 activeAlphas,
 ]).
@@ -469,6 +470,7 @@ function f(idx){
 this._window_itemList_depository.alpha=f.tbl[0];
 this._window_itemList_backpack.alpha=f.tbl[1];
 if(this._window_itemList_backpack.index()===idx) TouchInput.clear();
+	this.createWindow_operationHelp_setState("inBackpack");
 }, // 0: actFunc
 activeAlphas,
 ]).
@@ -500,22 +502,47 @@ function f(){
 }, // 1: smaller fontSize
 ]).
 addBase('createWindow_operationHelp_getDefaultTxt',function f(state){
-	let tmp; try{ tmp=Intl.DateTimeFormat().resolvedOptions().locale; }catch(e){}
-	const txts=f.tbl[0][tmp]||f.tbl[0]._default;
+	const txts=f.tbl[0][DataManager.getLocale()]||f.tbl[0]._default;
+	if(txts.inDepository_extMsgs_WindowInputText){
+		const isUndef=typeof Window_InputText==='undefined';
+		for(let x=0,arr=txts.inDepository_extMsgs_WindowInputText,xs=arr.length;x<xs;++x){
+			txts.inDepository=txts.inDepository.replace("{}",isUndef?arr[x]:"");
+		}
+		txts.inDepository_extMsgs_WindowInputText=undefined;
+	}
+	if(txts.inBackpack_extMsgs_WindowInputText){
+		const isUndef=typeof Window_InputText==='undefined';
+		for(let x=0,arr=txts.inBackpack_extMsgs_WindowInputText,xs=arr.length;x<xs;++x){
+			txts.inBackpack=txts.inBackpack.replace("{}",isUndef?arr[x]:"");
+		}
+		txts.inBackpack_extMsgs_WindowInputText=undefined;
+	}
 	return txts[state]||f.tbl[1];
 },[
 {
 _default:{
 "depository":"press \\C[6]ok\\C[0] to set cursor on items in the depository.",
 "backpack":"press \\C[6]ok\\C[0] to set cursor on items in the backpack.",
-"inDepository":"press \\C[6]ok\\C[0] to retrieve the item. \\C[6]L./R.\\C[0] switch to backpack.",
-"inBackpack":"press \\C[6]ok\\C[0] to store the item. \\C[6]L./R.\\C[0] switch to depository.",
+"inDepository":"press \\C[6]ok\\C[0] to retrieve an item{}. \\C[6]L./R.\\C[0] switch to backpack.",
+"inDepository_extMsgs_WindowInputText":[
+" (all with holding \\C[6]shift\\C[0])",
+],
+"inBackpack":"press \\C[6]ok\\C[0] to store an item{}. \\C[6]L./R.\\C[0] switch to depository.",
+"inBackpack_extMsgs_WindowInputText":[
+" (all with holding \\C[6]shift\\C[0])",
+],
 },
 "zh-TW":{
 "depository":"按下\\C[6]確認\\C[0]選取倉庫中的道具。",
 "backpack":"按下\\C[6]確認\\C[0]選取背包中的道具。",
-"inDepository":"按下\\C[6]確認\\C[0]將道具從倉庫放入背包。\\C[6]左/右\\C[0]切換選取框至背包。",
-"inBackpack":"按下\\C[6]確認\\C[0]將道具從背包放入倉庫。\\C[6]左/右\\C[0]切換選取框至倉庫。",
+"inDepository":"按下\\C[6]確認\\C[0]將一個道具從倉庫放入背包{}。\\C[6]左/右\\C[0]切換選取框至背包。",
+"inDepository_extMsgs_WindowInputText":[
+"(按住\\C[6]shift\\C[0]放全部)",
+],
+"inBackpack":"按下\\C[6]確認\\C[0]將一個道具從背包放入倉庫{}。\\C[6]左/右\\C[0]切換選取框至倉庫。",
+"inBackpack_extMsgs_WindowInputText":[
+"(按住\\C[6]shift\\C[0]放全部)",
+],
 }, // 0-"zh-TW"
 }, // 0: txt
 "", // 1: empty string
