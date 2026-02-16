@@ -7788,7 +7788,7 @@ addRoof('update',function f(){
 	return f.ori.apply(this,arguments);
 }).
 addBase('update_adjustTileScaleChanged',function f(){
-	this.update_tileSize_fin();
+	this.update_tileScale_tileSize_fin();
 	if(!this._tileScaleEnabled) return;
 	if(this._tileScaleChanged){
 		this._tileScaleChanged=false;
@@ -7796,35 +7796,41 @@ addBase('update_adjustTileScaleChanged',function f(){
 		this.refresh();
 	}
 }).
-addBase('update_tileSize_src',function(){
+addBase('update_tileScale_tileSize_src',function(){
 	this._tileWidth_src  =($gameMap?$gameMap.tileWidth_src  ():48)|0;
 	this._tileHeight_src =($gameMap?$gameMap.tileHeight_src ():48)|0;
 }).
-addBase('update_tileSize_fin',function(){
+addBase('update_tileScale_tileSize_fin',function(){
 	const w0=this._tileWidth;
 	const h0=this._tileHeight;
-	this._tileWidth  =($gameMap?$gameMap.tileWidth  ():48)|0;
-	this._tileHeight =($gameMap?$gameMap.tileHeight ():48)|0;
+	this._tileWidth  =$gameMap?$gameMap.tileWidth  ():48;
+	this._tileHeight =$gameMap?$gameMap.tileHeight ():48;
 	if(w0!==this._tileWidth||h0!==this._tileHeight) this._tileScaleChanged=true;
+	
+	this.update_margin.apply(this,arguments);
+	this.update_overallSize.apply(this,arguments);
 }).
-addBase('initialize_tileSize',function(){
-	this.update_tileSize_src.apply(this,arguments);
-	this.update_tileSize_fin.apply(this,arguments);
+addBase('update_margin',function(margin){
+	return this._margin=margin||Math.max(
+		this._tileWidth_src,
+		this._tileWidth,
+		this._tileHeight_src,
+		this._tileHeight,
+	)||64;
+}).
+addBase('update_overallSize',function(){
+	this._width  =Math.ceil(this._margin*2+Graphics.width  );
+	this._height =Math.ceil(this._margin*2+Graphics.height );
+}).
+addBase('tileScale_updateParams',function(){
+	this.update_tileScale_tileSize_src.apply(this,arguments);
+	this.update_tileScale_tileSize_fin.apply(this,arguments);
 	this._tileScaleEnabled=true; // only enabled when rendering
-}).
-addBase('initialize_margin',function(margin){
-	this._margin = margin||Math.max(this._tileWidth_src,this._tileHeight_src)||64;
-}).
-addBase('initialize_overallSize',function(){
-	this._width = Graphics.width + (this._margin<<1);
-	this._height = Graphics.height + (this._margin<<1);
 }).
 addBase('initialize',function(margin){
 	PIXI.Container.call(this);
 	
-	this.initialize_tileSize.apply(this,arguments);
-	this.initialize_margin.apply(this,arguments);
-	this.initialize_overallSize.apply(this,arguments);
+	this.tileScale_updateParams.apply(this,arguments);
 	this._mapWidth = 0;
 	this._mapHeight = 0;
 	this._mapData = null;
@@ -8083,20 +8089,14 @@ addWithBaseIfNotOwn('removeChildren',function f(){
 getP;
 
 new cfc(ShaderTilemap.prototype).
-addBase('initialize_margin',function f(){
-	this.update_margin.apply(this,arguments);
-}).
 addBase('update_margin',function f(margin){
 	// need: ._tile*_dst
-	this._margin = margin||Math.max(
+	this._margin=margin||Math.max(
 		this._tileWidth_src,
 		this._tileWidth_dst,
 		this._tileHeight_src,
 		this._tileHeight_dst
 	)||64;
-}).
-addBase('initialize_overallSize',function f(){
-	this.update_overallSize.apply(this,arguments);
 }).
 addBase('update_overallSize',function f(){
 	// need: ._margin
@@ -8108,12 +8108,12 @@ addBase('update_overallSize',function f(){
 			y=scl.y;
 		}
 	}
-	this._width  =Math.ceil((Graphics.width /x +(this._margin<<1)));
-	this._height =Math.ceil((Graphics.height/y +(this._margin<<1)));
+	this._width  =Math.ceil(this._margin*2+Graphics.width  /x);
+	this._height =Math.ceil(this._margin*2+Graphics.height /y);
 	if(this.lowerZLayer) this.lowerZLayer.scale.set(x,y);
 	if(this.upperZLayer) this.upperZLayer.scale.set(x,y);
 }).
-addBase('update_tileSize_fin',function f(){
+addBase('update_tileScale_tileSize_fin',function f(){
 	this._tileWidth  =this._tileWidth_src;
 	this._tileHeight =this._tileHeight_src;
 	
@@ -8127,7 +8127,7 @@ addBase('update_tileSize_fin',function f(){
 	this.update_overallSize.apply(this,arguments);
 }).
 add('updateTransform',function f(){
-	this.update_tileSize_fin.apply(this,arguments);
+	this.update_tileScale_tileSize_fin.apply(this,arguments);
 	
 	let ox,oy;
 	if(this.roundPixels){
@@ -8160,7 +8160,6 @@ addBase('_updateRepaint',function f(startX,startY){
 	}
 }).
 addBase('_paintAllTiles',function f(startX,startY){
-	//this.update_tileSize_fin();
 	this.lowerZLayer.clear();
 	this.upperZLayer.clear();
 	// floor,-margin(left),+margin(right),ceil,insurance
