@@ -2381,6 +2381,16 @@ new cfc(p).add('_createAllParts',function f(){
 
 
 new cfc(SceneManager).
+addBase('updateChildren1',function f(child){
+	return child.update&&child.update();
+}).
+addBase('updateChildren',function f(parent){
+	parent.children && parent.children.forEach && parent.children.forEach(this.updateChildren1,this);
+}).
+getP;
+
+
+new cfc(SceneManager).
 addBase('snap',function f(sc){
 	sc=sc||this._scene;
 	return Bitmap.snap(sc);
@@ -3636,13 +3646,12 @@ new cfc(Window_SkillStatus.prototype).addBase('refresh',function f(){
 
 new cfc(Sprite.prototype).addBase('update',function f(){
 	this.update_before();
-	this.children.forEach(f.tbl[0]);
+	this.children.forEach(SceneManager.updateChildren1);
 	this.update_after();
-},[
-child=>child.update&&child.update(), // 0: forEach
-]).addBase('update_before',none,
-).addBase('update_after',none,
-);
+}).
+addBase('update_before',none,).
+addBase('update_after',none,).
+getP;
 
 
 new cfc(Scene_Skill.prototype).
@@ -3770,6 +3779,20 @@ undefined,
 },[
 undefined,
 ]);
+
+
+new cfc(Tilemap.prototype).
+addBase('updateAnimationFrame',function(){
+	this.animationFrame=++this.animationCount>>5;
+}).
+addBase('update',function f(){
+	this.updateAnimationFrame();
+	this.children.forEach(SceneManager.updateChildren1);
+	for(let i=0,arr=this.bitmaps,sz=arr.length;i<sz;++i){
+		arr[i] && arr[i].touch();
+	}
+}).
+getP;
 
 
 new cfc(ConfigManager).addBase('readFlag',function f(config,name,defaultValue){
@@ -7639,15 +7662,160 @@ new cfc(Sprite.prototype).add('update',function f(){
 
 })(); // drawMask API
 
-// ---- ---- ---- ---- Tilemap / Spriteset
+// ---- ---- ---- ---- tileScale / Tilemap / Spriteset
 
 (()=>{ let k,r,t;
 
-new cfc(Tilemap.prototype).addBase('initialize',function(margin) {
+{ const p=Game_Map.prototype;
+new cfc(p).
+addBase('_setTileScale',function(x,y){
+	const cx=$gameMap._displayX+$gamePlayer.centerX();
+	const cy=$gameMap._displayY+$gamePlayer.centerY();
+	if(y===undefined) y=x;
+	let s=this._tileScale; if(!s) s=this._tileScale={x:NaN,y:NaN,};
+	s.x=x;
+	s.y=y;
+	$gamePlayer.center(cx,cy);
+	return this;
+}).
+addBase('setTileScale',function(x,y){
+	const last=this.getTileScale();
+	const rtv=this._setTileScale.apply(this,arguments);
+	const curr=this._getTileScale();
+	if(last.x!==curr.x||last.y!==curr.y){
+		this._tileScaleChanged=true;
+	}
+	return rtv;
+}).
+addBase('_getTileScale',function f(){
+	return this._tileScale||f.tbl[0];
+},[
+{x:1,y:1,}, // 0: default tile scale
+]).
+addBase('getTileScale',function(){
+	return Object.assign({},this._getTileScale());
+}).
+addBase('getTileScaleChanged',function(){
+	return this._tileScaleChanged;
+}).
+addBase('clearTileScaleChanged',function(){
+	this._tileScaleChanged=false;
+	return this;
+}).
+addBase('tileWidth_src',p.tileWidth).
+addBase('tileHeight_src',p.tileHeight).
+addBase('tileWidth',function f(){
+	return this._getTileScale().x*this.tileWidth_src.apply(this,arguments);
+}).
+addBase('tileHeight',function f(){
+	return this._getTileScale().y*this.tileHeight_src.apply(this,arguments);
+}).
+getP;
+}
+
+{ const p=PIXI.ObservablePoint.prototype;
+const ori=Object.getOwnPropertyDescriptors(p);
+Object.defineProperties(p,{
+	_x:{
+		set:function(rhs){
+			if(this._out2inX) rhs=this._out2inX(rhs);
+			return this.__x=rhs;
+		},get:function(){
+			return this._in2outX?this._in2outX(this.__x):this.__x;
+		},configurable:true,
+	},
+	_y:{
+		set:function(rhs){
+			if(this._out2inY) rhs=this._out2inY(rhs);
+			return this.__y=rhs;
+		},get:function(){
+			return this._in2outY?this._in2outY(this.__y):this.__y;
+		},configurable:true,
+	},
+	scope:{
+		// as `initialize()`
+		set:function(rhs){
+			const rtv=this._scope=rhs;
+			this.initialize();
+			return rtv;
+		},get:function(){
+			return this._scope;
+		},configurable:true,
+	},
+});
+new cfc(p).
+addBase('initialize',function f(){
+	return this.setInternalTransform();
+}).
+addBase('setInternalXy',function f(x,y){
+	this.__x=x;
+	this.__y=y;
+	return this;
+}).
+addBase('setInternalTransform',function f(in2outX,in2outY,out2inX,out2inY){
+	this._in2outX=in2outX;
+	this._in2outY=in2outY;
+	this._out2inX=out2inX;
+	this._out2inY=out2inY;
+	return this;
+}).
+addBase('changeToInternalTransform',function f(changeToTimes){
+	if(changeToTimes===undefined) changeToTimes=1;
+	for(let _=changeToTimes;_--;){
+		if(this._out2inX) this.__x=this._out2inX(this.__x);
+		if(this._out2inY) this.__y=this._out2inY(this.__y);
+	}
+	return this;
+}).
+addBase('setInternalTransformAndChangeTo',function f(in2outX,in2outY,out2inX,out2inY,changeToTimes){
+	this.
+		setInternalTransform(in2outX,in2outY,out2inX,out2inY).
+		changeToInternalTransform(changeToTimes).
+	constructor;
+}).
+addBase('applyInternalTransformAndClear',function f(){
+	if(this._in2outX) this.__x=this._in2outX(this.__x);
+	if(this._in2outY) this.__y=this._in2outY(this.__y);
+	this.setInternalTransform();
+	return this;
+}).
+getP;
+}
+
+new cfc(Tilemap.prototype).
+addRoof('update',function f(){
+	this.update_adjustTileScaleChanged();
+	return f.ori.apply(this,arguments);
+}).
+addBase('update_adjustTileScaleChanged',function f(){
+	this.update_tileSize_fin();
+	if(!this._tileScaleEnabled) return;
+	if(this._tileScaleChanged){
+		this._tileScaleChanged=false;
+		this._createLayers();
+		this.refresh();
+	}
+}).
+addBase('update_tileSize_src',function(){
+	this._tileWidth_src  =($gameMap?$gameMap.tileWidth_src  ():48)|0;
+	this._tileHeight_src =($gameMap?$gameMap.tileHeight_src ():48)|0;
+}).
+addBase('update_tileSize_fin',function(){
+	const w0=this._tileWidth;
+	const h0=this._tileHeight;
+	this._tileWidth  =($gameMap?$gameMap.tileWidth  ():48)|0;
+	this._tileHeight =($gameMap?$gameMap.tileHeight ():48)|0;
+	if(w0!==this._tileWidth||h0!==this._tileHeight) this._tileScaleChanged=true;
+}).
+addBase('initialize_tileSize',function(){
+	this.update_tileSize_src.apply(this,arguments);
+	this.update_tileSize_fin.apply(this,arguments);
+	this._tileScaleEnabled=true; // only enabled when rendering
+}).
+addBase('initialize',function(margin){
 	PIXI.Container.call(this);
 	
-	this._tileWidth = $gameMap?$gameMap.tileWidth():48;
-	this._tileHeight = $gameMap?$gameMap.tileHeight():48;
+	this.initialize_tileSize.apply(this,arguments);
 	this._margin = margin||Math.max(this._tileWidth,this._tileHeight)||64;
 	this._width = Graphics.width + (this._margin<<1);
 	this._height = Graphics.height + (this._margin<<1);
@@ -7708,17 +7876,233 @@ new cfc(Tilemap.prototype).addBase('initialize',function(margin) {
 	
 	this._createLayers();
 	this.refresh();
-});
+	this._tileScaleChanged=false;
+}).
+add('_createLayers',function f(){
+	let c,p;
+	c=this._upperLayer;
+	p=c&&c.parent; p&&p.removeChild(c);
+	c=this._lowerLayer;
+	p=c&&c.parent; p&&p.removeChild(c);
+	return f.ori.apply(this,arguments);
+}).
+addBase('_drawNormalTile',function(bitmap,tileId,dx,dy){
+	let setNumber=0;
 
-new cfc(Spriteset_Base.prototype).add('updatePosition',function f(){
+	if(Tilemap.isTileA5(tileId)){
+		setNumber=4;
+	}else{
+		setNumber=5+(tileId>>8);
+	}
+
+	const source=this.bitmaps[setNumber];
+	if(source){
+		const sw=this._tileWidth_src;
+		const sh=this._tileHeight_src;
+		const dw=this._tileWidth;
+		const dh=this._tileHeight;
+		//var sx = (Math.floor(tileId / 128) % 2 * 8 + tileId % 8) * w;
+		//var sy = (Math.floor(tileId % 256 / 8) % 16) * h;
+		const sx=(((tileId>>4)&8)|(tileId&7))*sw;
+		const sy=((tileId>>3)&15)*sh;
+		bitmap.bltImage(source, sx, sy, sw, sh, dx, dy, dw, dh);
+	}
+}).
+addBase('_drawAutotile',function f(bitmap, tileId, dx, dy){
+	let autotileTable=Tilemap.FLOOR_AUTOTILE_TABLE;
+	const kind=Tilemap.getAutotileKind(tileId);
+	const shape = Tilemap.getAutotileShape(tileId);
+	const tx=kind&7;
+	const ty=kind>>3;
+	let bx=0;
+	let by=0;
+	let setNumber=0;
+	let isTable=false;
+
+	if (Tilemap.isTileA1(tileId)) {
+		let waterSurfaceIndex=f.tbl[0][this.animationFrame % 4];
+		setNumber = 0;
+		if (kind === 0) {
+			bx = waterSurfaceIndex<<1;
+			by = 0;
+		} else if (kind === 1) {
+			bx = waterSurfaceIndex<<1;
+			by = 3;
+		} else if (kind === 2) {
+			bx = 6;
+			by = 0;
+		} else if (kind === 3) {
+			bx = 6;
+			by = 3;
+		} else {
+			bx = tx>>2<<3;
+			by = ((ty<<1)+((tx>>1)&1))*3;
+			if((kind&1)===0){
+				bx += waterSurfaceIndex<<1;
+			}
+			else {
+				bx += 6;
+				autotileTable = Tilemap.WATERFALL_AUTOTILE_TABLE;
+				by += this.animationFrame % 3;
+			}
+		}
+	} else if (Tilemap.isTileA2(tileId)) {
+		setNumber = 1;
+		bx = tx<<1;
+		by = (ty - 2) * 3;
+		isTable = this._isTableTile(tileId);
+	} else if (Tilemap.isTileA3(tileId)) {
+		setNumber = 2;
+		bx = tx<<1;
+		by = (ty - 6)<<1;
+		autotileTable = Tilemap.WALL_AUTOTILE_TABLE;
+	} else if (Tilemap.isTileA4(tileId)) {
+		setNumber = 3;
+		bx = tx<<1;
+		by = Math.floor((ty - 10) * 2.5 + (ty&1?0.5:0));
+		if(ty&1){
+			autotileTable = Tilemap.WALL_AUTOTILE_TABLE;
+		}
+	}
+
+	const table=autotileTable[shape];
+	const source=this.bitmaps[setNumber];
+	if(table&&source){
+		const sw1=this._tileWidth_src>>1;
+		const sh1=this._tileHeight_src>>1;
+		const w1=this._tileWidth/2.0;
+		const h1=this._tileHeight/2.0;
+		const qsx2v=f.tbl[1];
+		for (let i = 0; i < 4; i++) {
+			let qsx = table[i][0];
+			let qsy = table[i][1];
+			let sx1 = ((bx<<1) + qsx) * sw1;
+			let sy1 = ((by<<1) + qsy) * sh1;
+			let dx1 = dx + (i&1) * w1;
+			let dy1 = dy + (i>>1) * h1;
+			if (isTable && (qsy === 1 || qsy === 5)) {
+				let qsx2 = qsx;
+				let qsy2 = 3;
+				if (qsy === 1) {
+					qsx2 = qsx2v[qsx];
+				}
+				const sx2 = ((bx<<1) + qsx2) * sw1;
+				const sy2 = ((by<<1) + qsy2) * sh1;
+				bitmap.bltImage(source, sx2, sy2, sw1, sh1, dx1, dy1, w1, h1);
+				const h2=h1/2.0;
+				dy1+=h2;
+				bitmap.bltImage(source, sx1, sy1, sw1, sh1/2, dx1, dy1, w1, h1-h2);
+			} else {
+				bitmap.bltImage(source, sx1, sy1, sw1, sh1, dx1, dy1, w1, h1);
+			}
+		}
+	}
+},[
+[0|0, 1|0, 2|0, 1|0], // 0: animationFrame idxv
+[0,3,2,1], // 1: qsx2 idxv
+]).
+addBase('tileScale_handleChildSetting',function f(c,isAdd){
+	if(!f.tbl[0]){ f.tbl[0]=new Set([
+		Sprite_Animation,
+		Sprite_Balloon,
+		Sprite_Character,
+	]); }
+	if(!c||!f.tbl[0].has(c.constructor)) return;
+	if(isAdd){
+		if(!this._tileScale_funcs){ this._tileScale_funcs={
+			in2outX:f.tbl[1].in2outX.bind(this),
+			in2outY:f.tbl[1].in2outY.bind(this),
+			out2inX:f.tbl[1].out2inX.bind(this),
+			out2inY:f.tbl[1].out2inY.bind(this),
+		}; }
+		const funcs=this._tileScale_funcs;
+		c.scale.setInternalTransform(
+			funcs.in2outX,
+			funcs.in2outY,
+			funcs.out2inX,
+			funcs.out2inY,
+		);
+	}else{
+		if(c.parent!==this) return;
+		this.scale.applyInternalTransformAndClear();
+	}
+},[
+undefined, // accepted obj ctors
+{
+	in2outX:function(val){
+		if(!this._tileScaleRendering||!$gameMap) return val;
+		return val*$gameMap._getTileScale().x;
+	},
+	in2outY:function(val){
+		if(!this._tileScaleRendering||!$gameMap) return val;
+		return val*$gameMap._getTileScale().y;
+	},
+	out2inX:function(val){
+		if(!this._tileScaleRendering||!$gameMap) return val;
+		return val/$gameMap._getTileScale().x;
+	},
+	out2inY:function(val){
+		if(!this._tileScaleRendering||!$gameMap) return val;
+		return val/$gameMap._getTileScale().y;
+	},
+}, // 0: funcs
+]).
+addWithBaseIfNotOwn('addChild',function f(c){
+	const rtv=f.ori.apply(this,arguments);
+	if(arguments.length===1) this.tileScale_handleChildSetting(c,true);
+	return rtv;
+}).
+addWithBaseIfNotOwn('addChildAt',function f(c,idx){
+	const rtv=f.ori.apply(this,arguments);
+	this.tileScale_handleChildSetting(c,true);
+	return rtv;
+}).
+addWithBaseIfNotOwn('removeChild',function f(c){
+	if(arguments.length===1) this.tileScale_handleChildSetting(c,false);
+	return f.ori.apply(this,arguments);
+}).
+addWithBaseIfNotOwn('removeChildAt',function f(c){
+	if(arguments.length===1) this.tileScale_handleChildSetting(c,false);
+	return f.ori.apply(this,arguments);
+}).
+addWithBaseIfNotOwn('removeChildren',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	for(let x=rtv.length;x--;){
+		rtv[x].parent=this;
+		this.tileScale_handleChildSetting(rtv[x],false);
+		rtv[x].parent=null;
+	}
+	return rtv;
+}).
+addWithBaseIfNotOwn('update',function f() /*(renderer)*/ {
+	//this._tileScaleRendering=true;
+	const rtv=f.ori.apply(this,arguments);
+	//this._tileScaleRendering=false;
+	return rtv;
+}).
+getP;
+
+new cfc(SceneManager).
+add('renderScene',function f(){
+	const tm=this.getTilemap();
+	if(tm) tm._tileScaleRendering=true;
+	const rtv=f.ori.apply(this,arguments);
+	if(tm) tm._tileScaleRendering=false;
+	return rtv;
+}).
+getP;
+
+new cfc(Spriteset_Base.prototype).
+add('updatePosition',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	this.updatePosition_CanvasToneChanger();
 	return rtv;
-}).addBase('updatePosition_CanvasToneChanger',function f(){
+}).
+addBase('updatePosition_CanvasToneChanger',function f(){
 	const sp=this._toneSprite; if(sp) sp.position.set(-this.x,-this.y);
 });
 
-})(); // Tilemap / Spriteset
+})(); // tileScale / Tilemap / Spriteset
 
 // ---- ---- ---- ---- refine Sprite_Animation
 
