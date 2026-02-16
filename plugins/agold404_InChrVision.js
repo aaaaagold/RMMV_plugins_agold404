@@ -3,6 +3,12 @@
  * @plugindesc set what to do when an event sees player
  * @author agold404
  * 
+ * @param DefaultHideLoc
+ * @type text
+ * @text default hide location
+ * @desc [x,y]
+ * @default [-404,-404]
+ * 
  * @help editor comment starting with (at-sign)inView in event command pages
  * 
  * 
@@ -72,6 +78,7 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_InChrVision";
 const params=PluginManager.parameters(pluginName);
+params._defaultHideLoc=JSON.parse(params.DefaultHideLoc||"[-404,-404]");
 
 t=[
 undefined,
@@ -85,7 +92,7 @@ new cfc(DataManager).add('onLoad_after_map',function f(obj){
 }).
 addBase('onLoad_setInChrVision',function f(obj){
 	obj.events.forEach(f.tbl[0]);
-},t=[
+},r=[
 evtd=>{ if(!evtd) return;
 	for(let p=0,pgv=evtd.pages,pe=pgv.length;p!==pe;++p){
 		const txtv=[];
@@ -103,7 +110,8 @@ evtd=>{ if(!evtd) return;
 		if(txt) pgv[p].inChrVisions.push(txt);
 	}
 },
-]);
+]).
+getP;
 
 new cfc(Game_Event.prototype).add('setupPageSettings',function f(){
 	const page=f.ori.apply(this,arguments);
@@ -372,7 +380,8 @@ addBase('_inVision_doDetectedEval',function f(detecteds,s){
 ]).addBase('_inVision_getShowHint',function f(inChrVision){
 	if(!inChrVision.showHintCond) return inChrVision.showHint;
 	return eval(inChrVision.showHintCond);
-}).addBase('inVision_getFrontPoints',function f(n){
+}).
+addBase('inVision_getFrontPoints',function f(n){
 	const rtv=[];
 	const d=this._direction;
 	const N=Math.abs(n)|0;
@@ -386,7 +395,7 @@ addBase('_inVision_doDetectedEval',function f(detecteds,s){
 		this._direction=d;
 	}
 	return rtv;
-},t=[
+},r=[
 {
 2:8,
 4:6,
@@ -407,13 +416,19 @@ addBase('_inVision_doDetectedEval',function f(detecteds,s){
 		this._direction=d;
 	}
 	return rtv;
-},t).addBase('inVision_updateHint',function f(posKeys){
+},r).
+addBase('inVision_updateHint',function f(posKeys){
 	this.inVision_updateHint_hideLast();
 	this.inVision_updateHint_placing(posKeys);
-}).addBase('inVision_updateHint_hideLast',function f(){
+}).
+addBase('inVision_updateHint_hideLast',function f(){
 	const last=this._inVision_lastHintEvts;
-	if(last) for(let x=last.length;x--;) last[x].locate(-8,-8);
-}).addBase('inVision_updateHint_placing',function f(posKeys){
+	if(last){
+		const loc=params._defaultHideLoc;
+		for(let x=last.length;x--;) last[x].locate(loc[0],loc[1]);
+	}
+},t).
+addBase('inVision_updateHint_placing',function f(posKeys){
 	if(!posKeys||!posKeys.length||!$gameMap||!$gameMap.cpevt) return;
 	const newEvts=[];
 	const last=this._inVision_lastHintEvts;
