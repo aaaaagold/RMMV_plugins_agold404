@@ -7812,13 +7812,19 @@ addBase('initialize_tileSize',function(){
 	this.update_tileSize_fin.apply(this,arguments);
 	this._tileScaleEnabled=true; // only enabled when rendering
 }).
+addBase('initialize_margin',function(margin){
+	this._margin = margin||Math.max(this._tileWidth_src,this._tileHeight_src)||64;
+}).
+addBase('initialize_overallSize',function(){
+	this._width = Graphics.width + (this._margin<<1);
+	this._height = Graphics.height + (this._margin<<1);
+}).
 addBase('initialize',function(margin){
 	PIXI.Container.call(this);
 	
 	this.initialize_tileSize.apply(this,arguments);
-	this._margin = margin||Math.max(this._tileWidth,this._tileHeight)||64;
-	this._width = Graphics.width + (this._margin<<1);
-	this._height = Graphics.height + (this._margin<<1);
+	this.initialize_margin.apply(this,arguments);
+	this.initialize_overallSize.apply(this,arguments);
 	this._mapWidth = 0;
 	this._mapHeight = 0;
 	this._mapData = null;
@@ -8074,12 +8080,100 @@ addWithBaseIfNotOwn('removeChildren',function f(){
 	}
 	return rtv;
 }).
-addWithBaseIfNotOwn('update',function f() /*(renderer)*/ {
-	//this._tileScaleRendering=true;
-	const rtv=f.ori.apply(this,arguments);
-	//this._tileScaleRendering=false;
-	return rtv;
+getP;
+
+new cfc(ShaderTilemap.prototype).
+addBase('initialize_margin',function f(){
+	this.update_margin.apply(this,arguments);
 }).
+addBase('update_margin',function f(margin){
+	// need: ._tile*_dst
+	this._margin = margin||Math.max(
+		this._tileWidth_src,
+		this._tileWidth_dst,
+		this._tileHeight_src,
+		this._tileHeight_dst
+	)||64;
+}).
+addBase('initialize_overallSize',function f(){
+	this.update_overallSize.apply(this,arguments);
+}).
+addBase('update_overallSize',function f(){
+	// need: ._margin
+	let x=1,y=1;
+	{
+		const scl=$gameMap&&$gameMap._getTileScale();
+		if(scl){
+			x=scl.x;
+			y=scl.y;
+		}
+	}
+	this._width  =Math.ceil((Graphics.width /x +(this._margin<<1)));
+	this._height =Math.ceil((Graphics.height/y +(this._margin<<1)));
+	if(this.lowerZLayer) this.lowerZLayer.scale.set(x,y);
+	if(this.upperZLayer) this.upperZLayer.scale.set(x,y);
+}).
+addBase('update_tileSize_fin',function f(){
+	this._tileWidth  =this._tileWidth_src;
+	this._tileHeight =this._tileHeight_src;
+	
+	const w0=this._tileWidth_dst;
+	const h0=this._tileHeight_dst;
+	this._tileWidth_dst  =Math.max(1,$gameMap.tileWidth  ());
+	this._tileHeight_dst =Math.max(1,$gameMap.tileHeight ());
+	if(w0!==this._tileWidth_dst||h0!==this._tileHeight_dst) this._needsRepaint=true;
+
+	this.update_margin.apply(this,arguments);
+	this.update_overallSize.apply(this,arguments);
+}).
+add('updateTransform',function f(){
+	this.update_tileSize_fin.apply(this,arguments);
+	
+	let ox,oy;
+	if(this.roundPixels){
+		ox=Math.floor(this.origin.x);
+		oy=Math.floor(this.origin.y);
+	}else{
+		ox=this.origin.x;
+		oy=this.origin.y;
+	}
+	const startX = Math.floor((ox - this._margin) / this._tileWidth_dst);
+	const startY = Math.floor((oy - this._margin) / this._tileHeight_dst);
+	this._updateLayerPositions(startX,startY,ox,oy);
+	this._updateRepaint(startX,startY);
+	
+	this._sortChildren();
+	PIXI.Container.prototype.updateTransform.call(this);
+}).
+addBase('_updateLayerPositions',function f(startX,startY,ox,oy){
+	const x0=startX * this._tileWidth_dst  -ox;
+	const y0=startY * this._tileHeight_dst -oy;
+	this.lowerZLayer.position.set(x0,y0);
+	this.upperZLayer.position.set(x0,y0);
+}).
+addBase('_updateRepaint',function f(startX,startY){
+	if(this._needsRepaint || this._lastStartX!==startX || this._lastStartY!==startY){
+		this._paintAllTiles(startX,startY);
+		this._lastStartY   =startY;
+		this._lastStartX   =startX;
+		this._needsRepaint =false;
+	}
+}).
+addBase('_paintAllTiles',function f(startX,startY){
+	//this.update_tileSize_fin();
+	this.lowerZLayer.clear();
+	this.upperZLayer.clear();
+	// floor,-margin(left),+margin(right),ceil,insurance
+	const tileCols=Math.ceil(this._width  / this._tileWidth_dst  )+5;
+	const tileRows=Math.ceil(this._height / this._tileHeight_dst )+5;
+	for(let y=0;y<tileRows;++y){
+		for(let x=0;x<tileCols;++x){
+			this._paintTiles(startX,startY,x,y);
+		}
+	}
+},[
+3, // paint padding
+]).
 getP;
 
 new cfc(SceneManager).
