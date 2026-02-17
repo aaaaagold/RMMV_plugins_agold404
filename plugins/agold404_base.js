@@ -7811,12 +7811,12 @@ addBase('update_tileScale_tileSize_fin',function(){
 	this.update_overallSize.apply(this,arguments);
 }).
 addBase('update_margin',function(margin){
-	return this._margin=margin||Math.max(
+	return this._margin=Math.ceil(margin||Math.max(
 		this._tileWidth_src,
 		this._tileWidth,
 		this._tileHeight_src,
 		this._tileHeight,
-	)||64;
+	)||64);
 }).
 addBase('update_overallSize',function(){
 	this._width  =Math.ceil(this._margin*2+Graphics.width  );
@@ -7834,6 +7834,8 @@ addBase('initialize',function(margin){
 	this._mapWidth = 0;
 	this._mapHeight = 0;
 	this._mapData = null;
+	this._layerCols=0;
+	this._layerRows=0;
 	this._layerWidth = 0;
 	this._layerHeight = 0;
 	this._lastTiles = [];
@@ -7898,7 +7900,16 @@ add('_createLayers',function f(){
 	p=c&&c.parent; p&&p.removeChild(c);
 	return f.ori.apply(this,arguments);
 }).
-addBase('_drawNormalTile',function(bitmap,tileId,dx,dy){
+addBase('_drawTile',function(bitmap_or_layer,tileId,dx,dy,dw,dh){
+	if (Tilemap.isVisibleTile(tileId)) {
+		if (Tilemap.isAutotile(tileId)) {
+			this._drawAutotile.apply(this,arguments);
+		} else {
+			this._drawNormalTile.apply(this,arguments);
+		}
+	}
+}).
+addBase('_drawNormalTile',function(bitmap,tileId,dx,dy,dw,dh){
 	let setNumber=0;
 
 	if(Tilemap.isTileA5(tileId)){
@@ -7911,8 +7922,6 @@ addBase('_drawNormalTile',function(bitmap,tileId,dx,dy){
 	if(source){
 		const sw=this._tileWidth_src;
 		const sh=this._tileHeight_src;
-		const dw=this._tileWidth;
-		const dh=this._tileHeight;
 		//var sx = (Math.floor(tileId / 128) % 2 * 8 + tileId % 8) * w;
 		//var sy = (Math.floor(tileId % 256 / 8) % 16) * h;
 		const sx=(((tileId>>4)&8)|(tileId&7))*sw;
@@ -7920,7 +7929,7 @@ addBase('_drawNormalTile',function(bitmap,tileId,dx,dy){
 		bitmap.bltImage(source, sx, sy, sw, sh, dx, dy, dw, dh);
 	}
 }).
-addBase('_drawAutotile',function f(bitmap, tileId, dx, dy){
+addBase('_drawAutotile',function f(bitmap,tileId,dx,dy,dw,dh){
 	let autotileTable=Tilemap.FLOOR_AUTOTILE_TABLE;
 	const kind=Tilemap.getAutotileKind(tileId);
 	const shape = Tilemap.getAutotileShape(tileId);
@@ -7971,7 +7980,8 @@ addBase('_drawAutotile',function f(bitmap, tileId, dx, dy){
 	} else if (Tilemap.isTileA4(tileId)) {
 		setNumber = 3;
 		bx = tx<<1;
-		by = Math.floor((ty - 10) * 2.5 + (ty&1?0.5:0));
+		//by = Math.floor((ty - 10) * 2.5 + (ty % 2 === 1 ? 0.5 : 0));
+		by = ((ty - 10) * 5 + (ty&1))>>1;
 		if(ty&1){
 			autotileTable = Tilemap.WALL_AUTOTILE_TABLE;
 		}
@@ -7982,16 +7992,22 @@ addBase('_drawAutotile',function f(bitmap, tileId, dx, dy){
 	if(table&&source){
 		const sw1=this._tileWidth_src>>1;
 		const sh1=this._tileHeight_src>>1;
-		const w1=this._tileWidth/2.0;
-		const h1=this._tileHeight/2.0;
 		const qsx2v=f.tbl[1];
-		for (let i = 0; i < 4; i++) {
-			let qsx = table[i][0];
-			let qsy = table[i][1];
-			let sx1 = ((bx<<1) + qsx) * sw1;
-			let sy1 = ((by<<1) + qsy) * sh1;
-			let dx1 = dx + (i&1) * w1;
-			let dy1 = dy + (i>>1) * h1;
+		const ofstxv=[0,dw>>1,dw];
+		const ofstyv=[0,dh>>1,dh];
+		for(let i=0;i<4;++i){
+			const qsx=table[i][0];
+			const qsy=table[i][1];
+			const sx1=((bx<<1) + qsx) * sw1;
+			const sy1=((by<<1) + qsy) * sh1;
+			const x=i&1;
+			const y=i>>1;
+			const dx1=dx+ofstxv[x];
+			const dx2=dx+ofstxv[x+1];
+			let dy1=dy+ofstyv[y];
+			const dy2=dy+ofstyv[y+1];
+			const w1=dx2-dx1;
+			const h1=dy2-dy1;
 			if (isTable && (qsy === 1 || qsy === 5)) {
 				let qsx2 = qsx;
 				let qsy2 = 3;
@@ -8013,6 +8029,68 @@ addBase('_drawAutotile',function f(bitmap, tileId, dx, dy){
 [0|0, 1|0, 2|0, 1|0], // 0: animationFrame idxv
 [0,3,2,1], // 1: qsx2 idxv
 ]).
+addBase('_drawTableEdge',function f(bitmap,tileId,dx,dy,dw,dh){
+	if (Tilemap.isTileA2(tileId)) {
+		const autotileTable=Tilemap.FLOOR_AUTOTILE_TABLE;
+		const shape=Tilemap.getAutotileShape(tileId);
+		const table=autotileTable[shape];
+		
+		if (table) {
+			const kind=Tilemap.getAutotileKind(tileId);
+			const tx=kind&7;
+			const ty=kind>>3;
+			const setNumber=1;
+			const bx=tx<<1;
+			const by=(ty-2)*3;
+			
+			const source=this.bitmaps[setNumber];
+			const sw1=this._tileWidth_src>>1;
+			const sh1=this._tileHeight_src>>1;
+			const ofstxv=[0,dw>>1,dw];
+			const ofstyv=[0,dh>>1,dh];
+			for(let i=0;i<2;++i){
+				const qsx=table[2+i][0];
+				const qsy=table[2+i][1];
+				const sx1=((bx<<1)+qsx)*sw1;
+				const sy1=((by<<1)+qsy)*sh1+(sh1>>1);
+				const x=i&1;
+				const y=i>>1;
+				const dx1=dx+ofstxv[x];
+				const dx2=dx+ofstxv[x+1];
+				const dy1=dy+ofstyv[y];
+				const dy2=dy+ofstyv[y+1];
+				const w1=dx2-dx1;
+				const h1=dy2-dy1;
+				bitmap.bltImage(source,sx1,sy1,sw1,sh1>>1,dx1,dy1,w1,h1/2);
+			}
+		}
+	}
+}).
+addBase('_drawShadow_getShadowColor',function(bitmap,shadowBits,dx,dy,dw,dh){
+	return f.tbl[0];
+},[
+'rgba(0,0,0,0.5)', // 0: 
+]).
+addBase('_drawShadow',function(bitmap,shadowBits,dx,dy,dw,dh){
+	if (shadowBits & 0x0f) {
+		const color=this._drawShadow_getShadowColor.apply(this,arguments);
+		const ofstxv=[0,dw>>1,dw];
+		const ofstyv=[0,dh>>1,dh];
+		for(let i=0;i<4;++i){
+			if (shadowBits & (1 << i)) {
+				const x=i&1;
+				const y=i>>1;
+				const dx1=dx+ofstxv[x];
+				const dx2=dx+ofstxv[x+1];
+				const dy1=dy+ofstyv[y];
+				const dy2=dy+ofstyv[y+1];
+				const w1=dx2-dx1;
+				const h1=dy2-dy1;
+				bitmap.fillRect(dx1, dy1, w1, h1, color);
+			}
+		}
+	}
+}).
 addBase('tileScale_handleChildSetting',function f(c,isAdd){
 	if(!f.tbl[0]){ f.tbl[0]=new Set([
 		Sprite_Animation,
@@ -8086,9 +8164,166 @@ addWithBaseIfNotOwn('removeChildren',function f(){
 	}
 	return rtv;
 }).
+addBase('_createLayers',function f(){
+	const width  =this._width;
+	const height =this._height;
+	const margin=this._margin;
+	const tileCols=(Math.ceil(width  /this._tileWidth  )+1)|0;
+	const tileRows=(Math.ceil(height /this._tileHeight )+1)|0;
+	const layerWidth_raw  =tileCols*this._tileWidth  ;
+	const layerHeight_raw =tileRows*this._tileHeight ;
+	const layerWidth  =Math.ceil(layerWidth_raw  )|0;
+	const layerHeight =Math.ceil(layerHeight_raw )|0;
+	this._lowerBitmap=new Bitmap(layerWidth,layerHeight);
+	this._upperBitmap=new Bitmap(layerWidth,layerHeight);
+	this._layerCols=tileCols;
+	this._layerRows=tileRows;
+	this._layerWidth  =layerWidth  ;
+	this._layerHeight =layerHeight ;
+	
+	/*
+	 * Z coordinate:
+	 *
+	 * 0 : Lower tiles
+	 * 1 : Lower characters
+	 * 3 : Normal characters
+	 * 4 : Upper tiles
+	 * 5 : Upper characters
+	 * 6 : Airship shadow
+	 * 7 : Balloon
+	 * 8 : Animation
+	 * 9 : Destination
+	 */
+	
+	this._lowerLayer = new Sprite();
+	this._lowerLayer.move(-margin, -margin, width, height);
+	this._lowerLayer.z = 0;
+	
+	this._upperLayer = new Sprite();
+	this._upperLayer.move(-margin, -margin, width, height);
+	this._upperLayer.z = 4;
+	
+	for(let i = 4;i--;){
+		this._lowerLayer.addChild(new Sprite(this._lowerBitmap));
+		this._upperLayer.addChild(new Sprite(this._upperBitmap));
+	}
+	
+	this.addChild(this._lowerLayer);
+	this.addChild(this._upperLayer);
+}).
+addBase('_paintTiles_tableEdgeVirtualIdStart',function f(){
+	return f.tbl[0];
+},[
+1e4,
+]).
+addBase('_paintTiles',function f(startX,startY,x,y){
+	const tableEdgeVirtualId=this._paintTiles_tableEdgeVirtualIdStart.apply(this,arguments);
+	const mx=startX+x; // $gameMap x
+	const my=startY+y; // $gameMap y
+	const lx=mx.mod(this._layerCols);
+	const ly=my.mod(this._layerRows);
+	const dx=~~(lx*this._layerWidth  /this._layerCols);
+	const dy=~~(ly*this._layerHeight /this._layerRows);
+	const dx1=~~((lx+1)*this._layerWidth  /this._layerCols);
+	const dy1=~~((ly+1)*this._layerHeight /this._layerRows);
+	const dw=dx1-dx;
+	const dh=dy1-dy;
+	const upperTileId1=this._readMapData(mx, my - 1, 1);
+	const tileId0=this._readMapData(mx,my,0);
+	const tileId1=this._readMapData(mx,my,1);
+	const tileId2=this._readMapData(mx,my,2);
+	const tileId3=this._readMapData(mx,my,3);
+	const shadowBits=this._readMapData(mx, my, 4);
+	const lowerTiles=[];
+	const upperTiles=[];
+	
+	if (this._isHigherTile(tileId0)) {
+		upperTiles.push(tileId0);
+	} else {
+		lowerTiles.push(tileId0);
+	}
+	if (this._isHigherTile(tileId1)) {
+		upperTiles.push(tileId1);
+	} else {
+		lowerTiles.push(tileId1);
+	}
+	
+	lowerTiles.push(-shadowBits);
+
+	if (this._isTableTile(upperTileId1) && !this._isTableTile(tileId1)) {
+		if (!Tilemap.isShadowingTile(tileId0)) {
+			lowerTiles.push(tableEdgeVirtualId + upperTileId1);
+		}
+	}
+	
+	if (this._isOverpassPosition(mx, my)) {
+		upperTiles.push(tileId2);
+		upperTiles.push(tileId3);
+	} else {
+		if (this._isHigherTile(tileId2)) {
+			upperTiles.push(tileId2);
+		} else {
+			lowerTiles.push(tileId2);
+		}
+		if (this._isHigherTile(tileId3)) {
+			upperTiles.push(tileId3);
+		} else {
+			lowerTiles.push(tileId3);
+		}
+	}
+	
+	const lastLowerTiles=this._readLastTiles(0,lx,ly);
+	if (!lowerTiles.equals(lastLowerTiles) || (Tilemap.isTileA1(tileId0) && this._frameUpdated)) {
+		this._lowerBitmap.clearRect(dx, dy, dw, dh);
+		for(let i=0,sz=lowerTiles.length;i<sz;++i){
+			const lowerTileId=lowerTiles[i];
+			if (lowerTileId < 0) {
+				this._drawShadow(this._lowerBitmap,shadowBits,dx,dy,dw,dh);
+			} else if (lowerTileId >= tableEdgeVirtualId) {
+				this._drawTableEdge(this._lowerBitmap,upperTileId1,dx,dy,dw,dh);
+			} else {
+				this._drawTile(this._lowerBitmap,lowerTileId,dx,dy,dw,dh);
+			}
+		}
+		this._writeLastTiles(0, lx, ly, lowerTiles);
+	}
+	
+	const lastUpperTiles=this._readLastTiles(1,lx,ly);
+	if (!upperTiles.equals(lastUpperTiles)) {
+		this._upperBitmap.clearRect(dx,dy,dw,dh);
+		for (let j = 0; j < upperTiles.length; j++) {
+			this._drawTile(this._upperBitmap,upperTiles[j],dx,dy,dw,dh);
+		}
+		this._writeLastTiles(1, lx, ly, upperTiles);
+	}
+}).
+addBase('_paintAllTiles_getBaseCols',function f(startX,startY){
+	return Math.ceil(this._width  / this._tileWidth  );
+}).
+addBase('_paintAllTiles_getBaseRows',function f(startX,startY){
+	return Math.ceil(this._height / this._tileHeight );
+}).
+addBase('_paintAllTiles_getPadding',function f(startX,startY){
+	return f.tbl[0];
+},[
+1, // 0: paint padding
+]).
+addBase('_paintAllTiles',function f(startX,startY){
+	const padding=this._paintAllTiles_getPadding.apply(this,arguments);
+	const tileCols=(this._paintAllTiles_getBaseCols.apply(this,arguments)+padding)|0;
+	const tileRows=(this._paintAllTiles_getBaseRows.apply(this,arguments)+padding)|0;
+	for(let y=0|0;y<tileRows;++y){
+		for(let x=0|0;x<tileCols;++x){
+			this._paintTiles(startX,startY,x,y);
+		}
+	}
+}).
 getP;
 
-new cfc(ShaderTilemap.prototype).
+{ const p=ShaderTilemap.prototype;
+delete p._drawTile;
+delete p._paintAllTiles;
+new cfc(p).
 addBase('update_margin',function f(margin){
 	// need: ._tile*_dst
 	this._margin=margin||Math.max(
@@ -8126,7 +8361,7 @@ addBase('update_tileScale_tileSize_fin',function f(){
 	this.update_margin.apply(this,arguments);
 	this.update_overallSize.apply(this,arguments);
 }).
-add('updateTransform',function f(){
+addBase('updateTransform',function f(){
 	this.update_tileScale_tileSize_fin.apply(this,arguments);
 	
 	let ox,oy;
@@ -8159,21 +8394,25 @@ addBase('_updateRepaint',function f(startX,startY){
 		this._needsRepaint =false;
 	}
 }).
-addBase('_paintAllTiles',function f(startX,startY){
+addBase('_paintAllTiles_getBaseCols',function f(startX,startY){
+	return Math.ceil(this._width  / this._tileWidth_dst  );
+}).
+addBase('_paintAllTiles_getBaseRows',function f(startX,startY){
+	return Math.ceil(this._height / this._tileHeight_dst );
+}).
+addBase('_paintAllTiles_getPadding',function f(startX,startY){
+	// floor,-margin(left),+margin(right),ceil,insurance
+	return f.tbl[0];
+},[
+5, // 0: paint padding
+]).
+addWithBaseIfNotOwn('_paintAllTiles',function f(startX,startY){
 	this.lowerZLayer.clear();
 	this.upperZLayer.clear();
-	// floor,-margin(left),+margin(right),ceil,insurance
-	const tileCols=Math.ceil(this._width  / this._tileWidth_dst  )+5;
-	const tileRows=Math.ceil(this._height / this._tileHeight_dst )+5;
-	for(let y=0;y<tileRows;++y){
-		for(let x=0;x<tileCols;++x){
-			this._paintTiles(startX,startY,x,y);
-		}
-	}
-},[
-3, // paint padding
-]).
+	return f.ori.apply(this,arguments);
+}).
 getP;
+}
 
 new cfc(SceneManager).
 add('renderScene',function f(){
