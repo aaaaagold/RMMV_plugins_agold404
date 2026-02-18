@@ -3938,6 +3938,9 @@ addBase('update_clearLastScroll',function f(){
 addBase('update_clearWasMoving',function f(){
 	this._wasMoving=undefined;
 }).
+addBase('centerChr',function f(chr){
+	return this.center(chr.x,chr.y);
+}).
 getP;
 
 
@@ -7792,6 +7795,7 @@ addBase('update_adjustTileScaleChanged',function f(){
 	if(!this._tileScaleEnabled) return;
 	if(this._tileScaleChanged){
 		this._tileScaleChanged=false;
+		this._needsRepaint=true;
 		this._createLayers();
 		this.refresh();
 	}
