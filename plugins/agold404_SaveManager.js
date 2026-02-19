@@ -72,13 +72,15 @@ p[k]=function(info, x, y, width){
 }
 
 // opt UI for defining names
-const scname="Scene_EdtSaveName",optKey='key-edtSaveName',optLoadLocal='key-loadLocal',optSaveLocal='key-saveLocal';
+const scname="Scene_EdtSaveName",optKey='key-edtSaveName',optLoadLocal='key-loadLocal',optSaveLocal='key-saveLocal',optSaveLocal_uncompressed='key-saveLocal_uncompressed';
 const ENUM_SCTYPE_EDITNAME=0;
 const ENUM_SCTYPE_SAVELOCAL=1;
 let sctype=0;
+let isExportingUncompressed=false;
 
 // param getter
-new cfc(DataManager).add('agold404_SaveManager_pluginParams_get',function f(){
+new cfc(DataManager).
+add('agold404_SaveManager_pluginParams_get',function f(){
 	let tmp=this._agold404_SaveManager_pluginParams,rtv;
 	if(!tmp){
 		tmp=this._agold404_SaveManager_pluginParams=Object.assign({},PluginManager.parameters(pluginName));
@@ -100,43 +102,60 @@ new cfc(DataManager).add('agold404_SaveManager_pluginParams_get',function f(){
 		}
 		for(let x=0,arr=f.tbl[1],xs=arr.length;x!==xs;++x) if(rtv[arr[x]]===undefined) rtv[arr[x]]=f.tbl[0][arr[x]].display;
 	}
-	if(isMz()) delete rtv.renameTag;
+	if(isMz()){
+		delete rtv.renameTag;
+		delete rtv.exportSaveToFile_uncompressed;
+	}
 	return rtv;
 },t=[
 {
 renameTag:{display:"Rename Save's Tag",key:optKey,status:"",},
 loadSaveFromFile:{display:"Load Save from File",key:optLoadLocal,status:"",},
 exportSaveToFile:{display:"Export Save to File",key:optSaveLocal,status:"",},
+exportSaveToFile_uncompressed:{display:"Export Save to Uncompressed Plaintext File",key:optSaveLocal_uncompressed,status:"",},
 }, // 0: infos of options
-['renameTag','loadSaveFromFile','exportSaveToFile',], // 1: order of options
+['renameTag','loadSaveFromFile','exportSaveToFile','exportSaveToFile_uncompressed',], // 1: order of options
 undefined, // 2: 'no status text' key set
 item=>JSON.parse(item), // 3: JSON.parse
 arrRaw=>{ const arr=arrRaw.split('\n'); return [arr[0],arr.slice(1),]; }, // 4: adjust to Map arguments[0]
-],false,true).add('agold404_SaveManager_pluginParams_clearParsingCache',function f(){
+],false,true).
+add('agold404_SaveManager_pluginParams_clearParsingCache',function f(){
 	const last=this._agold404_SaveManager_pluginParams;
 	this._agold404_SaveManager_pluginParams=undefined;
 	return last;
-},undefined,false,true).add('agold404_SaveManager_pluginParams_clearLastResultsCache',function f(){
+},undefined,false,true).
+add('agold404_SaveManager_pluginParams_clearLastResultsCache',function f(){
 	const t=this._agold404_SaveManager_pluginParams; if(!t) return;
 	const last=t._lastRes;
 	t._lastRes=undefined;
 	return last;
-},undefined,false,true);
+},undefined,false,true).
+getP;
 
 // - Window_Options
 { const p=Window_Options.prototype;
 
-new cfc(p).add('makeCommandList',function f(){
+new cfc(p).
+add('makeCommandList',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	// edit save file name
 	for(let x=0,arr=f.tbl[1],xs=arr.length,dispTbl=DataManager.agold404_SaveManager_pluginParams_get();x!==xs;++x){
 		const key=f.tbl[0][arr[x]].key,display=dispTbl[arr[x]];
-		if(display) this.addCommand(display, key);
+		if(display) this.addCommand(display,key,undefined,{noStatus:true,});
 	}
 	return rtv;
-},t).add('statusText',function f(idx){
+},t).
+addWithBaseIfNotOwn('itemRectForText',function f(idx){
+	const rtv=f.ori.apply(this,arguments);
+	{ const ext=this.commandExt(idx); if(ext&&ext.noStatus){
+		rtv.width+=this.statusWidth();
+	} }
+	return rtv;
+}).
+add('statusText',function f(idx){
 	return f.tbl[2].has(this.commandSymbol(idx))?"":f.ori.apply(this,arguments);
-},t);
+},t).
+getP;
 t[2]=new Set(t[1].map(key=>t[0][key].key));
 t=undefined;
 { const k='processOk';
@@ -173,6 +192,9 @@ const input=document.createElement('input'),onload=e=>{
 		$gameTroop=backup.trp;
 		$gameMap=backup.map;
 		$gamePlayer=backup.plr;
+		if($gameTemp && $gameTemp.popupMsg){
+			$gameTemp.popupMsg("file loading failed");
+		}
 	};
 	try{
 		if(isMz()){
@@ -193,7 +215,11 @@ const input=document.createElement('input'),onload=e=>{
 			return;
 		}
 		DataManager.createGameObjects();
-		DataManager.extractSaveContents(JsonEx.parse(LZString.decompressFromBase64(self.result)));
+		if(self.result[0]==="{"){
+			DataManager.extractSaveContents(JsonEx.parse(self.result));
+		}else{
+			DataManager.extractSaveContents(JsonEx.parse(LZString.decompressFromBase64(self.result)));
+		}
 		SoundManager.playLoad();
 		SceneManager._scene.fadeOutAll();
 		Scene_Load.prototype.reloadMapIfUpdated();
@@ -224,6 +250,7 @@ input.onchange=function(){
 	reader.readAsText(this.files[0]); // testing beta...
 };
 (p[k]=function f(){
+	isExportingUncompressed=false;
 	switch(this.commandSymbol(this.index())){
 	case optKey: SoundManager.playOk(); sctype=ENUM_SCTYPE_EDITNAME; return SceneManager.push(window[scname]);
 	case optLoadLocal:
@@ -235,6 +262,7 @@ input.onchange=function(){
 		if(input._wnd) input._wnd.active=false;
 		(input._wnd=this).active=true;
 		return;
+	case optSaveLocal_uncompressed: isExportingUncompressed=true;
 	case optSaveLocal: SoundManager.playOk(); sctype=ENUM_SCTYPE_SAVELOCAL; return SceneManager.push(window[scname]);
 	default: return f.ori.apply(this);
 	}
@@ -308,7 +336,9 @@ p[k]=function(){
 			break;
 			case ENUM_SCTYPE_SAVELOCAL:
 				infostring='input a file name for download';
-				input.value="save-"+id+".rpgsave";
+				const isUncompressed=isExportingUncompressed;
+				const fileSuffix=isUncompressed?".txt":".rpgsave";
+				input.value="save-"+id+fileSuffix;
 				btn.onclick=function(){
 					if(isMz()){
 						StorageManager.loadFromForage(DataManager.makeSavename(id)).
@@ -319,7 +349,11 @@ p[k]=function(){
 							});
 						return;
 					}
-					sa(sa(sa(ce('a'),'download',input.value),'href',"data:application/plain,"+LZString.compressToBase64(StorageManager.load(id))),'target','_blank').click();
+					sa(sa(sa(ce('a'),'download',input.value),'href',(
+						isUncompressed?
+						"data:text/plain,"+encodeURIComponent(StorageManager.load(id)):
+						"data:application/plain,"+LZString.compressToBase64(StorageManager.load(id))
+					)),'target','_blank').click();
 					backToLastWindow();
 					self._listWindow.refresh();
 				};
@@ -358,7 +392,8 @@ p[k]=function(){
 } // END window[scname]
 
 // preventDefault
-new cfc(Input).add('_onKeyDown',function f(){
+new cfc(Input).
+add('_onKeyDown',function f(){
 	return editing?(editing>1?(editing=0):0):f.ori.apply(this,arguments);
 }).
 addBase('_agold404_SaveManager_getEditing',function f(){
