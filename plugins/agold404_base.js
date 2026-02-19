@@ -56,18 +56,40 @@ addBase('value',function f(variableId){
 }).
 getP;
 
-new cfc(Game_Event.prototype).add('start',function f(triggerer){
+new cfc(Game_Event.prototype).
+add('start',function f(triggerer){
 	const oriTriggerer=this._triggerer; this._triggerer=triggerer;
 	f.ori.apply(this,arguments);
 	if(this.isStarting()) this._triggerer=triggerer;
 	else this._triggerer=oriTriggerer;
 	return this;
-}).add('clearStartingFlag',function f(){
+}).
+add('clearStartingFlag',function f(){
 	this._triggerer=undefined;
 	f.ori.apply(this,arguments);
 	return this;
-});
+}).
+add('isStarting',function f(triggerer){
+	return (!triggerer||this._triggerer===triggerer)&&f.ori.apply(this,arguments);
+}).
+getP;
 new cfc(Game_Map.prototype).
+addBase('isEventRunning',function f(triggerer){
+	if(this._interpreter.isRunning()&&(!triggerer||this._interpreter.getTriggerer()===triggerer)){
+		return true;
+	}
+	if(this.isAnyEventStarting(triggerer)){
+		return true;
+	}
+	return false;
+}).
+addBase('isAnyEventStarting',function f(triggerer){
+	return this.events().some(f.tbl[0],triggerer);
+},[
+function(event){
+	return event.isStarting(this);
+}, // 0: forEach evt
+]).
 addBase('setupStartingMapEvent',function f(){
 	for(let arr=this._events,xs=arr.length,x=0;x<xs;++x){
 		const evt=arr[x];
@@ -103,6 +125,23 @@ function(commonEvent){
 	return new Game_CommonEvent(commonEvent.id);
 }, // 0: parallel common evt map
 ]).
+getP;
+new cfc(Game_Player.prototype).
+addBase('canMove',function f(){
+	if ($gameMap.isEventRunning(this) || $gameMessage.isBusy()) {
+		return false;
+	}
+	if (this.isMoveRouteForcing() || this.areFollowersGathering()) {
+		return false;
+	}
+	if (this._vehicleGettingOn || this._vehicleGettingOff) {
+		return false;
+	}
+	if (this.isInVehicle() && !this.vehicle().canMove()) {
+		return false;
+	}
+	return true;
+}).
 getP;
 { const a=Game_Interpreter,p=a.prototype;
 a.NOP={code:0,indent:0,parameters:[],};
