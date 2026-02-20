@@ -3840,6 +3840,18 @@ new cfc(ConfigManager).addBase('readFlag',function f(config,name,defaultValue){
 
 
 new cfc(Game_Map.prototype).
+addBase('canvasToMapRealX',function(x){
+	const tileWidth=this.tileWidth();
+	return this._displayX+x/tileWidth;
+}).
+addBase('canvasToMapRealY',function(y){
+	const tileHeight=this.tileHeight();
+	return this._displayY+y/tileHeight;
+}).
+getP;
+
+
+new cfc(Game_Map.prototype).
 addBase('setDisplayX',function f(newDisplayX){
 	this._displayX=newDisplayX;
 }).
@@ -11035,7 +11047,7 @@ getP;
 (()=>{ let k,r,t;
 
 
-{ const webgl1VerticesCntUpperBound=65536;
+{ const webgl1VerticesCntUpperBound=65536|0;
 new cfc(PIXI.tilemap.RectTileLayer.prototype).
 addBase('renderWebGL',function f(renderer, useSquare){
 	if (useSquare === void 0) { useSquare = false; }
@@ -11057,52 +11069,74 @@ addBase('renderWebGL',function f(renderer, useSquare){
 		this._tempTexSize = shader.maxTextures;
 		this._tempSize = new Float32Array(2 * shader.maxTextures);
 	}
-	for (var i = 0; i < len; i++) {
+	for(let i=0;i<len;++i){
 		if (!textures[i] || !textures[i].valid)
 			return;
 		var texture = textures[i].baseTexture;
 	}
 	tile.bindTextures(renderer, shader, textures);
-	let vb = tile.getVb(this.vbId);
-	if (!vb) {
-		vb = tile.createVb(useSquare);
-		this.vbId = vb.id;
-		this.vbBuffer = null;
-		this.modificationMarker = 0;
-	}
-	const vao = vb.vao;
-	renderer.bindVao(vao);
-	const vertexBuf = vb.vb;
-	vertexBuf.bind();
-	const vertices = rectsCount * shader.vertPerQuad;
-	if (vertices === 0)
-		return;
-	if (this.modificationMarker != vertices) {
-		this.modificationMarker = vertices;
-		const vs=shader.stride*vertices;
-		if (!this.vbBuffer || this.vbBuffer.byteLength < vs) {
-			let bk=shader.stride;
-			while(bk<vs) bk<<=1;
-			this.vbBuffer = new ArrayBuffer(bk);
-			this.vbArray = new Float32Array(this.vbBuffer);
-			this.vbInts = new Uint32Array(this.vbBuffer);
-			vertexBuf.upload(this.vbBuffer, 0, true);
+	const vertices=rectsCount*shader.vertPerQuad; if(!vertices===0) return;
+	
+	const vbs=[];
+	if(!this.vbIds) this.vbIds=[];
+	if(!this.vbBuffers) this.vbBuffers=[];
+	for(let i=0|0,e=~~((vertices+(webgl1VerticesCntUpperBound-1))/webgl1VerticesCntUpperBound);i<e;++i){
+		if(!this.vbIds[i]) this.vbIds[i]=0|0;
+		
+		let vb=tile.getVb(this.vbIds[i]);
+		if(!vb){
+			vb=tile.createVb(useSquare);
+			this.vbIds[i]=vb.id|0;
+			this.vbBuffers[i]=null;
+			
+			this.modificationMarker=0;
 		}
-		const arr=this.vbArray,ints=this.vbInts;
-		let sz=0;
-		let textureId,shiftU,shiftV;
-		const pe=points.length;
-		if (useSquare) {
-			for(let i=0,vCnt=0;i<pe;vCnt+=shader.vertPerQuad,i+=9){
-				if(webgl1VerticesCntUpperBound-shader.vertPerQuad<vCnt){
-					vertexBuf.upload(arr, 0, true);
-					gl.drawArrays(gl.POINTS, 0, vCnt);
-					vCnt=0;
-					sz=0;
+		vbs.push(vb);
+	}
+	const vertPerQuad=shader.vertPerQuad;
+	if(this.modificationMarker!==vertices){
+		this.modificationMarker=vertices;
+		// shader.stride: bytes per vertex
+		const vs=shader.stride*vertices;
+		const maxBytesPerBuffer=shader.stride*webgl1VerticesCntUpperBound;
+		const eps=0.5;
+		
+		for(let i=0|0,sz=0|0,doneCnt=0|0,vbIdIt=0|0,vDoneCnt=webgl1VerticesCntUpperBound,pe=points.length;;++doneCnt,vDoneCnt+=vertPerQuad,i+=9|0){
+			if(i>=pe||webgl1VerticesCntUpperBound<vDoneCnt+vertPerQuad){
+				if(vbIdIt){
+					const vb=vbs[vbIdIt-1];
+					vb.vb.upload(new Float32Array(this.vbBuffers[vbIdIt-1]),0,true);
+					if(useSquare){
+						gl.drawArrays(gl.POINTS,0,vDoneCnt);
+					}else{
+						gl.drawElements(gl.TRIANGLES,doneCnt*6,gl.UNSIGNED_SHORT,0);
+					}
 				}
-				textureId = (points[i + 8] >> 2);
-				shiftU = 1024 * (points[i + 8] & 1);
-				shiftV = 1024 * ((points[i + 8] >> 1) & 1);
+				
+				vDoneCnt=0|0;
+				sz=0|0;
+				if(i>=pe) break;
+				
+				const vb=vbs[vbIdIt];
+				const vao=vb.vao;
+				renderer.bindVao(vao);
+				const vertexBuf=vb.vb;
+				vertexBuf.bind();
+				
+				const targetBytes=Math.min(vs-vbIdIt*maxBytesPerBuffer,maxBytesPerBuffer);
+				if(!this.vbBuffers[vbIdIt]||this.vbBuffers[vbIdIt].byteLength<targetBytes){
+					let byteCnt=targetBytes; while((byteCnt&-byteCnt)!==byteCnt) byteCnt+=byteCnt&-byteCnt;
+					this.vbBuffers[vbIdIt]=new ArrayBuffer(byteCnt);
+					vertexBuf.upload(this.vbBuffers[vbIdIt], 0, true);
+				}
+				
+				++vbIdIt;
+			}
+			const arr=new Float32Array(this.vbBuffers[vbIdIt-1]); // last
+			if(useSquare){
+				const textureId = (points[i + 8] >> 2);
+				const shiftU = 1024 * (points[i + 8] & 1);
+				const shiftV = 1024 * ((points[i + 8] >> 1) & 1);
 				arr[sz++] = points[i + 2];
 				arr[sz++] = points[i + 3];
 				arr[sz++] = points[i + 0] + shiftU;
@@ -11111,21 +11145,10 @@ addBase('renderWebGL',function f(renderer, useSquare){
 				arr[sz++] = points[i + 6];
 				arr[sz++] = points[i + 7];
 				arr[sz++] = textureId;
-			}
-		}
-		else {
-			//var tint = -1;
-			const eps = 0.5;
-			for(let i=0,vCnt=0;i<pe;vCnt+=6,i+=9){
-				if(webgl1VerticesCntUpperBound-6<vCnt){
-					vertexBuf.upload(arr, 0, true);
-					gl.drawElements(gl.TRIANGLES, vCnt, gl.UNSIGNED_SHORT, 0);
-					vCnt=0;
-					sz=0;
-				}
-				textureId = (points[i + 8] >> 2);
-				shiftU = 1024 * (points[i + 8] & 1);
-				shiftV = 1024 * ((points[i + 8] >> 1) & 1);
+			}else{
+				const textureId = (points[i + 8] >> 2);
+				const shiftU = 1024 * (points[i + 8] & 1);
+				const shiftV = 1024 * ((points[i + 8] >> 1) & 1);
 				const x = points[i + 2], y = points[i + 3];
 				const w = points[i + 4], h = points[i + 5];
 				const u = points[i] + shiftU, v = points[i + 1] + shiftV;
@@ -11176,12 +11199,20 @@ addBase('renderWebGL',function f(renderer, useSquare){
 				arr[sz++] = textureId;
 			}
 		}
-		vertexBuf.upload(arr, 0, true);
-	}
-	if(useSquare){
-		gl.drawArrays(gl.POINTS, 0, vertices);
 	}else{
-		gl.drawElements(gl.TRIANGLES, rectsCount * 6, gl.UNSIGNED_SHORT, 0);
+		for(let x=0|0,sz=vbs.length|0,maxRectsPerDraw=~~(webgl1VerticesCntUpperBound/vertPerQuad);x<sz;++x){
+			const vb=vbs[x];
+			const vao=vb.vao;
+			renderer.bindVao(vao);
+			const vertexBuf=vb.vb;
+			vertexBuf.bind();
+			const remainedRectsCnt=Math.min(rectsCount-x*maxRectsPerDraw,maxRectsPerDraw,);
+			if(useSquare){
+				gl.drawArrays(gl.POINTS,0,remainedRectsCnt);
+			}else{
+				gl.drawElements(gl.TRIANGLES,remainedRectsCnt*6,gl.UNSIGNED_SHORT,0);
+			}
+		}
 	}
 }).
 getP;
