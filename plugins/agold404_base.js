@@ -7854,21 +7854,22 @@ addBase('update_tileScale_tileSize_src',function(){
 	this._tileHeight_src =($gameMap?$gameMap.tileHeight_src ():48)|0;
 }).
 addBase('update_tileScale_tileSize_fin',function(){
-	const w0=this._tileWidth;
-	const h0=this._tileHeight;
+	const w0=Math.min(this._tileWidth,this._tileWidth_src);
+	const h0=Math.min(this._tileHeight,this._tileHeight_src);
 	this._tileWidth  =$gameMap?$gameMap.tileWidth  ():48;
 	this._tileHeight =$gameMap?$gameMap.tileHeight ():48;
-	if(w0!==this._tileWidth||h0!==this._tileHeight) this._tileScaleChanged=true;
+	const w1=Math.min(this._tileWidth,this._tileWidth_src);
+	const h1=Math.min(this._tileHeight,this._tileHeight_src);
+	if(w0!==w1||h0!==h1) this._tileScaleChanged=true;
 	
 	this.update_margin.apply(this,arguments);
 	this.update_overallSize.apply(this,arguments);
 }).
 addBase('update_margin',function(margin){
 	return this._margin=Math.ceil(margin||Math.max(
+		64,
 		this._tileWidth_src,
-		this._tileWidth,
 		this._tileHeight_src,
-		this._tileHeight,
 	)||64);
 }).
 addBase('update_overallSize',function(){
@@ -8149,6 +8150,7 @@ addBase('tileScale_handleChildSetting',function f(c,isAdd){
 		Sprite_Animation,
 		Sprite_Balloon,
 		Sprite_Character,
+		Sprite_Destination,
 	]); }
 	if(!c||!f.tbl[0].has(c.constructor)) return;
 	if(isAdd){
@@ -8221,10 +8223,12 @@ addBase('_createLayers',function f(){
 	const width  =this._width;
 	const height =this._height;
 	const margin=this._margin;
-	const tileCols=(Math.ceil(width  /this._tileWidth  )+1)|0;
-	const tileRows=(Math.ceil(height /this._tileHeight )+1)|0;
-	const layerWidth_raw  =tileCols*this._tileWidth  ;
-	const layerHeight_raw =tileRows*this._tileHeight ;
+	const tw=Math.min(this._tileWidth  ,this._tileWidth_src  );
+	const th=Math.min(this._tileHeight ,this._tileHeight_src );
+	const tileCols=(Math.ceil(width  /tw)+1)|0;
+	const tileRows=(Math.ceil(height /th)+1)|0;
+	const layerWidth_raw  =tileCols*tw;
+	const layerHeight_raw =tileRows*th;
 	const layerWidth  =Math.ceil(layerWidth_raw  )|0;
 	const layerHeight =Math.ceil(layerHeight_raw )|0;
 	this._lowerBitmap=new Bitmap(layerWidth,layerHeight);
@@ -8369,6 +8373,48 @@ addBase('_paintAllTiles',function f(startX,startY){
 		for(let x=0|0;x<tileCols;++x){
 			this._paintTiles(startX,startY,x,y);
 		}
+	}
+}).
+addBase('_updateLayerPositions',function f(startX,startY){
+	const scalexy=$gameMap&&$gameMap.getTileScale();
+	const scalex=scalexy?scalexy.x:1;
+	const scaley=scalexy?scalexy.y:1;
+	const scalex_=Math.max(1,scalex,);
+	const scaley_=Math.max(1,scaley,);
+	
+	const m=this._margin;
+	const ox=Math.floor(this.origin.x/scalex_);
+	const oy=Math.floor(this.origin.y/scaley_);
+	const x2=(ox - m).mod(this._layerWidth);
+	const y2=(oy - m).mod(this._layerHeight);
+	const w1=this._layerWidth - x2;
+	const h1=this._layerHeight - y2;
+	const w2=this._width - w1;
+	const h2=this._height - h1;
+	
+	const baseX=-m*scalex_;
+	const baseY=-m*scaley_;
+
+	for(let i=2;i--;){
+		const p=i?this._upperLayer:this._lowerLayer;
+		p.position.set(
+			baseX,
+			baseY,
+		);
+		p.scale.set(
+			scalex_,
+			scaley_,
+		);
+		
+		const children=p.children;
+		children[0].move(0, 0, w1, h1);
+		children[0].setFrame(x2, y2, w1, h1);
+		children[1].move(w1, 0, w2, h1);
+		children[1].setFrame(0, y2, w2, h1);
+		children[2].move(0, h1, w1, h2);
+		children[2].setFrame(x2, 0, w1, h2);
+		children[3].move(w1, h1, w2, h2);
+		children[3].setFrame(0, 0, w2, h2);
 	}
 }).
 getP;
