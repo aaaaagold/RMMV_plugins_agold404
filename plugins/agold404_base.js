@@ -3841,12 +3841,10 @@ new cfc(ConfigManager).addBase('readFlag',function f(config,name,defaultValue){
 
 new cfc(Game_Map.prototype).
 addBase('canvasToMapRealX',function(x){
-	const tileWidth=this.tileWidth();
-	return this._displayX+x/tileWidth;
+	return TouchInput.toMapXyReal({x:x,y:0,},this).x;
 }).
 addBase('canvasToMapRealY',function(y){
-	const tileHeight=this.tileHeight();
-	return this._displayY+y/tileHeight;
+	return TouchInput.toMapXyReal({x:0,y:y,},this).y;
 }).
 getP;
 
