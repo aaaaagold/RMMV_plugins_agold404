@@ -3834,6 +3834,47 @@ addBase('update',function f(){
 getP;
 
 
+new cfc(Tilemap.prototype).
+addBase('setDataFromGameMap',function(gameMap){
+	this.setData(gameMap.width(),gameMap.height(),gameMap.data());
+	this.horizontalWrap=$gameMap.isLoopHorizontal();
+	this.verticalWrap=$gameMap.isLoopVertical();
+	this.loadTileset.apply(this,arguments);
+}).
+addBase('loadTileset_condOk',function f(gameMap){
+	const newTileset=gameMap.tileset();
+	if(newTileset===this._tileset) return false;
+	this._tileset=newTileset;
+	if(!newTileset) return false;
+	return true;
+}).
+addBase('loadTileset_do',function f(gameMap){
+	const newTileset=this._tileset;
+	for(let i=0,src=newTileset.tilesetNames,sz=src.length,bmps=this.bitmaps;i<sz;++i){
+		bmps[i]=ImageManager.loadTileset(src[i]);
+	}
+        
+	const newTilesetFlags=gameMap.tilesetFlags();
+        this.refreshTileset();
+        if(!this.flags.equals(newTilesetFlags)){
+            this.refresh();
+        }
+        this.flags=newTilesetFlags;
+}).
+addBase('loadTileset',function f(gameMap){
+	// gameMap instanceof Game_Map or capable
+	if(this.loadTileset_condOk.apply(this,arguments)) return this.loadTileset_do.apply(this,arguments);
+}).
+getP;
+
+new cfc(Spriteset_Map.prototype).
+addBase('loadTileset',function f(){
+	this._tileset=$gameMap.tileset();
+	this._tilemap.loadTileset($gameMap);
+}).
+getP;
+
+
 new cfc(ConfigManager).addBase('readFlag',function f(config,name,defaultValue){
 	return config[name]===undefined?!!defaultValue:config[name];
 });
@@ -7865,8 +7906,8 @@ addBase('update_tileScale_tileSize_fin',function(){
 	this.update_margin.apply(this,arguments);
 	this.update_overallSize.apply(this,arguments);
 }).
-addBase('update_margin',function(margin){
-	return this._margin=Math.ceil(margin||Math.max(
+addBase('update_margin',function(){
+	return this._margin=Math.ceil(Math.max(
 		64,
 		this._tileWidth_src,
 		this._tileHeight_src,
@@ -7881,7 +7922,7 @@ addBase('tileScale_updateParams',function(){
 	this.update_tileScale_tileSize_fin.apply(this,arguments);
 	this._tileScaleEnabled=true; // only enabled when rendering
 }).
-addBase('initialize',function(margin){
+addBase('initialize',function(){
 	PIXI.Container.call(this);
 	
 	this.tileScale_updateParams.apply(this,arguments);
@@ -7965,13 +8006,13 @@ addBase('_drawTile',function(bitmap_or_layer,tileId,dx,dy,dw,dh){
 }).
 addBase('_drawNormalTile',function(bitmap,tileId,dx,dy,dw,dh){
 	let setNumber=0;
-
+	
 	if(Tilemap.isTileA5(tileId)){
 		setNumber=4;
 	}else{
 		setNumber=5+(tileId>>8);
 	}
-
+	
 	const source=this.bitmaps[setNumber];
 	if(source){
 		const sw=this._tileWidth_src;
@@ -7993,9 +8034,9 @@ addBase('_drawAutotile',function f(bitmap,tileId,dx,dy,dw,dh){
 	let by=0;
 	let setNumber=0;
 	let isTable=false;
-
+	
 	if (Tilemap.isTileA1(tileId)) {
-		let waterSurfaceIndex=f.tbl[0][this.animationFrame % 4];
+		let waterSurfaceIndex=f.tbl[0][this.animationFrame&3];
 		setNumber = 0;
 		if (kind === 0) {
 			bx = waterSurfaceIndex<<1;
@@ -8040,7 +8081,7 @@ addBase('_drawAutotile',function f(bitmap,tileId,dx,dy,dw,dh){
 			autotileTable = Tilemap.WALL_AUTOTILE_TABLE;
 		}
 	}
-
+	
 	const table=autotileTable[shape];
 	const source=this.bitmaps[setNumber];
 	if(table&&source){
@@ -8306,7 +8347,7 @@ addBase('_paintTiles',function f(startX,startY,x,y){
 	}
 	
 	lowerTiles.push(-shadowBits);
-
+	
 	if (this._isTableTile(upperTileId1) && !this._isTableTile(tileId1)) {
 		if (!Tilemap.isShadowingTile(tileId0)) {
 			lowerTiles.push(tableEdgeVirtualId + upperTileId1);
@@ -8375,6 +8416,10 @@ addBase('_paintAllTiles',function f(startX,startY){
 		}
 	}
 }).
+addBase('_updateLayerPositions_setBmpFrame',function f(sp,ox,oy,x,y,w,h){
+	sp.move(ox,oy);
+	sp.setFrame(x,y,w,h);
+}).
 addBase('_updateLayerPositions',function f(startX,startY){
 	const scalexy=$gameMap&&$gameMap.getTileScale();
 	const scalex=scalexy?scalexy.x:1;
@@ -8385,16 +8430,16 @@ addBase('_updateLayerPositions',function f(startX,startY){
 	const m=this._margin;
 	const ox=Math.floor(this.origin.x/scalex_);
 	const oy=Math.floor(this.origin.y/scaley_);
-	const x2=(ox - m).mod(this._layerWidth);
-	const y2=(oy - m).mod(this._layerHeight);
-	const w1=this._layerWidth - x2;
-	const h1=this._layerHeight - y2;
-	const w2=this._width - w1;
-	const h2=this._height - h1;
+	const x2=(ox - m).mod(this._layerWidth  );
+	const y2=(oy - m).mod(this._layerHeight );
+	const w1=this._layerWidth  -x2;
+	const h1=this._layerHeight -y2;
+	const w2=this._layerWidth  -w1;
+	const h2=this._layerHeight -h1;
 	
 	const baseX=-m*scalex_;
 	const baseY=-m*scaley_;
-
+	
 	for(let i=2;i--;){
 		const p=i?this._upperLayer:this._lowerLayer;
 		p.position.set(
@@ -8407,14 +8452,10 @@ addBase('_updateLayerPositions',function f(startX,startY){
 		);
 		
 		const children=p.children;
-		children[0].move(0, 0, w1, h1);
-		children[0].setFrame(x2, y2, w1, h1);
-		children[1].move(w1, 0, w2, h1);
-		children[1].setFrame(0, y2, w2, h1);
-		children[2].move(0, h1, w1, h2);
-		children[2].setFrame(x2, 0, w1, h2);
-		children[3].move(w1, h1, w2, h2);
-		children[3].setFrame(0, 0, w2, h2);
+		this._updateLayerPositions_setBmpFrame(children[0], 0, 0,  x2,y2,w1,h1);
+		this._updateLayerPositions_setBmpFrame(children[1],w1, 0,   0,y2,w2,h1);
+		this._updateLayerPositions_setBmpFrame(children[2], 0,h1,  x2, 0,w1,h2);
+		this._updateLayerPositions_setBmpFrame(children[3],w1,h1,   0, 0,w2,h2);
 	}
 }).
 getP;
@@ -8423,9 +8464,9 @@ getP;
 delete p._drawTile;
 delete p._paintAllTiles;
 new cfc(p).
-addBase('update_margin',function f(margin){
+addBase('update_margin',function f(){
 	// need: ._tile*_dst
-	this._margin=margin||Math.max(
+	this._margin=Math.max(
 		this._tileWidth_src,
 		this._tileWidth_dst,
 		this._tileHeight_src,
