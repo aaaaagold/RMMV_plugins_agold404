@@ -8294,11 +8294,11 @@ addBase('_createLayers',function f(){
 	 */
 	
 	this._lowerLayer = new Sprite();
-	this._lowerLayer.move(-margin, -margin, width, height);
+	//this._lowerLayer.move(-margin, -margin, width, height);
 	this._lowerLayer.z = 0;
 	
 	this._upperLayer = new Sprite();
-	this._upperLayer.move(-margin, -margin, width, height);
+	//this._upperLayer.move(-margin, -margin, width, height);
 	this._upperLayer.z = 4;
 	
 	for(let i = 4;i--;){
@@ -8427,22 +8427,27 @@ addBase('_updateLayerPositions',function f(startX,startY){
 	const scalex_=Math.max(1,scalex,);
 	const scaley_=Math.max(1,scaley,);
 	
+	/* from (xy0) to (xy1) but rounded in (mod layerSize) */
 	const m=this._margin;
 	const ox=Math.floor(this.origin.x/scalex_);
 	const oy=Math.floor(this.origin.y/scaley_);
-	const x2=(ox - m).mod(this._layerWidth  );
-	const y2=(oy - m).mod(this._layerHeight );
-	const w1=this._layerWidth  -x2;
-	const h1=this._layerHeight -y2;
-	const w2=this._layerWidth  -w1;
-	const h2=this._layerHeight -h1;
+	const displayWidth  =~~(this._width  -m*2);
+	const displayHeight =~~(this._height -m*2);
+	const x0=(ox).mod(this._layerWidth  );
+	const y0=(oy).mod(this._layerHeight );
+	const x1=(x0+displayWidth  ).mod(this._layerWidth  );
+	const y1=(y0+displayHeight ).mod(this._layerHeight );
+	const w0=x1<x0?this._layerWidth  -x0:x1-x0;
+	const h0=y1<y0?this._layerHeight -y0:y1-y0;
+	const w1=displayWidth  -w0;
+	const h1=displayHeight -h0;
 	
 	const baseX=-m*scalex_;
 	const baseY=-m*scaley_;
 	
 	for(let i=2;i--;){
 		const p=i?this._upperLayer:this._lowerLayer;
-		p.position.set(
+		if(0)p.position.set(
 			baseX,
 			baseY,
 		);
@@ -8452,10 +8457,10 @@ addBase('_updateLayerPositions',function f(startX,startY){
 		);
 		
 		const children=p.children;
-		this._updateLayerPositions_setBmpFrame(children[0], 0, 0,  x2,y2,w1,h1);
-		this._updateLayerPositions_setBmpFrame(children[1],w1, 0,   0,y2,w2,h1);
-		this._updateLayerPositions_setBmpFrame(children[2], 0,h1,  x2, 0,w1,h2);
-		this._updateLayerPositions_setBmpFrame(children[3],w1,h1,   0, 0,w2,h2);
+		this._updateLayerPositions_setBmpFrame(children[0], 0, 0,  x0,y0,w0,h0);
+		this._updateLayerPositions_setBmpFrame(children[1],w0, 0,   0,y0,w1,h0);
+		this._updateLayerPositions_setBmpFrame(children[2], 0,h0,  x0, 0,w0,h1);
+		this._updateLayerPositions_setBmpFrame(children[3],w0,h0,   0, 0,w1,h1);
 	}
 }).
 getP;
