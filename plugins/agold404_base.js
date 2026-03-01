@@ -3865,12 +3865,33 @@ addBase('loadTileset',function f(gameMap){
 	// gameMap instanceof Game_Map or capable
 	if(this.loadTileset_condOk.apply(this,arguments)) return this.loadTileset_do.apply(this,arguments);
 }).
+addBase('createCharacters',function f(gameMap,gamePlayer){
+	const rtv=[];
+	gameMap=gameMap||$gameMap;
+	gamePlayer=gamePlayer||$gamePlayer;
+	if(gameMap) gameMap.events().forEach(f.tbl[0],rtv);
+	if(gameMap) gameMap.vehicles().forEach(f.tbl[0],rtv);
+	if(gamePlayer) gamePlayer.followers().reverseEach(f.tbl[0],rtv);
+	if(gamePlayer) rtv.push(new Sprite_Character(gamePlayer));
+	rtv.forEach(f.tbl[1],this);
+	return rtv;
+},[
+function(chr){
+	this.push(new Sprite_Character(chr));
+}, // 0: forEach - create spChr
+function(spChr){
+	this.addChild(spChr);
+}, // 1: forEach - add spChr
+]).
 getP;
 
 new cfc(Spriteset_Map.prototype).
 addBase('loadTileset',function f(){
 	this._tileset=$gameMap.tileset();
 	this._tilemap.loadTileset($gameMap);
+}).
+addBase('createCharacters',function f(){
+	this._characterSprites=this._tilemap.createCharacters();
 }).
 getP;
 
@@ -5719,19 +5740,37 @@ new cfc(Game_Event.prototype).addBase('page',function f(){
 
 (()=>{ let k,r,t;
 
-new cfc(Sprite_Character.prototype).add('setCharacter',function f(){
-	{ const sc=SceneManager._scene; if(sc){
-		if(!sc._chr2sp) sc._chr2sp=new Map();
-		sc._chr2sp.set(arguments[0],this);
-	} }
+new cfc(SceneManager).
+addBase('chr2sp_getDefaultRoot',function f(isNoWrap){
+	const rtv=this._chr2sp_defaultRoot;
+	return isNoWrap?rtv:(rtv||this._scene);
+}).
+addBase('chr2sp_setDefaultRoot',function f(root){
+	this._chr2sp_defaultRoot=root;
+	return this;
+}).
+addBase('chr2sp_getCont',function f(root){
+	root=root||this.chr2sp_getDefaultRoot();
+	let rtv; if(root){ rtv=root._chr2sp; if(!rtv) rtv=root._chr2sp=new Map(); }
+	return rtv;
+}).
+getP;
+
+new cfc(Sprite_Character.prototype).
+add('setCharacter',function f(gameChr){
+	const chr2sp=SceneManager.chr2sp_getCont();
+	if(chr2sp) chr2sp.set(gameChr,this);
 	return f.ori.apply(this,arguments);
-}).addBase('updatePosition',function f(){
+}).
+addBase('updatePosition',function f(){
 	const chr=this._character;
 	this.position.set(chr.screenX(),chr.screenY());
 	this.z=chr.screenZ();
-});
+}).
+getP;
 
-new cfc(Sprite_Battler.prototype).add('setBattler',function f(){
+new cfc(Sprite_Battler.prototype).
+add('setBattler',function f(){
 	const rtv=f.ori.apply(this,arguments);
 	const sc=SceneManager._scene;
 	if(sc){
@@ -5739,23 +5778,29 @@ new cfc(Sprite_Battler.prototype).add('setBattler',function f(){
 		sc._btlr2sp.set(this._battler,this);
 	}
 	return rtv;
-}).addBase('updatePosition',function f(){
+}).
+addBase('updatePosition',function f(){
 	this.position.set( this._homeX+this._offsetX , this._homeY+this._offsetY );
-});
+}).
+getP;
 
-new cfc(Game_Character.prototype).addBase('getSprite',function f(){
-	const sc=SceneManager._scene;
-	const m=sc&&sc._chr2sp;
+new cfc(Game_Character.prototype).
+addBase('getSprite',function f(root){
+	const m=SceneManager.chr2sp_getCont(root);
 	return m&&m.get(this);
-});
+}).
+getP;
 
-new cfc(Game_Battler.prototype).addBase('getSprite',function f(){
+new cfc(Game_Battler.prototype).
+addBase('getSprite',function f(){
 	const sc=SceneManager._scene;
 	const m=sc&&sc._btlr2sp;
 	return m&&m.get(this);
-});
+}).
+getP;
 
-new cfc(SceneManager).addBase('getSprite',function f(obj){
+new cfc(SceneManager).
+addBase('getSprite',function f(obj){
 	const sc=this._scene;
 	const func=f.tbl[0].get(sc&&sc.constructor);
 	const m=func&&func(sc);
@@ -5765,7 +5810,8 @@ new Map([
 [Scene_Map,sc=>sc&&sc._chr2sp],
 [Scene_Battle,sc=>sc&&sc._btlr2sp],
 ]), // 0: constructor -> spritesMap
-]);
+]).
+getP;
 
 })(); // gameObj2sprite
 
@@ -8464,6 +8510,26 @@ addBase('_updateLayerPositions',function f(startX,startY){
 	}
 }).
 getP;
+
+{ const a=class MiniTilemap extends Tilemap{
+};
+new cfc(a.prototype).
+addWithBaseIfNotOwn('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._tileScaleRendering=true;
+	return rtv;
+}).
+addWithBaseIfNotOwn('createCharacters',function f(){
+	const scmgr=SceneManager;
+	const root0=scmgr.chr2sp_getDefaultRoot(true);
+	scmgr.chr2sp_setDefaultRoot(this);
+	const rtv=f.ori.apply(this,arguments);
+	scmgr.chr2sp_setDefaultRoot(root0);
+	return rtv;
+}).
+getP;
+window[a.name]=a;
+}
 
 { const p=ShaderTilemap.prototype;
 delete p._drawTile;
