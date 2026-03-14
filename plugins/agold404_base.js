@@ -741,7 +741,8 @@ new cfc(SceneManager).addBase('isMapOrIsBattle',function f(){
 	this.updateMain_data();
 	this.updateMain_render();
 	this.updateMain_final();
-}).addBase('updateMain_data',function f(){
+}).
+addBase('updateMain_data',function f(){
 	if(Utils.isMobileSafari()){
 		// this.updateInputData(); // already in .update
 		this.updateMain_data1(true);
@@ -750,11 +751,15 @@ new cfc(SceneManager).addBase('isMapOrIsBattle',function f(){
 		const fTime=Math.min((newTime-this._currentTime)/1000.0,f.tbl[0]);
 		this._currentTime=newTime;
 		this._accumulator+=fTime;
-		for(;this._accumulator>=this._deltaTime;this._accumulator-=this._deltaTime){
+		for(let x=f.tbl[1];x--&&this._accumulator>=this._deltaTime;this._accumulator-=this._deltaTime){
 			this.updateMain_data1(false);
 		}
 	}
-},[0.25,]).addBase('updateMain_data1',function f(isNotToUpdateInputData){
+},[
+0.125, // 0: max dt
+3|0, // 1: max update time per requestAnimationFrame
+]).
+addBase('updateMain_data1',function f(isNotToUpdateInputData){
 	if(!isNotToUpdateInputData) this.updateInputData();
 	this.changeScene_before();
 	this.changeScene();
@@ -5276,7 +5281,7 @@ addBase('matchMembersCnt',function f(){
 	if(mc>=2){ for(;;){
 		const idx=arr.length+1;
 		if(idx>=mc) break;
-		const last=arr.back;
+		const last=arr.back||$gamePlayer;
 		const flwr=new Game_Follower(idx);
 		flwr.locate(last.x,last.y);
 		flwr.refresh();
