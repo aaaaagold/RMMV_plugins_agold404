@@ -750,14 +750,15 @@ addBase('updateMain_data',function f(){
 		const newTime=this._getTimeInMsWithoutMobileSafari();
 		const fTime=Math.min((newTime-this._currentTime)/1000.0,f.tbl[0]);
 		this._currentTime=newTime;
-		this._accumulator+=fTime;
-		for(let x=f.tbl[1];x--&&this._accumulator>=this._deltaTime;this._accumulator-=this._deltaTime){
+		this._accumulator=Math.min(this._accumulator+fTime,f.tbl[1]);
+		for(let x=f.tbl[2];x--&&this._accumulator>=this._deltaTime;this._accumulator-=this._deltaTime){
 			this.updateMain_data1(false);
 		}
 	}
 },[
-0.125, // 0: max dt
-3|0, // 1: max update time per requestAnimationFrame
+1.0/16, // 0: max dt
+1.0/4, // 1: max accumulated dt
+2|0, // 2: max update time per requestAnimationFrame
 ]).
 addBase('updateMain_data1',function f(isNotToUpdateInputData){
 	if(!isNotToUpdateInputData) this.updateInputData();
