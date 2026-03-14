@@ -11208,6 +11208,18 @@ getP;
 (()=>{ let k,r,t;
 
 
+new cfc(PIXI.tilemap.TileRenderer.prototype).
+addBase('getVb',function f(key){
+	this.checkLeaks();
+	const vb=this.vbs[key];
+	if(vb){
+		vb.lastTimeAccess=Date.now();
+		return vb;
+	}
+	return null;
+}).
+getP;
+
 { const webgl1VerticesCntUpperBound=65536|0;
 new cfc(PIXI.tilemap.RectTileLayer.prototype).
 addBase('renderWebGL',function f(renderer, useSquare){
