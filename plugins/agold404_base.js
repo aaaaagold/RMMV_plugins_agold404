@@ -5580,7 +5580,8 @@ new cfc(DataManager).addBase('getDebugInfo',function f(){
 	return res.join(' ; ');
 });
 
-new cfc(Game_Interpreter.prototype).add('command111',function f(){
+new cfc(Game_Interpreter.prototype).
+add('command111',function f(){
 	// interpreter branch
 	if(this._params[0]===12){
 		let res;
@@ -5607,13 +5608,17 @@ new cfc(Game_Interpreter.prototype).add('command111',function f(){
 '',
 '條件分歧ㄉ條件打錯ㄌ',
 ],
-]).addBase('command355',function f(){
+]).
+addBase('command355',function f(){
 	let script=this.currentCommand().parameters[0];
+	const idx0=this._index;
 	while(f.tbl[0].has(this.nextEventCode())){
 		this._index++;
 		script+='\n';
 		script+=this.currentCommand().parameters[0];
 	}
+	const idx1=this._index;
+	this._index=idx0;
 	try{
 		eval(script);
 	}catch(e){
@@ -5628,6 +5633,7 @@ new cfc(Game_Interpreter.prototype).add('command111',function f(){
 		e._msgOri=e.message;
 		throw e;
 	}
+	this._index=idx1;
 	return true;
 },[
 new Set([355,655,]),
@@ -5635,7 +5641,8 @@ new Set([355,655,]),
 'Game_Interpreter.prototype.command355',
 ' JavaScript 打錯ㄌ',
 ],
-]);
+]).
+getP;
 
 new cfc(Game_Action.prototype).addBase('evalDamageFormula',function f(target){
 	try{
