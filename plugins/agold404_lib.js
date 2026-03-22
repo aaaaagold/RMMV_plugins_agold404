@@ -351,7 +351,7 @@ p.multisetUniquesCnt=function(){
 (()=>{ let k,r,t;
 
 { const w=window; if(!w.Queue){
-	w.Queue=function(){ this.initialize.apply(this,arguments); };
+	w.Queue=function Queue(){ this.initialize.apply(this,arguments); };
 	const p=w.Queue.prototype;
 	p.constructor=w.Queue;
 	p.initialize=function(init_size_or_array,kargs){
@@ -516,7 +516,7 @@ p.multisetUniquesCnt=function(){
 
 { const w=window; if(!w.Heap){
 	let $dddd$;
-	w.Heap=function(){ this.initialize.apply(this,arguments); };
+	w.Heap=function Heap(){ this.initialize.apply(this,arguments); };
 	w.Heap.prototype.constructor=w.Heap;
 	$dddd$=w.Heap.prototype.initialize=function f(func_cmp3,arr,inPlace){
 		{
@@ -1379,6 +1379,7 @@ const pow32gf2=window.pow32gf2=(b,e,poly,revPoly)=>{
 })(); // lib
 
 const undef=undefined,none=()=>{},filterArg0=x=>x,isNum=n=>!isNaN(n),cmpFunc_num=(a,b)=>a-b;
+const filterArg1=(x,i)=>i;
 const re_allR=/\r/g;
 const re_leadingTrailing_crlf=/(^[\r\n]+|[\r\n]+$)/g;
 const EVAL=function(s){ const self=this; { return eval(s); } };
