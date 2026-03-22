@@ -758,7 +758,7 @@ addBase('updateMain_data',function f(){
 },[
 1.0/16, // 0: max dt
 1.0/4, // 1: max accumulated dt
-2|0, // 2: max update time per requestAnimationFrame
+4|0, // 2: max update time per requestAnimationFrame
 ]).
 addBase('updateMain_data1',function f(isNotToUpdateInputData){
 	if(!isNotToUpdateInputData) this.updateInputData();
