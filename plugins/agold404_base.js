@@ -10236,16 +10236,186 @@ new cfc(a.prototype).addBase('initialize',function f(){
 (()=>{ let k,r,t;
 
 new cfc(JsonEx).
+addBase('isJsonLiteral',function f(val){
+	if(val==null) return true;
+	return f.tbl[0].has(val.constructor.name);
+},[
+new Set([
+'Boolean',
+'Function', // though the whole thing should not be saved
+'Number',
+'String',
+]), // 0: immutable constructor names
+]).
+addBase('_linkCircularReference',function f(contents,circulars,registry){
+	for(let x=0,xs=circulars.length;x<xs;++x){
+		const circular=circulars[x];
+		if(circular['@f']) circular['@f'].apply(this,circular['@a']);
+		else circular[1][circular[0]]=registry[circular[2]];
+	}
+}).
+addBase('_cleanMetadata',function f(obj,depth){
+	if(!obj) return;
+	if(depth>=JsonEx.maxDepth){
+		throw new Error('clean meta too deep');
+	}
+	if((typeof obj)==='object'){
+		delete obj['@'];
+		delete obj['@c'];
+		const keys=this._encode_encVal_getKeys(obj);
+		if(keys){
+			++depth;
+			for(let x=0,xs=keys.length;x<xs;++x){
+				JsonEx._cleanMetadata(obj[keys[x]],depth);
+			}
+		}
+	}
+}).
 addBase('stringify',function f(obj){
 	const circular=[];
-	JsonEx._id=1;
-	const json=JSON.stringify(this._encode(obj,circular,0));
-	this._cleanMetadata(obj);
+	JsonEx._id=1|0;
+	const json=JSON.stringify(this._encode(obj,circular,0|0));
+	this._cleanMetadata(obj,0|0);
 	this._restoreCircularReference(circular);
 	
 	return json;
 }).
-add('_encode',function f(val,circular,depth){
+addBase('_encode',function f(val,circular,depth,linkInfo,opt,){
+	this._encode_chkDepth.apply(this,arguments);
+	return this._encode_encVal.apply(this,arguments);
+}).
+addBase('_encode_addFunc',function f(ctor,encFunc,keysFunc,decFunc,){
+	f.tbl[0].set(ctor.name,[encFunc,keysFunc,decFunc,]);
+	return this;
+},t=[
+new Map(), // 0: constructor name -> encoding func
+]).
+addBase('_encode_getEncFunc',function f(obj){
+	const res=f.tbl[0].get(obj&&obj.constructor.name);
+	return res&&res[0];
+},t).
+addBase('_encode_getKeysFunc',function f(obj){
+	const res=f.tbl[0].get(obj&&obj.constructor.name);
+	return res&&res[1];
+},t).
+addBase('_encode_getDecFunc',function f(consturctorName){
+	const res=f.tbl[0].get(consturctorName);
+	return res&&res[2];
+},t).
+addBase('_encode_addRestoreInfo',function f(val,circular,depth,linkInfo,opt,){
+	if(linkInfo) circular.push([linkInfo.key,linkInfo.parent,val]); // for restoring
+}).
+addBase('_encode_chkDepth',function f(val,circular,depth,linkInfo,){
+	if(depth>=this.maxDepth){
+		throw new Error('Object too deep');
+	}
+}).
+addBase('_encode_encVal',function f(val,circular,depth,linkInfo,opt,){
+	if(this.isJsonLiteral(val)) return val;
+	
+	if(val['@c']){
+		if(!val.hasOwnProperty('@c')){
+			throw new Error("!");
+		}
+		// existing object
+		this._encode_addRestoreInfo.apply(this,arguments);
+		return ({'@r':val['@c'],});
+	}
+	if(!f.tbl[0].has(val.constructor.name)) val["@"]=val.constructor.name;
+	if(!f.tbl[1].has(val.constructor.name)){
+		val['@c']=this._generateId();
+		this._encode_encVal_nextLevel.apply(this,arguments);
+	}
+	return this._encode_encVal_handleCurrent.apply(this,arguments);
+},[
+new Set([
+'Array', // save space
+'BigInt', // immutable but use handleCurrent
+'Object', // counted as basic type
+]), // 0: bypass constructor setting
+new Set([
+'BigInt',
+]), // 1: is immutable but use handleCurrent
+]).
+addBase('_encode_encVal_getKeys',function f(val){
+	const keysFunc=this._encode_getKeysFunc(val);
+	return keysFunc?keysFunc(val):Object.keys(val);
+}).
+addBase('_encode_encVal_nextLevel',function f(val,circular,depth,linkInfo,opt,){
+	const keys=this._encode_encVal_getKeys(val);
+	if(keys){
+		++depth;
+		const nextLinkInfo={parent:val,key:undefined,};
+		for(let x=0,xs=keys.length;x<xs;++x){
+			const key=keys[x];
+			if(key.match&&key.match(f.tbl[0])) continue;
+			nextLinkInfo.key=key;
+			val[key]=this._encode(val[key],circular,depth,nextLinkInfo,opt,);
+		}
+	}
+},[
+/^@.*/, // 0: RE of JsonEx meta data keys
+]).
+addBase('_encode_encVal_handleCurrent',function f(val,circular,depth,linkInfo,opt,){
+	// encode to json storable info
+	const encFunc=this._encode_getEncFunc(val);
+	if(encFunc){
+		// the object is not stored directly and will be changed
+		this._encode_addRestoreInfo.apply(this,arguments);
+		val=encFunc.apply(this,arguments);
+	}
+	
+	return val;
+}).
+addBase('_decode',function(info,circular,registry,linkInfo){
+	return this._decode_decInfo.apply(this,arguments);
+}).
+addBase('_decode_addRestoreInfo',function(info,circular,registry,linkInfo){
+	if(linkInfo&&info['@r']>=0) circular.push([linkInfo.key,linkInfo.parent,info['@r'],]);
+}).
+addBase('_decode_decInfo',function(info,circular,references,linkInfo,opt,){
+	if(this.isJsonLiteral(info)) return info;
+	
+	const c=info['@c'];
+	this._decode_addRestoreInfo.apply(this,arguments);
+	
+	this._decode_decInfo_nextLevel.apply(this,arguments);
+	info=this._decode_decInfo_handleCurrent.apply(this,arguments);
+	
+	if(c>=0){
+		references[c]=info;
+	}
+	return info;
+}).
+addBase('_decode_decInfo_nextLevel',function(info,circular,references,linkInfo,opt,){
+	const keys=this._encode_encVal_getKeys(info);
+	if(keys){
+		const nextLinkInfo={parent:info,key:undefined,};
+		for(let x=0,xs=keys.length;x<xs;++x){
+			const key=keys[x];
+			nextLinkInfo.key=key;
+			info[key]=this._decode(info[key],circular,references,nextLinkInfo,opt,);
+		}
+	}
+}).
+addBase('_decode_decInfo_getDecFunc',function(info){
+	if(info['@a']) return this._encode_getDecFunc('Array'); // backward capability
+	return this._encode_getDecFunc(info['@']);
+}).
+addBase('_decode_decInfo_handleCurrent',function(info,circular,references,linkInfo,opt,){
+	// decode from json storable info
+	const decFunc=this._decode_decInfo_getDecFunc(info);
+	if(decFunc){
+		info=decFunc.apply(this,arguments);
+	}else{
+		const ctor=window[info['@']];
+		if(ctor) info=this._resetPrototype(info,ctor.prototype);
+	}
+	
+	return info;
+}).
+// special num
+add('_encode',function f(val,circular,depth,linkInfo,){
 	if(this.isSpecialNumVal(val)) return this._encodeSpeicalNumVal.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
@@ -10254,7 +10424,7 @@ addBase('isSpecialNumVal',function f(val){
 },[
 new Set([Infinity,-Infinity,NaN]), // special num vals
 ]).
-addBase('_encodeSpeicalNumVal',function f(val,circular,depth){
+addBase('_encodeSpeicalNumVal',function f(val,circular,depth,linkInfo,){
 	const rtv={};
 	rtv[f.tbl[0]]=val.toString();
 	return rtv;
@@ -10269,6 +10439,95 @@ add('_decode',function f(val,circular,depth){
 	return f.ori.apply(this,arguments);
 },t).
 getP;
+
+JsonEx.
+_encode_addFunc(Array,
+arr=>({'@':'Array','@c':arr['@c'],'@a':arr,}), // remains original array instance so that it can be cleaned
+function f(arr){
+	if(!f.tbl){ f.tbl=[
+		function(x,i){ this.push(i); },
+	]; }
+	const rtv=[];
+	arr.forEach(f.tbl[0],rtv);
+	return rtv;
+},
+info=>info['@a'],
+).
+_encode_addFunc(BigInt,
+bi=>({'@':'BigInt','@d':bi.toString(),}),
+none,
+info=>BigInt(info['@d']),
+).
+_encode_addFunc(Map,
+function f(m,circular,depth,){
+	if(!f.tbl){ f.tbl=[
+		function(v,k){ this.push([k,v,]); },
+	]; }
+	const data=[];
+	m.forEach(f.tbl[0].bind(data));
+	++depth;
+	const nextLinkInfo={parent:data,key:undefined,};
+	for(let x=0,xs=data.length;x<xs;++x){
+		nextLinkInfo.parent=data[x];
+		nextLinkInfo.key=0;
+		data[x][0]=this._encode(data[x][0],circular,depth,nextLinkInfo,);
+		nextLinkInfo.key=1;
+		data[x][1]=this._encode(data[x][1],circular,depth,nextLinkInfo,);
+	}
+	return ({
+		'@':'Map',
+		'@c':m['@c'],
+		'@d':data,
+	});
+},
+none,
+function f(info,circular){
+	if(!f.tbl){ f.tbl=[
+		function f(m,data){
+			for(let x=0,xs=data.length;x<xs;++x){
+				m.set(data[x][0],data[x][1]);
+			}
+		},
+	]; }
+	const rtv=new Map();
+	circular.push({'@f':f.tbl[0],'@a':[rtv,info['@d'],],});
+	return rtv;
+},
+).
+_encode_addFunc(Set,
+function f(s,circular,depth,){
+	if(!f.tbl){ f.tbl=[
+		function(v){ this.push(v); },
+	]; }
+	const data=[];
+	s.forEach(f.tbl[0].bind(data));
+	++depth;
+	const nextLinkInfo={parent:data,key:undefined,};
+	for(let x=0,xs=data.length;x<xs;++x){
+		nextLinkInfo.key=x;
+		data[x]=this._encode(data[x],circular,depth,nextLinkInfo,);
+	}
+	return ({
+		'@':'Set',
+		'@c':s['@c'],
+		'@d':data,
+	});
+},
+none,
+function f(info,circular){
+	if(!f.tbl){ f.tbl=[
+		function f(s,data){
+			for(let x=0,xs=data.length;x<xs;++x){
+				s.add(data[x]);
+			}
+		},
+	]; }
+	const rtv=new Set();
+	circular.push({'@f':f.tbl[0],'@a':[rtv,info['@d'],],});
+	return rtv;
+},
+).
+_encode_addFunc;
 
 })(); // extend JsonEx
 
