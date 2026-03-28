@@ -5611,14 +5611,11 @@ add('command111',function f(){
 ]).
 addBase('command355',function f(){
 	let script=this.currentCommand().parameters[0];
-	const idx0=this._index;
 	while(f.tbl[0].has(this.nextEventCode())){
 		this._index++;
 		script+='\n';
 		script+=this.currentCommand().parameters[0];
 	}
-	const idx1=this._index;
-	this._index=idx0;
 	try{
 		eval(script);
 	}catch(e){
@@ -5633,7 +5630,6 @@ addBase('command355',function f(){
 		e._msgOri=e.message;
 		throw e;
 	}
-	this._index=idx1;
 	return true;
 },[
 new Set([355,655,]),
@@ -5642,6 +5638,10 @@ new Set([355,655,]),
 ' JavaScript 打錯ㄌ',
 ],
 ]).
+addRoof('executeCommand',function f(){
+	this._index_cmdStart=this._index;
+	return f.ori.apply(this,arguments);
+}).
 getP;
 
 new cfc(Game_Action.prototype).addBase('evalDamageFormula',function f(target){
