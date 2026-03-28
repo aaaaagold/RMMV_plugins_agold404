@@ -39,7 +39,7 @@ add('clear',function f(){
 	return rtv;
 }).
 addBase('onGameLoadedIndex_setHere',function (){
-	this._onLoadIndex=this._index;
+	this._onLoadIndex=this._index_cmdStart;
 }).
 addBase('onGameLoadedIndex_clear',function (){
 	this._onLoadIndex=undefined;
