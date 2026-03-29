@@ -5554,11 +5554,49 @@ TouchInput._setupEventHandlers = function() {
 	document.addEventListener('pointerdown', this._onPointerDown.bind(this));
 };
 
+// ---- ---- ---- ---- Game_Interpreter.prototype.executeCommand
+
+(()=>{ let k,r,t;
+
+new cfc(Game_Interpreter.prototype).
+addBase('executeCommand',function f(){
+	const cmd=this.currentCommand();
+	if(cmd){
+		this._params = cmd.parameters;
+		this._indent = cmd.indent;
+		let func=f.tbl[0][cmd.code];
+		if(!func){
+			func=this[f.tbl[1]+cmd.code];
+			if(f.tbl[2]!==typeof func) func=getTrue;
+			f.tbl[0][cmd.code]=func;
+		}
+		if(!func.call(this)){
+			return false;
+		}
+		this._index++;
+	}else{
+		this.terminate();
+	}
+	return true;
+},[
+[getTrue,], // 0: code->func
+'command', // 1: func name prefix
+'function', // 2: typeof
+]).
+addRoof('executeCommand',function f(){
+	this._index_cmdStart=this._index;
+	return f.ori.apply(this,arguments);
+}).
+getP;
+
+})(); // Game_Interpreter.prototype.executeCommand
+
 // ---- ---- ---- ---- js error
 
 (()=>{ let k,r,t;
 
-new cfc(DataManager).addBase('getDebugInfo',function f(){
+new cfc(DataManager).
+addBase('getDebugInfo',function f(){
 	const sc=SceneManager._scene;
 	return ({
 		sc:sc,
@@ -5568,7 +5606,8 @@ new cfc(DataManager).addBase('getDebugInfo',function f(){
 		xyReal:$gamePlayer&&({x:$gamePlayer._realX,y:$gamePlayer._realY}),
 		troopId:$gameTroop&&$gameTroop._troopId,
 	});
-}).addBase('getDebugInfoStr',function f(){
+}).
+addBase('getDebugInfoStr',function f(){
 	const res=[];
 	const info=this.getDebugInfo();
 	const scName=info.scCtor&&info.scCtor.name;
@@ -5578,7 +5617,8 @@ new cfc(DataManager).addBase('getDebugInfo',function f(){
 	res.push("xyReal: "+JSON.stringify(info.xyReal||null));
 	res.push("troopId: "+info.troopId);
 	return res.join(' ; ');
-});
+}).
+getP;
 
 new cfc(Game_Interpreter.prototype).
 add('command111',function f(){
@@ -5609,6 +5649,12 @@ add('command111',function f(){
 '條件分歧ㄉ條件打錯ㄌ',
 ],
 ]).
+addBase('scriptCmdInterrupt_set',function f(val){
+	this._scriptCmdInterrupt=val;
+}).
+addBase('scriptCmdInterrupt_get',function f(){
+	return this._scriptCmdInterrupt;
+}).
 addBase('command355',function f(){
 	let script=this.currentCommand().parameters[0];
 	while(f.tbl[0].has(this.nextEventCode())){
@@ -5616,6 +5662,7 @@ addBase('command355',function f(){
 		script+='\n';
 		script+=this.currentCommand().parameters[0];
 	}
+	this.scriptCmdInterrupt_set();
 	try{
 		eval(script);
 	}catch(e){
@@ -5630,7 +5677,9 @@ addBase('command355',function f(){
 		e._msgOri=e.message;
 		throw e;
 	}
-	return true;
+	const res=this.scriptCmdInterrupt_get();
+	if(res) ++this._index;
+	return !res;
 },[
 new Set([355,655,]),
 [
@@ -5638,13 +5687,10 @@ new Set([355,655,]),
 ' JavaScript 打錯ㄌ',
 ],
 ]).
-addRoof('executeCommand',function f(){
-	this._index_cmdStart=this._index;
-	return f.ori.apply(this,arguments);
-}).
 getP;
 
-new cfc(Game_Action.prototype).addBase('evalDamageFormula',function f(target){
+new cfc(Game_Action.prototype).
+addBase('evalDamageFormula',function f(target){
 	try{
 		const item=this.item();
 		const a=this.subject();
@@ -5686,7 +5732,8 @@ function f(dataobj){
 	rtv+=dataobj.id;
 	return rtv;
 },
-]);
+]).
+getP;
 
 })(); // js error
 
