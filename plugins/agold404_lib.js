@@ -1380,6 +1380,7 @@ const pow32gf2=window.pow32gf2=(b,e,poly,revPoly)=>{
 
 const undef=undefined,none=()=>{},filterArg0=x=>x,isNum=n=>!isNaN(n),cmpFunc_num=(a,b)=>a-b;
 const filterArg1=(x,i)=>i;
+const getTrue=()=>true;
 const re_allR=/\r/g;
 const re_leadingTrailing_crlf=/(^[\r\n]+|[\r\n]+$)/g;
 const EVAL=function(s){ const self=this; { return eval(s); } };
