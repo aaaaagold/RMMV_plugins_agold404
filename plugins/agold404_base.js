@@ -10472,6 +10472,7 @@ addBase('isSpecialNumVal',function f(val){
 new Set([Infinity,-Infinity,NaN]), // special num vals
 ]).
 addBase('_encodeSpeicalNumVal',function f(val,circular,depth,linkInfo,){
+	this._encode_addRestoreInfo.apply(this,arguments);
 	const rtv={};
 	rtv[f.tbl[0]]=val.toString();
 	return rtv;
