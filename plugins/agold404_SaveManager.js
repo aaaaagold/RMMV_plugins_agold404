@@ -147,7 +147,7 @@ add('makeCommandList',function f(){
 },t).
 addWithBaseIfNotOwn('itemRectForText',function f(idx){
 	const rtv=f.ori.apply(this,arguments);
-	{ const ext=this.commandExt(idx); if(ext&&ext.noStatus){
+	{ const ext=this.commandExt&&this.commandExt(idx); if(ext&&ext.noStatus){
 		rtv.width+=this.statusWidth();
 	} }
 	return rtv;
