@@ -7,7 +7,7 @@
  * @param IsAddingExampleTemplates
  * @type boolean
  * @text is adding example templates
- * @desc template id = "--plugin-examples-1" , "--plugin-examples-2" , "--plugin-examples-3"
+ * @desc template id = "--plugin-examples-1" , "--plugin-examples-2"
  * @default false
  * 
  * 
@@ -18,7 +18,7 @@
  * {
  *   "templateId":"...",
  *   "titleFunc":function,
- *   "desciptionFunc":function,
+ *   "descriptionFunc":function,
  *   "onNewInstance":{ "exeFunc":function, },
  *   "condition":{
  *     "exeFunc":function,
@@ -174,38 +174,43 @@ addBase('_missions_current_get',function f(opt,instanceId){
 	return cont._idSet.get(instanceId);
 }).
 addBase('missions_current_getTemplateId',function f(opt,instanceId){
-	const cont=this._missions_current_getCont();
 	const res=this._missions_current_get(opt,instanceId);
 	return res&&res.templateId;
 }).
+addBase('missions_current_getTemplate',function f(opt,instanceId){
+	return DataManager.missions_template_get(opt,this.missions_current_getTemplateId(opt,instanceId));
+}).
+addBase('missions_current_getInstanceAndTemplate',function f(opt,instanceId){
+	return ({
+		instance:this._missions_current_get(opt,instanceId),
+		template:this.missions_current_getTemplate(opt,instanceId),
+	});
+}).
 addBase('missions_current_getTitle',function f(opt,instanceId){
-	const cont=this._missions_current_getCont();
-	const res=this._missions_current_get(opt,instanceId);
-	const func=res&&res.titleFunc&&res.titleFunc;
-	return func&&func(res);
+	const res=this.missions_current_getInstanceAndTemplate(opt,instanceId);
+	const func=res.template&&res.template.titleFunc;
+	return func(res.instance);
+}).
+addBase('missions_current_getDescription',function f(opt,instanceId){
+	const res=this.missions_current_getInstanceAndTemplate(opt,instanceId);
+	const func=res.template&&res.template.descriptionFunc;
+	return func(res.instance);
 }).
 addBase('missions_current_getOtherData',function f(opt,instanceId){
-	const cont=this._missions_current_getCont();
 	const res=this._missions_current_get(opt,instanceId);
 	return res&&res.otherData;
 }).
 addBase('missions_current_chkOk',function f(opt,instanceId){
-	const cont=this._missions_current_getCont();
-	const res=this._missions_current_get(opt,instanceId);
-	const templateInfo=res&&DataManager.missions_template_get(opt,res.templateId);
-	const funcParent=templateInfo&&templateInfo.condition;
-	const exeFunc=funcParent&&funcParent.exeFunc;
-	if(exeFunc&&exeFunc(res)) return true;
+	const res=this.missions_current_getInstanceAndTemplate(opt,instanceId);
+	const exeFunc=res.template&&res.template.condition&&res.template.condition.exeFunc;
+	if(exeFunc&&exeFunc(res.instance)) return true;
 }).
 addBase('missions_current_complete',function f(opt,instanceId){
-	const cont=this._missions_current_getCont();
-	const res=this._missions_current_get(opt,instanceId);
-	const templateInfo=res&&DataManager.missions_template_get(opt,res.templateId);
-	const funcParent=templateInfo&&templateInfo.completion;
-	const exeFunc=funcParent&&funcParent.exeFunc;
+	const res=this.missions_current_getInstanceAndTemplate(opt,instanceId);
+	const exeFunc=res.template&&res.template.completion&&res.template.completion.exeFunc;
 	if(exeFunc){
-		exeFunc(res);
-		this.missions_current_del(opt,res.instanceId);
+		exeFunc(res.instance);
+		this.missions_current_del(opt,res.instance.instanceId);
 	}
 }).
 addBase('missions_current_del',function f(opt,instanceId){
@@ -383,7 +388,7 @@ DataManager.
 missions_template_add(undefined,{
 	"templateId":"--plugin-examples-1",
 	"titleFunc":()=>"Example-1",
-	"desciptionFunc":()=>"This is Example-1.\n This mission's condition has always been completed.",
+	"descriptionFunc":()=>"This is Example-1.\n This mission's condition has always been completed.",
 	"condition":{
 		"exeFunc":()=>true,
 	},
@@ -392,37 +397,26 @@ missions_template_add(undefined,{
 missions_template_add(undefined,{
 	"templateId":"--plugin-examples-2",
 	"titleFunc":()=>"Example-2",
-	"desciptionFunc":info=>{
+	"descriptionFunc":info=>{
 		let s="this is ";
-		s+=$gameSystem.missions_current_getTitle(info.instanceId);
+		s+=$gameSystem.missions_current_getTitle(undefined,info.instanceId);
 		s+='.';
 		s+='\n';
-		s+=" This mission can be completed after 10 seconds.";
+		const n=Math.max(Math.ceil((info.otherData.timeToComplete-Graphics.getSceneFrameCnt())/60.0),0);
+		s+=" This mission can be completed after "+n+" seconds.";
 		return s;
 	},
 	"onNewInstance":{
 		"exeFunc":info=>{
 			if(!info.otherData) info.otherData={};
-			info.otherData.startTime=Graphics.getSceneFrameCnt();
+			info.otherData.timeToComplete=Graphics.getSceneFrameCnt()+6e2;
 		},
 	},
 	"condition":{
 		"exeFunc":info=>{
-			if(!info.otherData) info.otherData={startTime:0,};
-			return Graphics.getSceneFrameCnt()>=info.otherData.startTime+6e2;
+			if(!info.otherData) info.otherData={timeToComplete:0,};
+			return Graphics.getSceneFrameCnt()>=info.otherData.timeToComplete;
 		},
-		"handInMethods":{
-			"baskets":[ {"id":"...","textFunc":()=>{},"openFunc":()=>{},}, ],
-		},
-	},
-	"completion":{ "exeFunc":consoleLogCompletedMsg, },
-}).
-missions_template_add(undefined,{
-	"templateId":"--plugin-examples-3",
-	"titleFunc":()=>"Example-3",
-	"desciptionFunc":()=>"this is example-3",
-	"condition":{
-		"exeFunc":()=>{},
 		"handInMethods":{
 			"baskets":[ {"id":"...","textFunc":()=>{},"openFunc":()=>{},}, ],
 		},
