@@ -7330,10 +7330,20 @@ undefined,
 	return this.itemKeyInfoToDataobj(itemKey&&itemKey.split(f.tbl[0]));
 },t);
 
-new cfc(Window_Command.prototype).addBase('commandExt',function f(idx){
+new cfc(Window_Command.prototype).
+addBase('commandExt',function f(idx){
 	const cmd=this._list&&this._list[idx];
 	return cmd&&cmd.ext;
-});
+}).
+addBase('commandSymbol',function f(idx){
+	const cmd=this._list&&this._list[idx];
+	return cmd&&cmd.symbol;
+}).
+addBase('commandName',function f(idx){
+	const cmd=this._list&&this._list[idx];
+	return cmd&&cmd.name;
+}).
+getP;
 
 new cfc(Window_ItemList.prototype).addBase('drawItemNumber',function f(item, x, y, width){
 	if(this.needsNumber()) this.drawItemNumber_num(item,x,y,width,$gameParty.numItems(item));
