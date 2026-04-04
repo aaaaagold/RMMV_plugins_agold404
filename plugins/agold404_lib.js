@@ -516,7 +516,7 @@ p.multisetUniquesCnt=function(){
 
 { const w=window; if(!w.Heap){
 	let $dddd$;
-	w.Heap=function Heap(){ this.initialize.apply(this,arguments); };
+	w.Heap=function(){ this.initialize.apply(this,arguments); };
 	w.Heap.prototype.constructor=w.Heap;
 	$dddd$=w.Heap.prototype.initialize=function f(func_cmp3,arr,inPlace){
 		{
