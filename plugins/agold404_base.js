@@ -6608,7 +6608,7 @@ addBase('blur_iterCnt',function f(){
 	return 5;
 }).
 addBase('blur_blurN',function f(){
-	return 3;
+	return 2;
 }).
 addBase('blur_globalAlphaMultiplier',function f(){
 	return 1;
