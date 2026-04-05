@@ -479,12 +479,12 @@ addBase('createAll_finalTune',function f(){
 	this._itemListWindow.reselect();
 	this._itemListWindow.activate();
 }).
-addWithBaseIfNotOwn('changeUiState_focusOnItemWnd',function f(){
+addBase('changeUiState_focusOnItemListWnd',function f(){
 	this._descriptionWindow.deactivate();
 	this._itemListWindow.activate();
 	this._state='itemList';
 }).
-addWithBaseIfNotOwn('changeUiState_focusOnDescriptionWnd',function f(){
+addBase('changeUiState_focusOnDescriptionWnd',function f(){
 	this._itemListWindow.deactivate();
 	this._descriptionWindow.activate();
 	this._state='description';
@@ -493,7 +493,7 @@ addWithBaseIfNotOwn('update',function f(){
 	this.update_handleDescriptionScroll.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
-addWithBaseIfNotOwn('update_handleDescriptionScroll',function f(){
+addBase('update_handleDescriptionScroll',function f(){
 	if(!this._descriptionWindow.active) return;
 	const wnd=this._descriptionWindow;
 	this._update_handleDescriptionScroll_handleInputs.apply(this,arguments);
@@ -517,7 +517,7 @@ addWithBaseIfNotOwn('update_handleDescriptionScroll',function f(){
 		this._itemListWindow.refresh_drawDescription();
 	}
 }).
-addWithBaseIfNotOwn('_update_handleDescriptionScroll_handleInputs',function f(){
+addBase('_update_handleDescriptionScroll_handleInputs',function f(){
 	const wnd=this._descriptionWindow;
 	const shiftPressed=Input.isPressed('shift');
 	const ctrlPressed=Input.isPressed('control');
@@ -546,10 +546,10 @@ addWithBaseIfNotOwn('_update_handleDescriptionScroll_handleInputs',function f(){
 		Input.update();
 		TouchInput.update();
 		SoundManager.playCancel();
-		this.changeUiState_focusOnItemWnd();
+		this.changeUiState_focusOnItemListWnd();
 	}
 },t).
-addWithBaseIfNotOwn('update_handleDescriptionScroll_playScrollSe',function f(shouldPlay){
+addBase('update_handleDescriptionScroll_playScrollSe',function f(shouldPlay){
 	const lastTimePlayed=this._handleDescriptionScroll_playScrollSe_lastTimePlayed;
 	if(!shouldPlay) this._handleDescriptionScroll_playScrollSe_lastTimePlayed=undefined;
 	const hasSeEcho=$gameSystem&&$gameSystem.seEcho_opt_get;
