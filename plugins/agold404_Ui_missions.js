@@ -10,6 +10,24 @@
  * @desc template id = "--plugin-examples-1" , "--plugin-examples-2"
  * @default false
  * 
+ * @param DefaultWindowWidthItemList
+ * @type text
+ * @text default width for itemList window
+ * @desc if input is NaN, default value 256 is used
+ * @default 256
+ * 
+ * @param DefaultFontSizeItemList
+ * @type text
+ * @text default font size for itemList window
+ * @desc if input is NaN, default value 24 is used
+ * @default 24
+ * 
+ * @param DefaultFontSizeDescription
+ * @type text
+ * @text default font size for itemList window
+ * @desc if input is NaN, default value 16 is used
+ * @default 16
+ * 
  * 
  * @help an UI for missions
  * 
@@ -55,6 +73,9 @@
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_Ui_missions";
 const params=PluginManager.parameters(pluginName)||{};
 params._isAddingExampleTemplates=JSON.parse(params.IsAddingExampleTemplates||"false");
+params._defaultWindowWidth_itemList=useDefaultIfIsNaN(params.DefaultWindowWidthItemList-0,256);
+params._defaultFontSize_itemList=useDefaultIfIsNaN(params.DefaultFontSizeItemList-0,24);
+params._defaultFontSize_description=useDefaultIfIsNaN(params.DefaultFontSizeDescription-0,16);
 
 
 // DataManager
@@ -93,6 +114,9 @@ undefined, // 5: new Set(t[4])
 [4,4,], // 9: scroll unit
 [4,0.875,true,], // 10: $gameSystem.seEcho_opt_set
 8, // 11: play delay when no seEcho
+32, // 12: scroll wait time (unit:frame)
+16, // 13: scroll text width padding
+64, // 14: scroll end pause time (unit:frame)
 ];
 t[5]=new Set(t[4]);
 
@@ -268,6 +292,9 @@ const a=class Window_MissionsList extends Window_Command{
 };
 window[a.name]=a;
 new cfc(a.prototype).
+addBase('standardFontSize',function f(){
+	return f.tbl[1]._defaultFontSize_itemList;
+},t).
 addWithBaseIfNotOwn('initialize',function f(x,y,itemList,opt){
 	const rtv=f.ori.apply(this,arguments);
 	this._hiddenZones={};
@@ -303,6 +330,59 @@ addBase('resetItems',function f(){
 		}
 	}
 },t).
+addBase('getItemText',function f(idx){
+	// currently not used.
+	const itemList=this._initData_itemList;
+	const opt=this._initData_opt;
+	if(f.tbl[4][1]===typeof itemList[idx]){
+		return itemList[idx];
+	}else{
+		return $gameSystem.missions_current_getTitle(opt,itemList[idx].instanceId);
+	}
+},t).
+addBase('drawItem',function(index){
+	const rect=this.itemRectForText(index);
+	this.resetTextColor();
+	this.changePaintOpacity(this.isCommandEnabled(index));
+	this.drawTextEx(this.commandName(index), rect.x, rect.y, rect.width);
+}).
+addWithBaseIfNotOwn('update_openAndActive',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.update_scrollCurrentItemText();
+	return rtv;
+}).
+addBase('update_scrollCurrentItemText',function f(){
+	const idx=this.index();
+	if(!(idx>=0)) return;
+	
+	if(this._lastScrollItem_index!==idx){
+		if(this._lastScrollItem_textWidth>=this.contentsWidth()) this.redrawItem(this._lastScrollItem_index); // handle index range internally
+		this._lastScrollItem_index=idx;
+		this._lastScrollItem_stayTime=0;
+		this._lastScrollItem_textWidth=undefined;
+		this._lastScrollItem_scrollEndPauseTime=0;
+	}
+	if(++this._lastScrollItem_stayTime<f.tbl[12]) return;
+	
+	const text=this.commandName(idx);
+	if(this._lastScrollItem_textWidth==null){
+		this._lastScrollItem_textWidth=this.measure_drawTextEx(text,0,0)+f.tbl[13];
+	}
+	const maxScroll=this._lastScrollItem_textWidth-this.contentsWidth();
+	if(!(maxScroll>=0)) return;
+	
+	this.clearItem(idx);
+	const dx1=Math.max(0,this._lastScrollItem_stayTime-f.tbl[12]); // dev flexibility
+	const dx=Math.min(maxScroll,dx1);
+	if((this._lastScrollItem_scrollEndPauseTime+=dx<dx1)>=f.tbl[14]){
+		this._lastScrollItem_scrollEndPauseTime=0;
+		this._lastScrollItem_stayTime=0;
+		this.redrawItem(idx);
+	}else{
+		const rect=this.itemRectForText(idx);
+		this.drawTextEx(text, rect.x-dx, rect.y, rect.width+dx);
+	}
+},t).
 addBase('refresh',function f(){
 	this.createContents();
 	Window_Selectable.prototype.refresh.call(this);
@@ -313,10 +393,11 @@ addBase('refresh_drawDescription',function f(idx){
 	if(!wndD) return; // init not done
 	wndD.clear_recreateContentsIfOriginallySmaller();
 	if(this.commandSymbol(idx)!==f.tbl[8][0]) return;
+	const txtPad=this.textPadding();
 	const opt=undefined;
 	wndD.drawTextEx(
 		$gameSystem.missions_current_getDescription(opt,this.commandExt(idx)),
-		-wndD._scrollX,-wndD._scrollY,
+		txtPad-wndD._scrollX,-wndD._scrollY,
 	);
 	wndD.lastScrollX=wndD._scrollX;
 	wndD.lastScrollY=wndD._scrollY;
@@ -348,6 +429,9 @@ const a=class Window_MissionsDescription extends Window_Base{
 };
 window[a.name]=a;
 new cfc(a.prototype).
+addBase('standardFontSize',function f(){
+	return f.tbl[1]._defaultFontSize_description;
+},t).
 addWithBaseIfNotOwn('initialize',function f(x,y,w,h){
 	const rtv=f.ori.apply(this,arguments);
 	this._scrollX=0;
@@ -455,7 +539,7 @@ addBase('createAll_finalTune',function f(){
 	const itemListWindowPos={
 		x:0,
 		y:0,
-		width:Graphics.width>>2,
+		width:f.tbl[1]._defaultWindowWidth_itemList,
 		height:Graphics.height,
 	};
 	const descriptionWindowPos={
@@ -478,7 +562,7 @@ addBase('createAll_finalTune',function f(){
 	//this._descriptionWindow.refresh(); // Window_Base has no such method
 	this._itemListWindow.reselect();
 	this._itemListWindow.activate();
-}).
+},t).
 addBase('changeUiState_focusOnItemListWnd',function f(){
 	this._descriptionWindow.deactivate();
 	this._itemListWindow.activate();
@@ -588,7 +672,7 @@ missions_template_add(undefined,{
 }).
 missions_template_add(undefined,{
 	"templateId":"--plugin-examples-2",
-	"titleFunc":info=>"Example-2 "+info.otherData.timeToComplete,
+	"titleFunc":info=>"Example-2 ---- "+info.otherData.timeToComplete,
 	"descriptionFunc":info=>{
 		let s="this is ";
 		s+=$gameSystem.missions_current_getTitle(undefined,info.instanceId);
