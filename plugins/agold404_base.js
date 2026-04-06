@@ -981,7 +981,14 @@ addBase('processNormalCharacter',function f(textState){
 	// reserved for auto-line-break or something automatically changed by window size
 	out_textState=out_textState||{};
 	out_textState.isMeasureOnly=true;
-	return this.drawTextEx.apply(this,arguments);
+	const oriArg5=arguments[5];
+	const oriArgc=arguments.length;
+	if(5>=oriArgc) arguments.length=6;
+	arguments[5]=out_textState;
+	const rtv=this.drawTextEx.apply(this,arguments);
+	arguments[5]=oriArg5;
+	if(oriArgc!==arguments.length) arguments.length=oriArgc;
+	return rtv;
 }).add('drawText',function f(text,x,y,maxWidth,align,opt){
 	if(opt&&opt.isMeasureOnly) return;
 	return f.ori.apply(this,arguments);
