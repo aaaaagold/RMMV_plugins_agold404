@@ -4223,7 +4223,7 @@ addBase('testApply_isBypassCheck',function f(target){
 	return $gameParty.inBattle() || this.isForOpponent();
 }).
 addBase('testApply_deadState',function f(target){
-	return this.isForDeadFriend() === trgt.isDead();
+	return this.isForDeadFriend() === target.isDead();
 }).
 addBase('testApply_effective',function f(target){
 	return (
