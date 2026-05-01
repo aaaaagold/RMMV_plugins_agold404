@@ -107,8 +107,23 @@ addBase('recordingAPIs_start',function f(){
 	}
 	
 	if(!c._mr){
-		const stream=c.captureStream();
-		c._mr=new MediaRecorder(stream);
+		let vtracks=[];
+		let atracks=[];
+		try{
+			vtracks=c.captureStream().getVideoTracks();
+		}catch(e){
+		}
+		try{
+			const adst=WebAudio._context.createMediaStreamDestination();
+			WebAudio._masterGainNode.connect(adst);
+			atracks=adst.stream.getAudioTracks();
+		}catch(e){
+		}
+		const stream=new MediaStream([
+			...vtracks,
+			...atracks,
+		]);
+		c._mr=new MediaRecorder(stream,{mimeType:'video/webm',});
 		//c._mr._canvas=c;
 		c._mr._chunks=this._recordingAPIs_chunks;
 	}
