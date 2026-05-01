@@ -57,7 +57,7 @@ addBase('recordingAPIs_videoRecords_add',function f(recordBlobUrl){
 }).
 addBase('recordingAPIs_videoRecords_delFromIdx',function f(idx,cnt){
 	const cont=this.recordingAPIs_videoRecords_getCont();
-	if(cnt=null) cnt=1;
+	if(cnt==null) cnt=1;
 	const arr=cont.splice(idx,cnt);
 	arr.forEach(f.tbl[0]);
 	return arr;
