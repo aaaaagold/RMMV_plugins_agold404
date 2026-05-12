@@ -5334,6 +5334,27 @@ addBase('actor',function f(){
 getP;
 
 
+new cfc(Scene_Battle.prototype).
+addBase('stop',function f(){
+	Scene_Base.prototype.stop.call(this);
+	this.stop_fadeOutProc.apply(this,arguments);
+	this.stop_closeWindowsProc.apply(this,arguments);
+}).
+addBase('stop_fadeOutProc',function f(){
+	if (this.needsSlowFadeOut()) {
+		this.startFadeOut(this.slowFadeSpeed(), false);
+	} else {
+		this.startFadeOut(this.fadeSpeed(), false);
+	}
+}).
+addBase('stop_closeWindowsProc',function f(){
+	this._statusWindow.close();
+	this._partyCommandWindow.close();
+	this._actorCommandWindow.close();
+}).
+getP;
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
@@ -7440,6 +7461,13 @@ new cfc(Window_Base.prototype).addBase('duplicateTextState',function(textState,a
 
 (()=>{ let k,r,t;
 
+new cfc(Scene_Base.prototype).
+addRoof('stop',function f(nextClass,gotoArgv){
+	// only used to hint arguments names
+	return f.ori.apply(this,arguments);
+}).
+getP;
+
 new cfc(SceneManager).
 addBase('push',function f(sceneClass,shouldRecordCurrentScene){
 	this._stack.push(this._scene.constructor);
@@ -7450,7 +7478,11 @@ addBase('push',function f(sceneClass,shouldRecordCurrentScene){
 	if(this._scene._prevScene || shouldRecordCurrentScene && this._nextScene) this._nextScene._prevScene=this._scene;
 	return this._nextScene && this._nextScene._prevScene;
 }).
-add('goto',function f(sceneClass){
+addBase('goto',function f(sceneClass,shouldRecordCurrentScene){
+	if(sceneClass) this._nextScene=new sceneClass();
+	const sc=this._scene; sc && sc.stop(this._nextScene,arguments);
+}).
+add('goto',function f(sceneClass,shouldRecordCurrentScene){
 	const rtv=f.ori.apply(this,arguments);
 	this._nextScene_pushScene=this._gotoViaPush && this._nextScene;
 	return rtv;
@@ -11534,6 +11566,40 @@ getP;
 
 
 })(); // trait calc cache
+
+// ---- ---- ---- ---- enter Scene_Option in battle
+
+(()=>{ let k,r,t;
+
+
+new cfc(Scene_Battle.prototype).
+add('createPartyCommandWindow',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._partyCommandWindow.setHandler(f.tbl[0], this.commandOptions.bind(this));
+	return rtv;
+},t=[
+'options', // 0: keyword for options
+]).
+addBase('commandOptions',function f(){
+	SceneManager.push(Scene_Options,true);
+	SceneManager.snapForBackground(this._scene);
+}).
+add('stop',function f(nextScene,gotoArgv){
+	if(gotoArgv&&gotoArgv[1]) return;
+	return f.ori.apply(this,arguments);
+}).
+getP;
+
+new cfc(Window_PartyCommand.prototype).
+add('makeCommandList',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.addCommand(TextManager.options,f.tbl[0]);
+	return rtv;
+},t).
+getP;
+
+
+})(); // enter Scene_Option in battle
 
 // ---- ---- ---- ---- fix bug
 
