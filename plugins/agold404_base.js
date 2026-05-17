@@ -3485,14 +3485,29 @@ addBase('getFileId_global',function f(){
 	id:'global', // make it easy to be distinguished
 }, // 0: use unique object as id
 ]).
+addBase('isFileId_config',function f(savefileId){
+	return savefileId===this.getFileId_config();
+}).
+addBase('isFileId_global',function f(savefileId){
+	return savefileId===this.getFileId_global();
+}).
+addBase('isFileId_saveSlot',function f(savefileId){
+	return 0<savefileId;
+}).
+addBase('isFileId_custom',function f(savefileId){
+	if(this.isFileId_saveSlot.apply(this,arguments)) return false;
+	if(this.isFileId_global.apply(this,arguments)) return false;
+	if(this.isFileId_config.apply(this,arguments)) return false;
+	return true;
+}).
 addBase('localFilePath_getDefaultFileExtension',function(savefileId){
 	return '.rpgsave';
 }).
 addBase('localFilePath_makeFileName',function(savefileId){
-	let name;
-	if(savefileId===this.getFileId_config()) name='config';
-	else if(savefileId===this.getFileId_global()) name='global';
-	else if(0<savefileId) name='file%1'.format(savefileId);
+	let name='';
+	if(this.isFileId_saveSlot.apply(this,arguments)) name='file%1'.format(savefileId);
+	else if(this.isFileId_global.apply(this,arguments)) name='global';
+	else if(this.isFileId_config.apply(this,arguments)) name='config';
 	else name='custom-'+savefileId;
 	name+=this.localFilePath_getDefaultFileExtension.apply(this,arguments);
 	return name;
@@ -3500,11 +3515,14 @@ addBase('localFilePath_makeFileName',function(savefileId){
 addBase('localFilePath',function(savefileId){
 	return this.localFileDirectoryPath()+this.localFilePath_makeFileName(savefileId);
 }).
+addBase('webStorageKey_getPrefix',function f(savefileId){
+	return "RPG ";
+}).
 addBase('webStorageKey',function f(savefileId){
-	let name="RPG ";
-	if(savefileId===this.getFileId_config()) name+='Config';
-	else if(savefileId===this.getFileId_global()) name+='Global';
-	else if(0<savefileId) name+='File%1'.format(savefileId);
+	let name=this.webStorageKey_getPrefix.apply(this,arguments);
+	if(this.isFileId_saveSlot.apply(this,arguments)) name+='File%1'.format(savefileId);
+	else if(this.isFileId_global.apply(this,arguments)) name+='Global';
+	else if(this.isFileId_config.apply(this,arguments)) name+='Config';
 	else name+='Custom-'+savefileId;
 	return name;
 }).
@@ -3570,7 +3588,38 @@ addBase('loadGlobalInfo_parseData',function f(jsonStr){
 add('saveGameWithoutRescue',function f(savefileId){
 	if(savefileId==0) throw new Error('savefile id 0 is reserved for global info');
 	return f.ori.apply(this,arguments);
-});
+}).
+addBase('loadCustom',function f(savefileId){
+	let rtv;
+	try{
+		rtv=JsonEx.parse(StorageManager.load(savefileId));
+	}catch(e){
+		if(f.tbl[2]) throw e;
+	}
+	return rtv;
+},t=[
+undefined,
+undefined, // params
+window.isTest(),
+]).
+addBase('saveCustom',function f(savefileId,info){
+	if(!StorageManager.isFileId_custom(savefileId)) return -1; // prevent breaking other save types
+	let s;
+	try{
+		s=JsonEx.stringify(info);
+	}catch(e){
+		if(f.tbl[2]) throw e;
+		return -2; // improper object to be stringified.
+	}
+	try{
+		StorageManager.save(savefileId,s);
+	}catch(e){
+		if(f.tbl[2]) throw e;
+		return -3; // save error
+	}
+},t).
+getP;
+
 
 new cfc(Game_System.prototype).addBase('getLocale',function f(){
 	return this._customLocale;
@@ -10622,6 +10671,15 @@ add('_decode',function f(val,circular,depth){
 	}
 	return f.ori.apply(this,arguments);
 },t).
+addRoof('parse',function f(obj){
+	if(f.tbl[0].has(obj)) return undefined;
+	return f.ori.apply(this,arguments);
+},[
+new Set([
+	undefined,
+	'',
+]), // 0: mapping to `undefined` 
+]).
 getP;
 
 JsonEx.
