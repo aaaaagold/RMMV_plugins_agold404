@@ -25,6 +25,34 @@ console.log(getPluginNameViaSrc(document.currentScript.src));
 window._isTest=getUrlParamVal('test')||Utils.isOptionValid('test')||Utils.isOptionValid('btest')||Utils.isOptionValid('etest');
 window.isTest=()=>window._isTest;
 
+
+{ const a=function ScreenshotsManager(){
+	throw new Error('This is a static class');
+};
+new cfc(a).
+addBase('_getCont',function f(){
+	let rtv=this._cont; if(!rtv) rtv=this._cont=[];
+	return rtv;
+}).
+addBase('add1',function f(canvasSrc,opt){
+	const cont=this._getCont();
+	opt=Object.assign({},opt||{});
+	opt.canvas=canvasSrc.ptcp(0,0,canvasSrc.width,canvasSrc.height);
+	cont.push(opt);
+}).
+addBase('size',function f(){
+	const cont=this._getCont();
+	return cont.length;
+}).
+addBase('getI',function f(idx){
+	const cont=this._getCont();
+	return cont[idx];
+}).
+getP;
+window[a.name]=a;
+}
+
+
 new cfc(Decrypter).addBase('checkImgIgnore',function(url){
 	return this._ignoreList.uniqueHas(url) || ResourceHandler.isDirectPath(url);
 }).add('decryptArrayBuffer',function f(arrayBuffer,refHeader){
@@ -3279,7 +3307,7 @@ getP;
 
 new cfc(Window_EquipSlot.prototype).
 addBase('processOk',function f(){
-	// always ok. block equipment change when okItemOk.
+	// always ok here. block equipment change in okItemOk if not changable.
 	this.playOkSound();
 	this.updateInputData();
 	this.deactivate();
@@ -9507,10 +9535,16 @@ p.getImageData=function f(x,y,w,h){
 p.pasteCanvas=function f(){
 	if(!this._createScreenshot) return;
 	this._createScreenshot=false;
+	if(this._createScreenshot_fromHotkey){
+		this._createScreenshot_fromHotkey=false;
+		ScreenshotsManager.add1(this._canvas);
+		return;
+	}
 	pasteCanvas(this._canvas);
 };
-p.createScreenshot=function f(){
+p.createScreenshot=function f(isFromHotkey){
 	this._createScreenshot=true;
+	this._createScreenshot_fromHotkey=isFromHotkey;
 };
 }
 
