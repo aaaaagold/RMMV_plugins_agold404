@@ -1143,6 +1143,11 @@ const getPrefixPropertyNames=window.getPrefixPropertyNames=(obj,prefix)=>{
 	for(let i in obj) if(i.slice(0,prefix.length)===prefix) rtv.push(i);
 	return rtv;
 };
+const getSuffixPropertyNames=window.getSuffixPropertyNames=(obj,suffix)=>{
+	const rtv=[];
+	for(let i in obj) if(i.slice(-suffix.length)===suffix) rtv.push(i);
+	return rtv;
+};
 const getTopFrameWindow=window.getTopFrameWindow=()=>{
 	let w=window;
 	while(w.parent && w.parent!==w){
