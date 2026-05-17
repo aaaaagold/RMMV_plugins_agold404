@@ -3380,27 +3380,35 @@ addBase('isAnyMemberEquipped',function f(item){
 getP;
 
 
-new cfc(Input).addBase('_getKeyName',function f(event){
+new cfc(Input).
+addBase('_getKeyName',function f(event){
 	return this._remapKeyName(event.keyCode);
-}).addBase('_remapKeyName',function f(keyCode){
+}).
+addBase('_remapKeyName',function f(keyCode){
 	return this.keyMapper[keyCode]||keyCode;
 }).
 addBase('addKeyName',function f(keyCode,keyName){
 	this.keyMapper[keyCode]=keyName;
 	return this;
-}).addBase('_onKeyUp',function f(event){
+}).
+addBase('_onKeyUp',function f(event){
 	return this._onKeyUp_condOk.apply(this,arguments)&&this._onKeyUp_do.apply(this,arguments);
-}).addBase('_onKeyUp_condOk',function f(event){
+}).
+addBase('_onKeyUp_condOk',function f(event){
 	return true;
-}).addBase('_onKeyUp_do',function f(event){
+}).
+addBase('_onKeyUp_do',function f(event){
 	const btnName=this._getKeyName(event);
 	this._currentState[btnName]=false;
 	if(event.keyCode===0) this.clear(); // it is said that: For QtWebEngine on OS X
-}).addBase('_onKeyDown',function f(event){
+}).
+addBase('_onKeyDown',function f(event){
 	return this._onKeyDown_condOk.apply(this,arguments)&&this._onKeyDown_do.apply(this,arguments);
-}).addBase('_onKeyDown_condOk',function f(event){
+}).
+addBase('_onKeyDown_condOk',function f(event){
 	return !this.isTexting();
-}).addBase('_onKeyDown_do',function f(event){
+}).
+addBase('_onKeyDown_do',function f(event){
 	if (this._shouldPreventDefault(event.keyCode)) event.preventDefault();
 /*
 	if(event.keyCode===144){ // Numlock
@@ -3411,17 +3419,20 @@ addBase('addKeyName',function f(keyCode,keyName){
 	const btnName=this._getKeyName(event);
 	if(this._onKeyDown_okForRetryResource(btnName)) return;
 	this._currentState[btnName]=true;
-}).addBase('_onKeyDown_okForRetryResource',function f(buttonName){
+}).
+addBase('_onKeyDown_okForRetryResource',function f(buttonName){
 	const rtv=Graphics._errorShowed&&buttonName==='ok';
 	if(rtv){ const s=Graphics._retryResourceBtns; if(s){
 		const it0=s.keys().next(); if(!it0.done){ const btn=it0.value; btn.click(); s.delete(btn); }
 	} }
 	return rtv;
-}).addBase('update',function f(){
+}).
+addBase('update',function f(){
 	this._pollGamepads();
 	this._updateLastPressedInfos();
 	this._updateDirection();
-}).addBase('_updateLastPressedInfos',function f(){
+}).
+addBase('_updateLastPressedInfos',function f(){
 	if(this._currentState[this._latestButton]) this._pressedTime++;
 	else this._latestButton=null;
 	for(var name in this._currentState){
@@ -3432,16 +3443,19 @@ addBase('addKeyName',function f(keyCode,keyName){
 		}
 		this._previousState[name]=this._currentState[name];
 	}
-}).add('isPressed',function f(keyName){
+}).
+add('isPressed',function f(keyName){
 	arguments[0]=this._remapKeyName(keyName);
 	return f.ori.apply(this,arguments);
-}).addBase('isTriggered',function f(keyName){
+}).
+addBase('isTriggered',function f(keyName){
 	keyName=this._remapKeyName(keyName);
 	if(this._isEscapeCompatible(keyName)) keyName=f.tbl[0];
 	return this._latestButton===keyName && this._pressedTime===0;
 },t=[
 'escape', // 0: key-escape
-]).addBase('isRepeated',function f(keyName){
+]).
+addBase('isRepeated',function f(keyName){
 	keyName=this._remapKeyName(keyName);
 	if(this._isEscapeCompatible(keyName)) keyName=f.tbl[0];
 	return (this._latestButton === keyName && (
@@ -3450,18 +3464,90 @@ addBase('addKeyName',function f(keyCode,keyName){
 			this._pressedTime % this.keyRepeatInterval === 0
 		)
 	));
-},t);
+},t).
+getP;
 
-new cfc(DataManager).addBase('loadGlobalInfo',function(){
-	return this.loadGlobalInfo_parseData(this.loadGlobalInfo_loadRaw());
-}).addBase('loadGlobalInfo_loadRaw',function f(){
+
+new cfc(StorageManager).
+addBase('getFileId_config',function f(){
+	// the whole object IS the id
+	return f.tbl[0];
+},[
+{
+	id:'config', // make it easy to be distinguished
+}, // 0: use unique object as id
+]).
+addBase('getFileId_global',function f(){
+	// the whole object IS the id
+	return f.tbl[0];
+},[
+{
+	id:'global', // make it easy to be distinguished
+}, // 0: use unique object as id
+]).
+addBase('localFilePath_getDefaultFileExtension',function(savefileId){
+	return '.rpgsave';
+}).
+addBase('localFilePath_makeFileName',function(savefileId){
+	let name;
+	if(savefileId===this.getFileId_config()) name='config';
+	else if(savefileId===this.getFileId_global()) name='global';
+	else if(0<savefileId) name='file%1'.format(savefileId);
+	else name='custom-'+savefileId;
+	name+=this.localFilePath_getDefaultFileExtension.apply(this,arguments);
+	return name;
+}).
+addBase('localFilePath',function(savefileId){
+	return this.localFileDirectoryPath()+this.localFilePath_makeFileName(savefileId);
+}).
+addBase('webStorageKey',function f(savefileId){
+	let name="RPG ";
+	if(savefileId===this.getFileId_config()) name+='Config';
+	else if(savefileId===this.getFileId_global()) name+='Global';
+	else if(0<savefileId) name+='File%1'.format(savefileId);
+	else name+='Custom-'+savefileId;
+	return name;
+}).
+getP;
+
+new cfc(ConfigManager).
+addBase('save',function f(){
+	StorageManager.save(StorageManager.getFileId_config(), JSON.stringify(this.makeData()));
+}).
+addBase('load_getRaw',function f(){
+	return StorageManager.load(StorageManager.getFileId_config());
+}).
+addBase('load',function f(){
+	let json;
+	let config={};
 	try{
-		return StorageManager.load(0);
+		json=this.load_getRaw();
+	}catch(e){
+		console.error(e);
+	}
+	if(json){
+		config=JSON.parse(json);
+	}
+	this.applyData(config);
+}).
+getP;
+
+new cfc(DataManager).
+addBase('saveGlobalInfo',function f(info){
+	StorageManager.save(StorageManager.getFileId_global(), JSON.stringify(info));
+}).
+addBase('loadGlobalInfo',function(){
+	return this.loadGlobalInfo_parseData(this.loadGlobalInfo_loadRaw());
+}).
+addBase('loadGlobalInfo_loadRaw',function f(){
+	try{
+		return StorageManager.load(StorageManager.getFileId_global());
 	}catch(e){
 		console.error(e);
 	}
 	// return false-like
-}).addBase('loadGlobalInfo_parseData',function f(jsonStr){
+}).
+addBase('loadGlobalInfo_parseData',function f(jsonStr){
 	if(jsonStr){
 		const globalInfo=JSON.parse(jsonStr),sz=this.maxSavefiles();
 		globalInfo[0]=globalInfo[0]||{};
@@ -3480,7 +3566,8 @@ new cfc(DataManager).addBase('loadGlobalInfo',function(){
 		return globalInfo;
 	}
 	return [];
-}).add('saveGameWithoutRescue',function f(savefileId){
+}).
+add('saveGameWithoutRescue',function f(savefileId){
 	if(savefileId==0) throw new Error('savefile id 0 is reserved for global info');
 	return f.ori.apply(this,arguments);
 });
