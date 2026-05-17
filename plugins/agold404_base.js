@@ -2346,10 +2346,11 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 	}; }
 	const w=getTopFrameWindow(); if(w===window) return;
 	w._w=window;
+	if(!f.tbl) f.tbl=[];
 	// dynamicData
 	{
 		w.exposeToTopFrame=f;
-		const arr=f.tbl=f.tbl||getPrefixPropertyNames(window,'$data'); arr.uniquePop('$dataMap');
+		const arr=f.tbl[0]=f.tbl[0]||getPrefixPropertyNames(window,'$data'); arr.uniquePop('$dataMap');
 		arr.uniquePush('$dataMap','$gameTemp','$gameSystem','$gameScreen','$gameTimer','$gameMessage','$gameSwitches','$gameVariables','$gameSelfSwitches','$gameActors','$gameParty','$gameTroop','$gameMap','$gamePlayer',);
 		arr.forEach(key=>{ if(!key) return;
 			try{
@@ -2358,8 +2359,18 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 			}
 		});
 	}
+	// staticData
 	{
-		const arr=[];
+		const arr=f.tbl[1]=f.tbl[1]||getPrefixPropertyNames(w._w,'Game_').concat_inplace(
+			getPrefixPropertyNames(w._w,'Scene_')
+		).concat_inplace(
+			getPrefixPropertyNames(w._w,'Window_')
+		).concat_inplace(
+			getSuffixPropertyNames(w._w,'Manager').filter(s=>{
+				const obj=w._w[s];
+				return obj&&!obj.toString().indexOf('[native code]')===-1;
+			})
+		);
 		arr.push('AudioManager','BattleManager','ConfigManager','DataManager','ImageManager','SceneManager','SoundManager','PluginManager',);
 		arr.push('Input','TouchInput',);
 		arr.push('Graphics','PIXI','Sprite','Bitmap','WebAudio',);
@@ -2371,7 +2382,7 @@ const exposeToTopFrame=window.exposeToTopFrame=function f(){
 		arr.push('isArray',);
 		arr.push('useDefaultIfIsNaN','useDefaultIfIsNone',);
 		arr.push('getCStyleStringStartAndEndFromString',);
-		arr.push('getPrefixPropertyNames',);
+		arr.push('getPrefixPropertyNames','getSuffixPropertyNames',);
 		arr.push('getTopFrameWindow','chTitle',);
 		arr.push('copyToClipboard','pasteCanvas',);
 		arr.push('listMapParents',);
