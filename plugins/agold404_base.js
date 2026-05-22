@@ -826,6 +826,7 @@ function(f){ if(!f()) this.push(f); },
 }).addBase('additionalUpdate_changeScene_add',function f(func,isAfter){
 	const arr=isAfter?this.additionalUpdate_changeScene_getAfter():this.additionalUpdate_changeScene_getBefore();
 	arr.push(func);
+	return this;
 }).addBase('updateScene_before',function f(){
 	this.additionalUpdate_doArr(this.additionalUpdate_updateScene_getBefore());
 }).addBase('updateScene_after',function f(){
@@ -839,6 +840,7 @@ function(f){ if(!f()) this.push(f); },
 }).addBase('additionalUpdate_updateScene_add',function f(func,isAfter){
 	const arr=isAfter?this.additionalUpdate_updateScene_getAfter():this.additionalUpdate_updateScene_getBefore();
 	arr.push(func);
+	return this;
 }).addBase('renderScene_before',function f(){
 	this.additionalUpdate_doArr(this.additionalUpdate_renderScene_getBefore());
 }).addBase('renderScene_after',function f(){
@@ -852,6 +854,7 @@ function(f){ if(!f()) this.push(f); },
 }).addBase('additionalUpdate_renderScene_add',function f(func,isAfter){
 	const arr=isAfter?this.additionalUpdate_renderScene_getAfter():this.additionalUpdate_renderScene_getBefore();
 	arr.push(func);
+	return this;
 }).addBase('updateScene',function f(){
 	if(this._scene){
 		if(!this._sceneStarted && this._scene.isReady()){
