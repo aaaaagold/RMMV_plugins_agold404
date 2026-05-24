@@ -13,10 +13,12 @@ const params=PluginManager.parameters(pluginName)||{};
 
 const keyCode=80; // P
 
-new cfc(SceneManager).add('requestUpdate',function f(){
+new cfc(SceneManager).
+addRoof('requestUpdate',function f(){
 	if(this._isPressPPaused) return;
 	return f.ori.apply(this,arguments);
-}).getP()._isPressPPaused=false;
+}).
+getP()._isPressPPaused=false;
 
 const f=window._pressPToPause=e=>{ if(e.keyCode!==keyCode) return;
 	if((SceneManager._isPressPPaused=!SceneManager._isPressPPaused)){
