@@ -33,13 +33,186 @@ undefined,
 params,
 window.isTest(),
 undefined,
+"(no screenshots)",
+[
+["download","Download",function f(){
+	const idx=this._listWindow.index();
+	const info=ScreenshotsManager.getI(idx);
+	if(!info||!info.url){
+		SoundManager.playBuzzer();
+		return;
+	}
+	document.ce('a').sa('href',info.url).sa('download',info.name).click();
+	this._itemCmdWindow.activate();
+},], // 5-0: 
+["goback","Go back",function f(){
+	this._itemCmdWindow._handlers.cancel();
+},], // 5-1: 
+["delete","Delete",function f(){
+	const idx=this._listWindow.index();
+	ScreenshotsManager.delI(idx);
+	this._listWindow.refresh();
+	if(idx&&idx>=this._listWindow._list.length) this._listWindow.select(idx-1);
+	else this._listWindow.onNewSelect_updatePreview(idx);
+	this._itemCmdWindow._handlers.goback();
+},], // 5-2: 
+], // 5: itemCmds
+{
+	display:"see screenshots",
+	key:"screenshots",
+}, // 6: entry
 ];
 
 
-{ const a=class Scene_Screenshots extends Scene_Base{
+{ const a=class Window_Screenshots_List extends Window_Command{
 };
+new cfc(a.prototype).
+addBase('makeCommandList',function f(){
+	const sz=ScreenshotsManager.size();
+	for(let x=0;x<sz;++x){
+		const info=ScreenshotsManager.getI(x);
+		this.addCommand(info.name,'',undefined,info);
+	}
+	if(!sz){
+		this.addCommand(f.tbl[4],'none',false);
+	}
+},t).
+addBase('windowWidth',function f(){
+	return Graphics.boxWidth>>2;
+}).
+addBase('windowHeight',function f(){
+	return Graphics.boxHeight;
+}).
+addBase('onNewSelect',function f(idx){
+	const rtv=f._super[f._funcName].apply(this,arguments);
+	this.onNewSelect_updatePreview.apply(this,arguments);
+	return rtv;
+}).
+addBase('onNewSelect_updatePreview',function f(idx){
+	const sc=this._scene; if(!sc) return;
+	const sp=sc._previewSprite; if(!sp) return;
+	const info=sc._listWindow.commandExt(idx);
+	if(info&&info.url){
+		sp.bitmap=ImageManager.loadNormalBitmap(info.url);
+	}else{
+		sp.bitmap=ImageManager.loadEmptyBitmap();
+	}
+	sc.previewSprite_resetPosition();
+}).
+getP;
 window[a.name]=a;
 }
+
+{ const a=class Window_Screenshots_ItemCommands extends Window_HorzCommand{
+};
+new cfc(a.prototype).
+addBase('makeCommandList',function f(){
+	for(let arr=f.tbl[5],x=0,xs=arr.length;x<xs;++x){
+		this.addCommand(arr[x][1],arr[x][0]);
+	}
+},t).
+addBase('windowWidth',function f(){
+	return Graphics.boxWidth-Window_Screenshots_List.prototype[f._funcName].call(this);
+}).
+addBase('maxCols',function f(){
+	return f.tbl[5].length;
+},t).
+getP;
+window[a.name]=a;
+}
+
+{ const a=class Scene_Screenshots extends Scene_Base{
+};
+new cfc(a.prototype).
+addBase('create',function f(){
+	const rtv=f._super[f._funcName].apply(this,arguments);
+	this.create_do_before.apply(this,arguments);
+	this.create_do.apply(this,arguments);
+	this.create_do_after.apply(this,arguments);
+	return rtv;
+}).
+addBase('create_do_before',function f(){
+	Scene_MenuBase.prototype.createBackground.apply(this,arguments);
+}).
+addBase('create_do_after',function f(){
+	this._listWindow.select(0);
+}).
+addBase('create_do',function f(){
+	this.create_do_listWindow.apply(this,arguments);
+	this.create_do_itemCmdWindow.apply(this,arguments);
+	this.create_do_previewBackgroundWindow.apply(this,arguments);
+	this.create_do_previewSprite.apply(this,arguments);
+}).
+addBase('create_do_listWindow',function f(){
+	this._listWindow=new Window_Screenshots_List(0,0);
+	this.addChild(this._listWindow);
+	this._listWindow.select(-1);
+	this._listWindow._scene=this;
+	this._listWindow.setHandler('cancel',this.popScene.bind(this));
+	this._listWindow.setHandler('ok',()=>{
+		this._listWindow.deactivate();
+		this._itemCmdWindow.select(0);
+		this._itemCmdWindow.activate();
+	});
+}).
+addBase('create_do_itemCmdWindow',function f(){
+	this._itemCmdWindow=new Window_Screenshots_ItemCommands(0,0);
+	this.addChild(this._itemCmdWindow);
+	this._itemCmdWindow.deactivate();
+	this._itemCmdWindow.select(-1);
+	this._itemCmdWindow._scene=this;
+	this._itemCmdWindow.position.set(this._listWindow.width,0);
+	this._itemCmdWindow.setHandler('cancel',()=>{
+		this._itemCmdWindow.deactivate();
+		this._itemCmdWindow.select(-1);
+		this._listWindow.activate();
+	});
+	for(let arr=f.tbl[5],x=0,xs=arr.length;x<xs;++x){
+		this._itemCmdWindow.setHandler(arr[x][0],arr[x][2].bind(this));
+	}
+},t).
+addBase('create_do_previewBackgroundWindow',function f(){
+	this._previewBackgroundWindow=new Window_Base(this._listWindow.width,this._itemCmdWindow.height,Graphics.boxWidth-this._listWindow.width,this._listWindow.height-this._itemCmdWindow.height);
+	this.addChild(this._previewBackgroundWindow);
+}).
+addBase('create_do_previewSprite',function f(){
+	this._previewSprite=new Sprite();
+	this.addChild(this._previewSprite);
+	this.previewSprite_resetPosition.apply(this,arguments);
+}).
+addBase('previewSprite_resetPosition',function f(){
+	this._previewSprite.anchor.set(0.5);
+	this._previewSprite.scale.set(0.5);
+	this._previewSprite.position.set(
+		this._previewBackgroundWindow.x+(this._previewBackgroundWindow.width>>1),
+		this._previewBackgroundWindow.y+(this._previewBackgroundWindow.height>>1),
+	);
+}).
+getP;
+window[a.name]=a;
+}
+
+
+new cfc(Window_Options.prototype).
+add('makeCommandList',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.makeCommandList_addScreenshotsCmd.apply(this,arguments);
+	return rtv;
+}).
+addBase('makeCommandList_addScreenshotsCmd',function f(){
+	const info=f.tbl[6];
+	this.addCommand(info.display,info.key,undefined,{noStatus:true,});
+},t).
+add('processOk',function f(){
+	const info=f.tbl[6];
+	if(this.commandSymbol(this.index())===info.key){
+		SoundManager.playOk();
+		SceneManager.push(Scene_Screenshots,true);
+		return;
+	}
+	return f.ori.apply(this,arguments);
+},t).
+getP;
 
 
 const keyName_screenshot='screenshot';
