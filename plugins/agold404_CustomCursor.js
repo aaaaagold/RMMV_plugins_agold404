@@ -58,6 +58,10 @@ undefined,
 
 { const p=SceneManager;
 new cfc(p).
+addBase('_customCursorUpdater_setCss_cursor',function f(val){
+	document.body.style.cursor=val;
+	const c=Graphics._canvas; if(c) c.style.cursor=val;
+}).
 addBase('_customCursorUpdater_createObject',function f(){
 	if(!f.tbl[1]._isSettingOk) return;
 	const sc=SceneManager._scene;
@@ -79,9 +83,7 @@ addBase('_customCursorUpdater_preFrame',function f(){
 	const sc=SceneManager._scene;
 	const sp=sc&&sc._customCursor;
 	if(!sp||!sp.bitmap.isReady()){
-		document.body.style.cursor=
-		c.style.cursor=
-		f.tbl[5];
+		SceneManager._customCursorUpdater_setCss_cursor(f.tbl[5]);
 		return;
 	}
 	if(sp&&sc.children.back!==sp) sc.addChild(sp);
@@ -90,9 +92,7 @@ addBase('_customCursorUpdater_preFrame',function f(){
 		info.frameDelayCurr=info.frameDelayMax;
 		info.frameIdxCurr=(info.frameIdxCurr+1)%info.frameIdxMax;
 	}
-	document.body.style.cursor=
-	c.style.cursor=
-	f.tbl[4];
+	SceneManager._customCursorUpdater_setCss_cursor(f.tbl[4]);
 },t).
 addBase('_customCursorUpdater_movePosition',function f(){
 	const sc=SceneManager._scene;
@@ -113,12 +113,18 @@ addBase('_customCursorUpdater_movePosition',function f(){
 	}
 	Graphics._canvas.style.cursor=f.tbl[4];
 },t).
+addBase('_customCursorUpdater_handlePaused',function f(){
+	// `this` might not be `SceneManager` 
+	if(SceneManager._stopped||SceneManager._isPressPPaused) SceneManager._customCursorUpdater_setCss_cursor(f.tbl[5]);
+	requestAnimationFrame(f);
+},t).
 getP().
 additionalUpdate_changeScene_add(p._customCursorUpdater_createObject,  true).
 additionalUpdate_updateScene_add(p._customCursorUpdater_preFrame,     false).
 additionalUpdate_renderScene_add(p._customCursorUpdater_movePosition, false).
 getP;
 }
+requestAnimationFrame(SceneManager._customCursorUpdater_handlePaused);
 
 
 })();
