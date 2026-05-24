@@ -36,8 +36,17 @@ addBase('_getCont',function f(){
 }).
 addBase('add1',function f(canvasSrc,opt){
 	const cont=this._getCont();
-	opt=Object.assign({},opt||{});
-	opt.canvas=canvasSrc.ptcp(0,0,canvasSrc.width,canvasSrc.height);
+	const tm=Date.now();
+	opt=Object.assign({
+		name:"img-"+tm,
+	},opt||{});
+	opt.time=tm;
+	const c=opt.canvas=canvasSrc.ptcp(0,0,canvasSrc.width,canvasSrc.height);
+	opt.url=undefined;
+	opt.isDeleted=false;
+	c.toBlob(blob=>{
+		if(!opt.isDeleted) opt.url=URL.createObjectURL(blob);
+	},'image/png');
 	cont.push(opt);
 }).
 addBase('size',function f(){
@@ -47,6 +56,15 @@ addBase('size',function f(){
 addBase('getI',function f(idx){
 	const cont=this._getCont();
 	return cont[idx];
+}).
+addBase('delI',function f(idx){
+	const cont=this._getCont();
+	const rtv=cont.splice(idx,1)[0];
+	if(rtv){
+		rtv.isDeleted=true;
+		if(rtv.url) URL.revokeObjectURL(rtv.url);
+	}
+	return rtv;
 }).
 getP;
 window[a.name]=a;
