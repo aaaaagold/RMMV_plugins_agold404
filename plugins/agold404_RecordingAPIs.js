@@ -110,7 +110,7 @@ addBase('recordingAPIs_start',function f(){
 		let vtracks=[];
 		let atracks=[];
 		try{
-			vtracks=c.captureStream().getVideoTracks();
+			vtracks=c.captureStream(60).getVideoTracks();
 		}catch(e){
 		}
 		try{
