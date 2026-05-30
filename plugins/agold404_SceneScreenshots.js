@@ -10,6 +10,18 @@
  * @desc they are eval-ed before treating them as an integer.
  * @default ["\"19\""]
  * 
+ * @param HintsSceneCreate
+ * @type note
+ * @text hint texts - scene create
+ * @desc hint texts shown when player enters screenshots scene
+ * @default ""
+ * 
+ * @param CommandTextGetter
+ * @type note
+ * @text scene enter command text getter
+ * @desc a function returning a text, of the command to enter screenshots scene shown in Scene_Options
+ * @default "()=>\"see screenshots\""
+ * 
  * 
  * @help set key(s) to create screenshots and view them in Scene_Options
  * setting multiple keys means each of them being pressed alone can create a screenshot.
@@ -26,6 +38,9 @@
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_SceneScreenshots";
 const params=PluginManager.parameters(pluginName)||{};
 params._keys=JSON.parse(params.Keys||"[19]");
+params._hintsSceneCreate=JSON.parse(params.HintsSceneCreate||'""');
+params._commandTextGetter=EVAL.call(null,JSON.parse(params.CommandTextGetter||'"()=>\\"see screenshots\\""'));
+if(!(params._commandTextGetter instanceof Function)) params._commandTextGetter=undefined;
 
 
 t=[
@@ -58,7 +73,7 @@ undefined,
 },], // 5-2: 
 ], // 5: itemCmds
 {
-	display:"see screenshots",
+	display:"see screenshots", // f.tbl[1]._commandTextGetter()
 	key:"screenshots",
 }, // 6: entry
 ];
@@ -136,7 +151,8 @@ addBase('create_do_before',function f(){
 }).
 addBase('create_do_after',function f(){
 	this._listWindow.select(0);
-}).
+	if($gameTemp&&$gameTemp.popupMsg&&f.tbl[1]._hintsSceneCreate) $gameTemp.popupMsg(f.tbl[1]._hintsSceneCreate);
+},t).
 addBase('create_do',function f(){
 	this.create_do_listWindow.apply(this,arguments);
 	this.create_do_itemCmdWindow.apply(this,arguments);
@@ -201,7 +217,12 @@ add('makeCommandList',function f(){
 }).
 addBase('makeCommandList_addScreenshotsCmd',function f(){
 	const info=f.tbl[6];
-	this.addCommand(info.display,info.key,undefined,{noStatus:true,});
+	this.addCommand(
+		f.tbl[1]._commandTextGetter?f.tbl[1]._commandTextGetter():info.display,
+		info.key,
+		undefined,
+		{noStatus:true,},
+	);
 },t).
 add('processOk',function f(){
 	const info=f.tbl[6];
