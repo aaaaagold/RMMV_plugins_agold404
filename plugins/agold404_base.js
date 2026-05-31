@@ -2846,12 +2846,25 @@ for(let cv=[Window_ShopBuy,Window_SkillList,Window_ItemList],x=cv.length;x--;){
 const p=cv[x].prototype;
 new cfc(p).
 addBase('makeItemList_do',p.makeItemList).
-add('makeItemList_do',function f(){
+addRoof('makeItemList_do',function f(){
 	Window_Selectable.prototype[f._funcName].apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
 getP;
 delete p.makeItemList;
+}
+
+
+for(let cv=[Window_ShopBuy,Window_SkillList,Window_ItemList],x=cv.length;x--;){
+const p=cv[x].prototype;
+new cfc(p).
+addBase('isCurrentItemEnabled',function(){
+	return this.isEnabled_byIndex(this.index());
+}).
+addBase('isEnabled_byIndex',function(index){
+	return this.isEnabled(this._data[index]);
+}).
+getP;
 }
 
 
@@ -3215,6 +3228,7 @@ cancel:'onNewSelect_adjustWindow_cancel',
 }, // 0: cmd symbol to func. name
 ]).
 getP;
+
 
 new cfc(Window_ShopBuy.prototype).
 addBase('isEnabled',function f(item){
@@ -5106,6 +5120,77 @@ addBase('includes',function f(item){
 		return false;
 	}
 	return this._actor.canEquip(item);
+}).
+getP;
+
+
+new cfc(Window_ShopBuy.prototype).
+addBase('makeItemList_do_initAllData',function f(){
+	this._data = [];
+	this._price = [];
+	this._infos = [];
+}).
+addBase('makeItemList_do_forEachGoods',function f(info){
+	const func=f.tbl[0][info&&info[0]];
+	const item=func&&func.call(this,info);
+	if(item) this.makeItemList_do_forEachGoods_addItem(item,info);
+},[
+{
+0:function(info){ return $dataItems[info[1]]; },
+1:function(info){ return $dataWeapons[info[1]]; },
+2:function(info){ return $dataArmors[info[1]]; },
+}, // 0: tasks by info[0]
+]).
+addBase('makeItemList_do_forEachGoods_addItem',function f(item,info){
+	this._data.push(item);
+	this._price.push(info[2] === 0 ? item.price : info[3]);
+	this._infos.push(info);
+}).
+addBase('makeItemList_do',function f(){
+	this.makeItemList_do_initAllData.apply(this,arguments);
+	this._shopGoods.forEach(this.makeItemList_do_forEachGoods,this);
+}).
+addBase('drawItem_priceWidth',function(index){
+	return 96;
+}).
+addBase('drawItem_nameWidth',function(index){
+	return Infinity;
+}).
+addBase('drawItem_drawItemName',function(rect,item,index){
+	const padding=this.textPadding();
+	let width=Math.min(rect.width-padding,this.drawItem_nameWidth(index));
+	this.drawItemName(item, rect.x, rect.y, width);
+	width+=padding;
+	rect.x+=width;
+	rect.width-=width;
+}).
+addBase('drawItem_drawItemPrice',function(rect,item,index){
+	const padding=this.textPadding();
+	let width=Math.min(rect.width-padding,this.drawItem_priceWidth(index));
+	this.drawText(this.price(item), rect.x + rect.width - width, rect.y, width, 'right');
+	width+=padding;
+	rect.width-=width;
+}).
+addBase('drawItem_draw_before',function(rect,item,index){
+	this.changePaintOpacity(this.isEnabled_byIndex(index));
+}).
+addBase('drawItem_draw_do',function(rect,item,index){
+	this.drawItem_drawItemPrice.apply(this,arguments);
+	this.drawItem_drawItemName.apply(this,arguments);
+}).
+addBase('drawItem_draw_after',function(rect,item,index){
+	this.changePaintOpacity(true);
+}).
+addBase('drawItem_draw',function(rect,item,index){
+	this.drawItem_draw_before.apply(this,arguments);
+	this.drawItem_draw_do.apply(this,arguments);
+	this.drawItem_draw_after.apply(this,arguments);
+}).
+addBase('drawItem',function(index){
+	const item = this._data[index];
+	const rect = this.itemRect(index);
+	rect.width-=this.textPadding();
+	this.drawItem_draw(rect,item,index);
 }).
 getP;
 
@@ -12248,6 +12333,86 @@ getP;
 
 
 })(); // new feature
+
+// ---- ---- ---- ---- new feature - shop remained goods
+
+(()=>{ let k,r,t;
+
+
+new cfc(Window_ShopBuy.prototype).
+addBase('getInfoByIndex',function f(index){
+	return this._infos[index];
+}).
+addBase('getRemainedCountByIndex',function f(index){
+	const info=this.getInfoByIndex(index);
+	const remainedCount=info&&info[4];
+	return f.tbl[0].has(typeof remainedCount)?remainedCount:Infinity;
+},t=[
+new Set([
+	typeof 0,
+]), // 0: expected typeof s
+"#", // 1: hint text
+]).
+addBase('decreaseRemainedCountByIndex',function f(index,val){
+	const info=this.getInfoByIndex(index);
+	const oldRemainedCount=this.getRemainedCountByIndex(index);
+	if(oldRemainedCount!==Infinity&&!isNaN(val)) info[4]-=val;
+},t).
+addBase('increaseRemainedCountByIndex',function f(index,val){
+	const info=this.getInfoByIndex(index);
+	const oldRemainedCount=this.getRemainedCountByIndex(index);
+	if(oldRemainedCount!==Infinity&&!isNaN(val-=0)) info[4]+=val;
+},t).
+addBase('drawItem_remainedCountWidth',function f(index){
+	return 96;
+}).
+addBase('drawItem_drawRemainedCount',function f(rect,item,index){
+	const padding=this.textPadding();
+	let width=Math.min(rect.width-padding,this.drawItem_remainedCountWidth(index));
+	const info=this._infos[index];
+	const remainedCount=info&&info[4];
+	if(f.tbl[0].has(typeof remainedCount)){
+		this.drawText(f.tbl[1], rect.x + rect.width - width, rect.y, width, 'left');
+		this.drawText(remainedCount, rect.x + rect.width - width, rect.y, width, 'right');
+	}
+	width+=padding;
+	rect.width-=width;
+},t).
+add('drawItem_draw_do',function f(rect,item,index){
+	this.drawItem_drawRemainedCount.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+add('isEnabled_byIndex_hasRemained',function f(index){
+	return 0<this.getRemainedCountByIndex(index);
+},t).
+add('isEnabled_byIndex',function f(index){
+	return this.isEnabled_byIndex_hasRemained(index)&&f.ori.apply(this,arguments);
+},t).
+getP;
+
+new cfc(Scene_Shop.prototype).
+add('maxBuy_remainedCount',function f(){
+	return this._buyWindow.getRemainedCountByIndex(this._buyIndex);
+}).
+add('maxBuy',function f(){
+	return Math.min(this.maxBuy_remainedCount(),f.ori.apply(this,arguments));
+}).
+add('onBuyOk',function f(){
+	this._buyIndex=this._buyWindow.index();
+	return f.ori.apply(this,arguments);
+}).
+add('doBuy',function f(number){
+	this.doBuy_remainedCount.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('doBuy_remainedCount',function f(number){
+	const wnd=this._buyWindow;
+	wnd.decreaseRemainedCountByIndex(this._buyIndex,number);
+}).
+getP;
+
+
+})(); // new feature - shop remained goods
 
 // ---- ---- ---- ---- dbg
 
