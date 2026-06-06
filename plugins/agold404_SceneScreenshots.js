@@ -136,7 +136,7 @@ getP;
 window[a.name]=a;
 }
 
-{ const a=class Scene_Screenshots extends Scene_Base{
+{ const a=class Scene_Screenshots extends Scene_MenuBase{
 };
 new cfc(a.prototype).
 addBase('create',function f(){
@@ -148,6 +148,7 @@ addBase('create',function f(){
 }).
 addBase('create_do_before',function f(){
 	Scene_MenuBase.prototype.createBackground.apply(this,arguments);
+	this._allCmdWnds.length=0;
 }).
 addBase('create_do_after',function f(){
 	this._listWindow.select(0);
@@ -166,10 +167,13 @@ addBase('create_do_listWindow',function f(){
 	this._listWindow._scene=this;
 	this._listWindow.setHandler('cancel',this.popScene.bind(this));
 	this._listWindow.setHandler('ok',()=>{
+		this.changeUiState_focusOnItemCmdWnd(); return;
 		this._listWindow.deactivate();
 		this._itemCmdWindow.select(0);
 		this._itemCmdWindow.activate();
 	});
+	
+	this._allCmdWnds.push(this._listWindow);
 }).
 addBase('create_do_itemCmdWindow',function f(){
 	this._itemCmdWindow=new Window_Screenshots_ItemCommands(0,0);
@@ -179,6 +183,7 @@ addBase('create_do_itemCmdWindow',function f(){
 	this._itemCmdWindow._scene=this;
 	this._itemCmdWindow.position.set(this._listWindow.width,0);
 	this._itemCmdWindow.setHandler('cancel',()=>{
+		this.changeUiState_focusOnListWnd(); return;
 		this._itemCmdWindow.deactivate();
 		this._itemCmdWindow.select(-1);
 		this._listWindow.activate();
@@ -186,6 +191,8 @@ addBase('create_do_itemCmdWindow',function f(){
 	for(let arr=f.tbl[5],x=0,xs=arr.length;x<xs;++x){
 		this._itemCmdWindow.setHandler(arr[x][0],arr[x][2].bind(this));
 	}
+	
+	this._allCmdWnds.push(this._itemCmdWindow);
 },t).
 addBase('create_do_previewBackgroundWindow',function f(){
 	this._previewBackgroundWindow=new Window_Base(this._listWindow.width,this._itemCmdWindow.height,Graphics.boxWidth-this._listWindow.width,this._listWindow.height-this._itemCmdWindow.height);
@@ -204,6 +211,30 @@ addBase('previewSprite_resetPosition',function f(){
 		this._previewBackgroundWindow.y+(this._previewBackgroundWindow.height>>1),
 	);
 }).
+addBase('changeUiState_focusOnListWnd',function f(){
+	this.setUiState(f.tbl[0]);
+	this._changeUiState_defocusAll();
+	this._changeUiState_deselectExcept(new Set([
+		this._listWindow,
+	]));
+	const wnd=this._listWindow;
+	wnd.activate();
+},[
+'focusOnListWnd',
+]).
+addBase('changeUiState_focusOnItemCmdWnd',function f(){
+	this.setUiState(f.tbl[0]);
+	this._changeUiState_defocusAll();
+	this._changeUiState_deselectExcept(new Set([
+		this._listWindow,
+		this._itemCmdWindow,
+	]));
+	const wnd=this._itemCmdWindow;
+	wnd.activate();
+	if(!(wnd.index()>=0)) wnd.select(0);
+},[
+'focusOnItemCmdWnd',
+]).
 getP;
 window[a.name]=a;
 }
