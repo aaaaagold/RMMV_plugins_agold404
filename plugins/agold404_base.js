@@ -2907,6 +2907,28 @@ getP;
 
 
 new cfc(Scene_MenuBase.prototype).
+addWithBaseIfNotOwn('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this._allCmdWnds=[];
+	return rtv;
+}).
+addBase('_changeUiState_defocusAll',function f(){
+	this._allCmdWnds.forEach(f.tbl[0]);
+},[
+wnd=>{
+	wnd.deactivate();
+}, // 0: forEach
+]).
+addBase('_changeUiState_deselectExcept',function f(exceptWnds){
+	// exceptWnds instanceof Set
+	this._allCmdWnds.forEach(f.tbl[0],exceptWnds||f.tbl[1]);
+},[
+function(wnd){
+	if(this.has(wnd)) return;
+	wnd.deselect();
+}, // 0: forEach
+new Set(), // 1: prevent null
+]).
 addBase('setUiState',function f(val){
 	return this._uiState=val;
 }).
@@ -2916,10 +2938,22 @@ addBase('getUiState',function f(){
 addBase('isWndClicked',function f(wnd){
 	return wnd.isOpen()&&wnd.visible&&wnd.containsPoint_global(TouchInput);
 }).
-addBase('changeUiState_focusOnItemWnd',function f(){
-}).
 addBase('update_focusWndFromTouch_condOk',function f(){
 	return TouchInput.isTriggered();
+}).
+addBase('update_focusWndFromTouch_do',function f(){
+	return undefined ||
+		undefined;
+}).
+addBase('update_focusWndFromTouch',function f(){
+	if(this.update_focusWndFromTouch_condOk()) this.update_focusWndFromTouch_do();
+}).
+addWithBaseIfNotOwn('update',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.update_focusWndFromTouch();
+	return rtv;
+}).
+addBase('changeUiState_focusOnItemWnd',function f(){
 }).
 getP;
 
@@ -3000,14 +3034,6 @@ addBase('update_focusWndFromTouch_do',function f(){
 		this.update_focusWndFromTouch_do_itemList.apply(this,arguments) ||
 		this.update_focusWndFromTouch_do_category.apply(this,arguments) ||
 		undefined;
-}).
-addBase('update_focusWndFromTouch',function f(){
-	if(this.update_focusWndFromTouch_condOk()) this.update_focusWndFromTouch_do();
-}).
-addWithBaseIfNotOwn('update',function f(){
-	const rtv=f.ori.apply(this,arguments);
-	this.update_focusWndFromTouch();
-	return rtv;
 }).
 getP;
 
@@ -3179,14 +3205,6 @@ addBase('update_focusWndFromTouch_do',function f(){
 		this.update_focusWndFromTouch_do_sell.apply(this,arguments) ||
 		undefined;
 }).
-addBase('update_focusWndFromTouch',function f(){
-	if(this.update_focusWndFromTouch_condOk()) this.update_focusWndFromTouch_do();
-}).
-addWithBaseIfNotOwn('update',function f(){
-	const rtv=f.ori.apply(this,arguments);
-	this.update_focusWndFromTouch();
-	return rtv;
-}).
 getP;
 
 new cfc(Window_ShopCommand.prototype).
@@ -3329,14 +3347,6 @@ addBase('update_focusWndFromTouch_do',function f(){
 		this.changeUiState_focusOnItemWnd();
 		return wnd;
 	} }
-}).
-addBase('update_focusWndFromTouch',function f(){
-	if(this.update_focusWndFromTouch_condOk()) this.update_focusWndFromTouch_do();
-}).
-addWithBaseIfNotOwn('update',function f(){
-	const rtv=f.ori.apply(this,arguments);
-	this.update_focusWndFromTouch();
-	return rtv;
 }).
 getP;
 
