@@ -124,7 +124,7 @@ additionalUpdate_updateScene_add(p._customCursorUpdater_preFrame,     false).
 additionalUpdate_renderScene_add(p._customCursorUpdater_movePosition, false).
 getP;
 }
-requestAnimationFrame(SceneManager._customCursorUpdater_handlePaused);
+setTimeout(SceneManager._customCursorUpdater_handlePaused,1); // ?_? 
 
 
 })();
