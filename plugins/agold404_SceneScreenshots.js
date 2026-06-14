@@ -62,11 +62,14 @@ undefined,
 },], // 5- : 
 ["chName","Change name",function f(){
 	const wnd=this._inputTextWindow;
+	const ta=wnd._textarea;
 	const refWnd=this._previewBackgroundWindow;
-	const info=wnd._textarea._info=this._listWindow.currentExt();
+	const listWnd=this._listWindow;
+	ta._index=listWnd.index();
+	const info=ta._info=listWnd.currentExt();
 	wnd.position.set(refWnd.x,refWnd.y);
 	wnd.width=refWnd.width;
-	wnd._textarea.value=info.name;
+	ta.value=info.name;
 	wnd.open();
 	//wnd._textarea.focus(); // auto. exec. in `onopened` 
 },()=>(typeof Window_InputText!=='undefined'),], // 5- : 
@@ -100,9 +103,10 @@ undefined,
 		const self=wnd._scene;
 		if(this._info) this._info.name=this.value;
 		this._info=undefined;
+		if(this._index!=null) self._listWindow.redrawItem(this._index);
+		this._index=undefined;
 		SoundManager.playOk();
 		wnd.close();
-		self._listWindow.refresh();
 	},
 	enterAsOk:true,
 	btns:"left-h",
@@ -136,8 +140,8 @@ addBase('windowWidth',function f(){
 addBase('windowHeight',function f(){
 	return Graphics.boxHeight;
 }).
-addBase('onNewSelect',function f(idx){
-	const rtv=f._super[f._funcName].apply(this,arguments);
+addWithBaseIfNotOwn('onNewSelect',function f(idx){
+	const rtv=f.ori.apply(this,arguments);
 	this.onNewSelect_updatePreview.apply(this,arguments);
 	return rtv;
 }).
@@ -145,12 +149,29 @@ addBase('onNewSelect_updatePreview',function f(idx){
 	const sc=this._scene; if(!sc) return;
 	const sp=sc._previewSprite; if(!sp) return;
 	const info=sc._listWindow.commandExt(idx);
-	if(info&&info.url){
+	this._autoUpdatePreviewIndex=undefined;
+	let useEmpty=true;
+	if(info){
+		if(info.url){
+			useEmpty=false;
+		}else if(!info.isDeleted){
+			this._autoUpdatePreviewIndex=idx;
+		}
+	}
+	if(!useEmpty){
 		sp.bitmap=ImageManager.loadNormalBitmap(info.url);
 	}else{
 		sp.bitmap=ImageManager.loadEmptyBitmap();
 	}
 	sc.previewSprite_resetPosition();
+}).
+addBase('update_autoUpdatePreview',function f(){
+	const idx=this._autoUpdatePreviewIndex;
+	if(idx>=0) this.onNewSelect_updatePreview(idx);
+}).
+addWithBaseIfNotOwn('update',function f(){
+	this.update_autoUpdatePreview.apply(this,arguments);
+	return f.ori.apply(this,arguments);
 }).
 getP;
 window[a.name]=a;
@@ -336,6 +357,27 @@ if(params._keys&&params._keys.forEach) params._keys.forEach(x=>{
 SceneManager.additionalUpdate_renderScene_add(()=>{
 	if(Input.isTriggered(keyName_screenshot)) Graphics.createScreenshot(true);
 });
+new cfc(ScreenshotsManager).
+addBase('refreshGui',function f(){
+	const sc=SceneManager._scene;
+	if(sc&&sc.constructor===Scene_Screenshots){
+		sc._listWindow.refresh();
+		// refresh current new pewview
+		const idx=sc._listWindow.index();
+		if(Math.abs(ScreenshotsManager.size()-idx)<=1) sc._listWindow.onNewSelect_updatePreview(idx);
+	}
+}).
+add('add1',function f(canvasSrc,opt){
+	const rtv=f.ori.apply(this,arguments);
+	this.refreshGui();
+	return rtv;
+}).
+add('delI',function f(idx){
+	const rtv=f.ori.apply(this,arguments);
+	this.refreshGui();
+	return rtv;
+}).
+getP;
 
 
 })();
