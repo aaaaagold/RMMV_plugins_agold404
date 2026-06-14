@@ -60,7 +60,7 @@ undefined,
 	document.ce('a').sa('href',info.url).sa('download',info.name).click();
 	this._itemCmdWindow.activate();
 },], // 5- : 
-["chNode","Change note",function f(){
+["chName","Change name",function f(){
 	const wnd=this._inputTextWindow;
 	const refWnd=this._previewBackgroundWindow;
 	const info=wnd._textarea._info=this._listWindow.currentExt();
