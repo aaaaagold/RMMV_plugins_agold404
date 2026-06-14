@@ -12392,7 +12392,7 @@ add('drawItem_draw_do',function f(rect,item,index){
 	this.drawItem_drawRemainedCount.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
-add('isEnabled_byIndex_hasRemained',function f(index){
+addBase('isEnabled_byIndex_hasRemained',function f(index){
 	return 0<this.getRemainedCountByIndex(index);
 },t).
 add('isEnabled_byIndex',function f(index){
@@ -12401,7 +12401,7 @@ add('isEnabled_byIndex',function f(index){
 getP;
 
 new cfc(Scene_Shop.prototype).
-add('maxBuy_remainedCount',function f(){
+addBase('maxBuy_remainedCount',function f(){
 	return this._buyWindow.getRemainedCountByIndex(this._buyIndex);
 }).
 add('maxBuy',function f(){
