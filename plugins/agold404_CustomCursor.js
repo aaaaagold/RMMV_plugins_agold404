@@ -111,19 +111,42 @@ addBase('_customCursorUpdater_movePosition',function f(){
 		const ti=TouchInput;
 		sp.position.set(ti.x,ti.y);
 	}
-	Graphics._canvas.style.cursor=f.tbl[4];
+},t).
+addBase('_customCursorUpdater_visiblility',function f(){
+	// `this` might not be `SceneManager` 
+	const sc=SceneManager._scene;
+	const sp=sc&&sc._customCursor;
+	if(!sp) return;
+	const vis=sp.visible=SceneManager._customCursor_isVisible;
+	SceneManager._customCursorUpdater_setCss_cursor(vis?f.tbl[4]:f.tbl[5]);
 },t).
 addBase('_customCursorUpdater_handlePaused',function f(){
 	// `this` might not be `SceneManager` 
 	if(SceneManager._stopped||SceneManager._isPressPPaused) SceneManager._customCursorUpdater_setCss_cursor(f.tbl[5]);
 	requestAnimationFrame(f);
 },t).
+addBase('_customCursorUpdater_show',function f(){
+	this._customCursor_isVisible=true;
+},t).
+addBase('_customCursorUpdater_hide',function f(){
+	this._customCursor_isVisible=false;
+},t).
 getP().
 additionalUpdate_changeScene_add(p._customCursorUpdater_createObject,  true).
 additionalUpdate_updateScene_add(p._customCursorUpdater_preFrame,     false).
+// the order will be stable
 additionalUpdate_renderScene_add(p._customCursorUpdater_movePosition, false).
+additionalUpdate_renderScene_add(p._customCursorUpdater_visiblility,  false).
 getP;
 }
+
+for(let evts=[
+'pointerdown',
+'pointermove',
+],x=evts.length;x--;){ const evt=evts[x]; document.addEventListener(evt,function f(){
+	SceneManager._customCursorUpdater_show();
+	document.removeEventListener(evt,f);
+}); }
 setTimeout(SceneManager._customCursorUpdater_handlePaused,1); // ?_? 
 
 
