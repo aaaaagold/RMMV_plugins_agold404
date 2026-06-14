@@ -59,10 +59,20 @@ undefined,
 	}
 	document.ce('a').sa('href',info.url).sa('download',info.name).click();
 	this._itemCmdWindow.activate();
-},], // 5-0: 
+},], // 5- : 
+["chNode","Change note",function f(){
+	const wnd=this._inputTextWindow;
+	const refWnd=this._previewBackgroundWindow;
+	const info=wnd._textarea._info=this._listWindow.currentExt();
+	wnd.position.set(refWnd.x,refWnd.y);
+	wnd.width=refWnd.width;
+	wnd._textarea.value=info.name;
+	wnd.open();
+	//wnd._textarea.focus(); // auto. exec. in `onopened` 
+},()=>(typeof Window_InputText!=='undefined'),], // 5- : 
 ["goback","Go back",function f(){
 	this._itemCmdWindow._handlers.cancel();
-},], // 5-1: 
+},], // 5- : 
 ["delete","Delete",function f(){
 	const idx=this._listWindow.index();
 	ScreenshotsManager.delI(idx);
@@ -70,12 +80,40 @@ undefined,
 	if(idx&&idx>=this._listWindow._list.length) this._listWindow.select(idx-1);
 	else this._listWindow.onNewSelect_updatePreview(idx);
 	this._itemCmdWindow._handlers.goback();
-},], // 5-2: 
+},], // 5- : 
 ], // 5: itemCmds
 {
 	display:"see screenshots", // f.tbl[1]._commandTextGetter()
 	key:"screenshots",
 }, // 6: entry
+[
+{
+	updatePolling:undefined,
+	cancelCallback:function f(){
+		SoundManager.playCancel();
+		this._wnd.close();
+		//this.blur(); // too early
+	},
+	escAsCancel:true,
+	okCallback:function f(){
+		const wnd=this._wnd;
+		const self=wnd._scene;
+		if(this._info) this._info.name=this.value;
+		this._info=undefined;
+		SoundManager.playOk();
+		wnd.close();
+		self._listWindow.refresh();
+	},
+	enterAsOk:true,
+	btns:"left-h",
+}, // 7-0: opt
+function f(){
+	this._scene._itemCmdWindow.activate();
+	this._textarea.blur();
+	Graphics._canvas.focus();
+	Input.isTexting_clear();
+}, // 7-1: onclosed
+], // 7: Window_InputText setting
 ];
 
 
@@ -122,7 +160,9 @@ window[a.name]=a;
 };
 new cfc(a.prototype).
 addBase('makeCommandList',function f(){
+	this.maxCols(); // update enabled items
 	for(let arr=f.tbl[5],x=0,xs=arr.length;x<xs;++x){
+		if(arr[x][3]!=null) if((arr[x][3] instanceof Function)?!arr[x][3]():!arr[x][3]) continue;
 		this.addCommand(arr[x][1],arr[x][0]);
 	}
 },t).
@@ -130,7 +170,16 @@ addBase('windowWidth',function f(){
 	return Graphics.boxWidth-Window_Screenshots_List.prototype[f._funcName].call(this);
 }).
 addBase('maxCols',function f(){
-	return f.tbl[5].length;
+	const tbl5=f.tbl[5];
+	if(!tbl5._checked){
+		tbl5._checked=true;
+		const arr=tbl5.slice();
+		tbl5.length=0;
+		for(let x=0,xs=arr.length;x!==xs;++x){
+			tbl5.push(arr[x]);
+		}
+	}
+	return tbl5.length;
 },t).
 getP;
 window[a.name]=a;
@@ -159,6 +208,7 @@ addBase('create_do',function f(){
 	this.create_do_itemCmdWindow.apply(this,arguments);
 	this.create_do_previewBackgroundWindow.apply(this,arguments);
 	this.create_do_previewSprite.apply(this,arguments);
+	this.create_do_inputTextWindow.apply(this,arguments);
 }).
 addBase('create_do_listWindow',function f(){
 	this._listWindow=new Window_Screenshots_List(0,0);
@@ -188,6 +238,7 @@ addBase('create_do_itemCmdWindow',function f(){
 		this._itemCmdWindow.select(-1);
 		this._listWindow.activate();
 	});
+	this._itemCmdWindow.maxCols(); // update enabled items
 	for(let arr=f.tbl[5],x=0,xs=arr.length;x<xs;++x){
 		this._itemCmdWindow.setHandler(arr[x][0],arr[x][2].bind(this));
 	}
@@ -203,6 +254,16 @@ addBase('create_do_previewSprite',function f(){
 	this.addChild(this._previewSprite);
 	this.previewSprite_resetPosition.apply(this,arguments);
 }).
+addBase('create_do_inputTextWindow',function f(){
+	this._inputTextWindow=undefined;
+	if(typeof Window_InputText==='undefined') return;
+	const wnd=this._inputTextWindow=new Window_InputText(0,0,1,1,f.tbl[7][0]);
+	this.addChild(wnd);
+	wnd._scene=this;
+	wnd.height=1+Math.ceil(wnd.standardFontSize()*1.25+wnd.standardPadding()*2);
+	wnd.onclosed=f.tbl[7][1];
+	wnd.close();
+},t).
 addBase('previewSprite_resetPosition',function f(){
 	this._previewSprite.anchor.set(0.5);
 	this._previewSprite.scale.set(0.5);
