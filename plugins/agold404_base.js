@@ -7650,17 +7650,35 @@ undefined,
 },t);
 
 new cfc(Window_Command.prototype).
+addBase('command',function f(idx){
+	return this._list&&this._list[idx];
+}).
 addBase('commandExt',function f(idx){
-	const cmd=this._list&&this._list[idx];
+	const cmd=this.command(idx);
 	return cmd&&cmd.ext;
 }).
 addBase('commandSymbol',function f(idx){
-	const cmd=this._list&&this._list[idx];
+	const cmd=this.command(idx);
 	return cmd&&cmd.symbol;
 }).
 addBase('commandName',function f(idx){
-	const cmd=this._list&&this._list[idx];
+	const cmd=this.command(idx);
 	return cmd&&cmd.name;
+}).
+addBase('setCommandExt',function f(idx,ext){
+	const cmd=this.command(idx);
+	if(cmd) cmd.ext=ext;
+	return this;
+}).
+addBase('setCommandSymbol',function f(idx,symb){
+	const cmd=this.command(idx);
+	if(cmd) cmd.symbol=symb;
+	return this;
+}).
+addBase('setCommandName',function f(idx,name){
+	const cmd=this.command(idx);
+	if(cmd) cmd.name=name;
+	return this;
 }).
 getP;
 
