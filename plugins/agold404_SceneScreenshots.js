@@ -124,11 +124,15 @@ function f(){
 { const a=class Window_Screenshots_List extends Window_Command{
 };
 new cfc(a.prototype).
+addWithBaseIfNotOwn('commandName',function f(idx){
+	const info=f.ori.apply(this,arguments);
+	return typeof info==='string'?info:info&&info.name;
+}).
 addBase('makeCommandList',function f(){
 	const sz=ScreenshotsManager.size();
 	for(let x=0;x<sz;++x){
 		const info=ScreenshotsManager.getI(x);
-		this.addCommand(info.name,'',undefined,info);
+		this.addCommand(info,'',undefined,info);
 	}
 	if(!sz){
 		this.addCommand(f.tbl[4],'none',false);
@@ -222,6 +226,7 @@ addBase('create_do_before',function f(){
 }).
 addBase('create_do_after',function f(){
 	this._listWindow.select(0);
+	this._itemCmdWindow.deactivate();
 	if($gameTemp&&$gameTemp.popupMsg&&f.tbl[1]._hintsSceneCreate) $gameTemp.popupMsg(f.tbl[1]._hintsSceneCreate);
 },t).
 addBase('create_do',function f(){
@@ -283,7 +288,9 @@ addBase('create_do_inputTextWindow',function f(){
 	wnd._scene=this;
 	wnd.height=1+Math.ceil(wnd.standardFontSize()*1.25+wnd.standardPadding()*2);
 	wnd.onclosed=f.tbl[7][1];
+	wnd.openness=0;
 	wnd.close();
+	wnd.updateClose();
 },t).
 addBase('previewSprite_resetPosition',function f(){
 	this._previewSprite.anchor.set(0.5);
