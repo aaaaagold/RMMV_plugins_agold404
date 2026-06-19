@@ -12394,7 +12394,7 @@ addBase('getRemainedCountByIndex',function f(index){
 new Set([
 	typeof 0,
 ]), // 0: expected typeof s
-"#", // 1: hint text
+"  #", // 1: hint text
 ]).
 addBase('decreaseRemainedCountByIndex',function f(index,val){
 	const info=this.getInfoByIndex(index);
@@ -12409,14 +12409,18 @@ addBase('increaseRemainedCountByIndex',function f(index,val){
 addBase('drawItem_remainedCountWidth',function f(index){
 	return 96;
 }).
+addBase('drawItem_hintTextWidth',function f(index){
+	return 32;
+}).
 addBase('drawItem_drawRemainedCount',function f(rect,item,index){
 	const padding=this.textPadding();
 	let width=Math.min(rect.width-padding,this.drawItem_remainedCountWidth(index));
 	const info=this._infos[index];
 	const remainedCount=info&&info[4];
 	if(f.tbl[0].has(typeof remainedCount)){
-		this.drawText(f.tbl[1], rect.x + rect.width - width, rect.y, width, 'left');
-		this.drawText(remainedCount, rect.x + rect.width - width, rect.y, width, 'right');
+		const hintTextWidth=this.drawItem_hintTextWidth(index);
+		this.drawText(f.tbl[1], rect.x + rect.width - width, rect.y, hintTextWidth, 'left');
+		this.drawText(remainedCount, rect.x + rect.width - width + hintTextWidth, rect.y, width-hintTextWidth, 'right');
 	}
 	width+=padding;
 	rect.width-=width;
