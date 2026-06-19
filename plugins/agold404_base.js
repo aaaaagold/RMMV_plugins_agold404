@@ -3248,12 +3248,6 @@ cancel:'onNewSelect_adjustWindow_cancel',
 getP;
 
 
-new cfc(Window_ShopBuy.prototype).
-addBase('isEnabled',function f(item){
-	return item && $gameParty._gold>=this.price(item) && !$gameParty.hasMaxItems(item);
-}).
-getP;
-
 new cfc(Scene_Equip.prototype).
 addBase('changeUiState_focusOnSlotWnd',function f(){
 	this.setUiState(f.tbl[0]);
@@ -5135,6 +5129,16 @@ getP;
 
 
 new cfc(Window_ShopBuy.prototype).
+addBase('price_byIndex',function f(index){
+	return this._price[index]-0||0;
+}).
+addBase('getMoney',function f(){
+	return $gameParty.gold();
+}).
+addBase('isEnabled_byIndex',function f(index){
+	const item=this._data[index];
+	return (item && this.getMoney()>=this.price_byIndex(index) && !$gameParty.hasMaxItems(item));
+}).
 addBase('makeItemList_do_initAllData',function f(){
 	this._data = [];
 	this._price = [];
@@ -5177,7 +5181,7 @@ addBase('drawItem_drawItemName',function(rect,item,index){
 addBase('drawItem_drawItemPrice',function(rect,item,index){
 	const padding=this.textPadding();
 	let width=Math.min(rect.width-padding,this.drawItem_priceWidth(index));
-	this.drawText(this.price(item), rect.x + rect.width - width, rect.y, width, 'right');
+	this.drawText(this.price_byIndex(index), rect.x + rect.width - width, rect.y, width, 'right');
 	width+=padding;
 	rect.width-=width;
 }).
@@ -12237,6 +12241,17 @@ new cfc(Bitmap.prototype).add('_callLoadListeners',function f(){
 	return rtv;
 });
 }
+
+
+new cfc(Scene_Shop.prototype).
+add('onBuyOk',function f(){
+	this._itemIndex=this._buyWindow.index();
+	return f.ori.apply(this,arguments);
+}).
+addBase('buyingPrice',function f(){
+	return this._buyWindow.price_byIndex(this._itemIndex);
+}).
+getP;
 
 
 new cfc(Window_ShopSell.prototype).
