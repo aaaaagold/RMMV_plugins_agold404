@@ -2514,6 +2514,17 @@ addBase('snapForBackground',function f(sc){
 getP;
 
 
+new cfc(Window_Gold.prototype).
+add('initialize',function f(){
+	this._currencyUnit=TextManager.currencyUnit;
+	return f.ori.apply(this,arguments);
+}).
+addBase('currencyUnit',function f(){
+	return this._currencyUnit;
+}).
+getP
+
+
 new cfc(Window_ShopNumber.prototype).
 addBase('processNumberChange_condOk',function f(){
 	return this.isOpenAndActive();
@@ -3245,6 +3256,59 @@ sell:'onNewSelect_adjustWindow_sell',
 cancel:'onNewSelect_adjustWindow_cancel',
 }, // 0: cmd symbol to func. name
 ]).
+getP;
+
+
+new cfc(Scene_Shop.prototype).
+add('prepare',function f(goods, purchaseOnly, opts){
+	const rtv=f.ori.apply(this,arguments);
+	this.sellOptions_initOptions.apply(this,arguments);
+	return rtv;
+}).
+addBase('sellOptions_initOptions',function f(goods, purchaseOnly, opts){
+	const sellOptions=opts&&opts.sellOptions||{};
+	this._sellOption_sellFilter=sellOptions.filter;
+	this._sellOption_getSellPrice=sellOptions.price;
+}).
+add('createSellWindow',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.sellOptions_passOptionsToSellWindow.apply(this,arguments);
+	return rtv;
+}).
+addBase('sellOptions_passOptionsToSellWindow',function f(){
+	const wnd=this._sellWindow;
+	wnd._sellOption_sellFilter=this._sellOption_sellFilter;
+	wnd._sellOption_getSellPrice=this._sellOption_getSellPrice;
+}).
+add('sellingPrice',function f(item){
+	return this._sellOption_getSellPrice?this._sellOption_getSellPrice(item):f.ori.apply(this,arguments);
+}).
+addBase('doBuy',function f(cnt){
+	this.doBuy_setMoney.apply(this,arguments);
+	this.doBuy_setItem.apply(this,arguments);
+}).
+addBase('doBuy_setMoney',function f(cnt){
+	$gameParty.loseGold(this.buyingPrice()*cnt);
+}).
+addBase('doBuy_setItem',function f(cnt){
+	$gameParty.gainItem(this._item,cnt);
+}).
+addBase('doSell',function f(cnt){
+	this.doSell_setMoney.apply(this,arguments);
+	this.doSell_setItem.apply(this,arguments);
+}).
+addBase('doSell_setMoney',function f(cnt){
+	$gameParty.gainGold(this.sellingPrice()*cnt);
+}).
+addBase('doSell_setItem',function f(cnt){
+	$gameParty.loseItem(this._item,cnt);
+}).
+getP;
+
+new cfc(Window_ShopSell.prototype).
+addWithBaseIfNotOwn('isEnabled',function f(item){
+	return f.ori.apply(this,arguments)&&(!this._sellOption_sellFilter||this._sellOption_sellFilter(item));
+}).
 getP;
 
 
