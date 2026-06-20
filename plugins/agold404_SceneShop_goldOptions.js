@@ -77,25 +77,6 @@ addBase('goldOptions_passOptionsToBuyWindow',function f(){
 	if(this._goldOption_moneyGetter) wnd.getMoney=this._goldOption_moneyGetter;
 }).
 //
-add('buyingPrice',function f(){
-	return this.goldOptions_buyingPrice_chkIfUseOri.apply(this,arguments)?f.ori.apply(this,arguments):this.goldOptions_buyingPrice_do.apply(this,arguments);
-}).
-addBase('goldOptions_buyingPrice_chkIfUseOri',function f(){
-	return true; // TODO
-}).
-addBase('goldOptions_buyingPrice_do',function f(){
-	
-}).
-add('sellingPrice',function f(){
-	return this.goldOptions_sellingPrice_chkIfUseOri.apply(this,arguments)?f.ori.apply(this,arguments):this.goldOptions_sellingPrice_do.apply(this,arguments);
-}).
-addBase('goldOptions_sellingPrice_chkIfUseOri',function f(){
-	return true; // TODO
-}).
-addBase('goldOptions_sellingPrice_do',function f(){
-	
-}).
-//
 add('doBuy_setMoney',function f(){
 	return this.goldOptions_doBuySetMoney_chkIfUseOri.apply(this,arguments)?f.ori.apply(this,arguments):this.goldOptions_doBuySetMoney_do.apply(this,arguments);
 }).
