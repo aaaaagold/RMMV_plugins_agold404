@@ -464,6 +464,11 @@ makeItemList(){
 	if(this._isCanIncludeNull) this._data.push(null);
 }
 };
+new cfc(a.prototype).
+addWithBaseIfNotOwn('getItemSellPrice',function f(item){
+	return this._itemWindow?this._itemWindow.getItemSellPrice.apply(this,arguments):f.ori.apply(this,arguments);
+}).
+getP;
 classes.push(a);
 window[a.name]=a; }
 
