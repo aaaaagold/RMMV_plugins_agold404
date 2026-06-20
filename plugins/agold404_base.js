@@ -3259,6 +3259,28 @@ cancel:'onNewSelect_adjustWindow_cancel',
 getP;
 
 
+new cfc(Window_ShopSell.prototype).
+addBase('getItemPrice',function f(item){
+	return item ? item.price : undefined;
+}).
+addBase('getItemSellPrice',function f(item){
+	return this.getItemPrice(item)/2.0;
+}).
+addBase('isPriceSellable',function f(price){
+	return 0<price;
+}).
+addBase('isEnabled',function f(item){
+	return this.isPriceSellable(this.getItemSellPrice(item)) && $gameParty && $gameParty.numItems(item);
+}).
+getP;
+
+new cfc(Scene_Shop.prototype).
+addBase('sellingPrice',function f(){
+	return Math.floor(this._sellWindow.getItemSellPrice(this._item));
+}).
+getP;
+
+
 new cfc(Scene_Shop.prototype).
 add('prepare',function f(goods, purchaseOnly, opts){
 	const rtv=f.ori.apply(this,arguments);
@@ -3268,7 +3290,7 @@ add('prepare',function f(goods, purchaseOnly, opts){
 addBase('sellOptions_initOptions',function f(goods, purchaseOnly, opts){
 	const sellOptions=opts&&opts.sellOptions||{};
 	this._sellOption_sellFilter=sellOptions.filter;
-	this._sellOption_getSellPrice=sellOptions.price;
+	this._sellOption_getSellPrice=sellOptions.price&&sellOptions.price.bind(this);
 }).
 add('createSellWindow',function f(){
 	const rtv=f.ori.apply(this,arguments);
@@ -3278,11 +3300,9 @@ add('createSellWindow',function f(){
 addBase('sellOptions_passOptionsToSellWindow',function f(){
 	const wnd=this._sellWindow;
 	wnd._sellOption_sellFilter=this._sellOption_sellFilter;
-	wnd._sellOption_getSellPrice=this._sellOption_getSellPrice;
+	if(this._sellOption_getSellPrice) wnd.getItemSellPrice=this._sellOption_getSellPrice;
 }).
-add('sellingPrice',function f(item){
-	return this._sellOption_getSellPrice?this._sellOption_getSellPrice(item):f.ori.apply(this,arguments);
-}).
+//
 addBase('doBuy',function f(cnt){
 	this.doBuy_setMoney.apply(this,arguments);
 	this.doBuy_setItem.apply(this,arguments);
@@ -3306,7 +3326,7 @@ addBase('doSell_setItem',function f(cnt){
 getP;
 
 new cfc(Window_ShopSell.prototype).
-addWithBaseIfNotOwn('isEnabled',function f(item){
+addWithBaseIfNotOwn('includes',function f(item){
 	return f.ori.apply(this,arguments)&&(!this._sellOption_sellFilter||this._sellOption_sellFilter(item));
 }).
 getP;
@@ -12314,13 +12334,6 @@ add('onBuyOk',function f(){
 }).
 addBase('buyingPrice',function f(){
 	return this._buyWindow.price_byIndex(this._itemIndex);
-}).
-getP;
-
-
-new cfc(Window_ShopSell.prototype).
-addBase('isEnabled',function f(item){
-	return item && 0<item.price && $gameParty && $gameParty.numItems(item);
 }).
 getP;
 
