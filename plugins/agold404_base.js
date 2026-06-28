@@ -2920,6 +2920,9 @@ getP;
 
 
 new cfc(Window_ItemCategory.prototype).
+addBase('numVisibleRows',function f(){
+	return Math.min(3,this.maxRows());
+}).
 addBase('_makeCommandList_getMakerNames',function f(){
 	return f.tbl[0];
 },[
