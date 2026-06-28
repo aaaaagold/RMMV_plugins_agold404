@@ -43,7 +43,7 @@
  * @text custom categories
  * @desc follow the existing example to set new custom categories.
 each of the above texts will be parsed by `eval()`.
- * @default ["\"({\\n 'titleFunc':()=>\\\"items 0$\\\",\\n 'filterFunc':item=>item&&item.price===0,\\n 'comment':\\\"all items which is default 0$\\\",\\n})\""]
+ * @default ["\"({\\n 'titleFunc':()=>\\\"items 0$\\\",\\n 'filterFunc':item=>item&&item.price===0,\\n 'comment':\\\"all items which are default 0$\\\",\\n})\""]
  * 
  * 
  * @help see default example to set new custom categories
