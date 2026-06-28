@@ -89,7 +89,7 @@ undefined, // 3: reserved for kwpts
 ["<RandomSelectTotalPointsOnSomeParams>","</RandomSelectTotalPointsOnSomeParams>"],
 ], // 4: xmlMark for random params
 'focusOnLayeredItemWnd', // 5: uiState
-(a,b)=>$gameParty.itemOrder_getOrder?$gameParty.itemOrder_getOrder(undefined,a)-$gameParty.itemOrder_getOrder(undefined,b):(a&&a.id)-(b&&b.id), // 6: cmp for sort
+(a,b)=>$gameParty.itemOrder_getGlobalOrder?$gameParty.itemOrder_getGlobalOrder(undefined,a)-$gameParty.itemOrder_getGlobalOrder(undefined,b):(a&&a.id)-(b&&b.id), // 6: cmp for sort
 ];
 
 
