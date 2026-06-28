@@ -2919,6 +2919,35 @@ getP;
 }
 
 
+new cfc(Window_ItemCategory.prototype).
+addBase('_makeCommandList_getMakerNames',function f(){
+	return f.tbl[0];
+},[
+[
+'makeCommandList_item',
+'makeCommandList_weapon',
+'makeCommandList_armor',
+'makeCommandList_keyItem',
+], // 0: "makeCommandList*" s
+]).
+addBase('makeCommandList',function f(){
+	for(let arr=this._makeCommandList_getMakerNames.apply(this,arguments),x=0,xs=arr.length;x<xs;++x) this[arr[x]].apply(this,arguments);
+}).
+addBase('makeCommandList_item',function f(){
+	this.addCommand(TextManager.item,    'item');
+}).
+addBase('makeCommandList_weapon',function f(){
+	this.addCommand(TextManager.weapon,  'weapon');
+}).
+addBase('makeCommandList_armor',function f(){
+	this.addCommand(TextManager.armor,   'armor');
+}).
+addBase('makeCommandList_keyItem',function f(){
+	this.addCommand(TextManager.keyItem, 'keyItem');
+}).
+getP;
+
+
 new cfc(Window_SkillList.prototype).
 addBase('setActor_condOk',function(actor){
 	return this._actor!==actor;
