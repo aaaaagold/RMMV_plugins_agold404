@@ -1,6 +1,6 @@
 ﻿"use strict";
 /*:
- * @plugindesc make number of save files be infinity
+ * @plugindesc run a js code when leveling up
  * @author agold404
  * 
  * 
