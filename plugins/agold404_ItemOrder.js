@@ -65,8 +65,10 @@ function(cont,cmpValGetterFunc,a,b){
 [144,144,0,0], // 8: reorder mode cursor color tone
 function(cmpValGetterFunc,a,b){
 	const co=this._customOrder_global;
-	const valA=co&&a&&(a.id in co)?co[a.id]:(cmpValGetterFunc&&cmpValGetterFunc(a));
-	const valB=co&&a&&(b.id in co)?co[b.id]:(cmpValGetterFunc&&cmpValGetterFunc(b));
+	const keyA=this.itemOrder_getItemGlobalKey(a);
+	const keyB=this.itemOrder_getItemGlobalKey(b);
+	const valA=co&&a&&(keyA in co)?co[keyA]:(cmpValGetterFunc&&cmpValGetterFunc(a));
+	const valB=co&&a&&(keyB in co)?co[keyB]:(cmpValGetterFunc&&cmpValGetterFunc(b));
 	if(isNaN(valB)) return isNaN(valA)?0:-1; // put NaN last
 	return valA-valB;
 }, // 9: bind glb cmpValGetterFunc
@@ -166,6 +168,11 @@ addBase('itemOrder_reorderList_global',function f(src){
 	const cmpValGetterFunc=f.tbl[1]._func_itemToGlbCmpVal;
 	return src.sort(f.tbl[9].bind(this,cmpValGetterFunc&&cmpValGetterFunc.bind(this)));
 },t).
+addBase('itemOrder_getCustomGlobalOrderCont',function f(){
+	let rtv=this._customOrder_global;
+	if(!rtv) rtv=this._customOrder_global={};
+	return rtv;
+}).
 addBase('_itemOrder_getGlobalOrderCont',function f(){
 	let rtv=this._itemOrder_global;
 	if(!rtv){
@@ -175,15 +182,16 @@ addBase('_itemOrder_getGlobalOrderCont',function f(){
 	}
 	return rtv;
 }).
+addBase('itemOrder_setCustomGlobalOrder',function f(item,val){
+	const co=this.itemOrder_getCustomGlobalOrderCont();
+	if(co) co[this.itemOrder_getItemGlobalKey(item)]=val;
+}).
 addBase('itemOrder_getGlobalOrder',function f(item){
 	// exceptions -> cont._customOrder -> cmpValGetterFunc -> combined key = (typeStr,int(id))
 	if(!item) return NaN;
-	const cont=this._itemOrder_getGlobalOrderCont();
+	const co=this.itemOrder_getCustomGlobalOrderCont();
 	const key=this.itemOrder_getItemGlobalKey(item);
-	if(cont){
-		const co=this.itemOrder_getCustomOrderCont(cont,item);
-		if(key in co) return co[key];
-	}
+	if(key in co) return co[key];
 	const cmpValGetterFunc=f.tbl[1]._func_itemToGlbCmpVal;
 	if(cmpValGetterFunc) return cmpValGetterFunc.call(this,item);
 	return key;
@@ -226,10 +234,18 @@ addBase('itemOrder_arrangeOrder',function f(currIdx,lastIdx){
 	const item1=this._data[currIdx];
 	const item2=this._data[lastIdx];
 	if(!item1||!item2||item1===item2) return;
+	{ const cont1=$gameParty.itemContainer(item1); if(cont1===$gameParty.itemContainer(item2)){
 	const ord1=$gameParty.itemOrder_getOrder(undefined,item1);
 	const ord2=$gameParty.itemOrder_getOrder(undefined,item2);
 	$gameParty.itemOrder_setCustomOrder(undefined,item1,ord2);
 	$gameParty.itemOrder_setCustomOrder(undefined,item2,ord1);
+	} }
+	{
+	const ord1=$gameParty.itemOrder_getGlobalOrder(item1);
+	const ord2=$gameParty.itemOrder_getGlobalOrder(item2);
+	$gameParty.itemOrder_setCustomGlobalOrder(item1,ord2);
+	$gameParty.itemOrder_setCustomGlobalOrder(item2,ord1);
+	}
 	this._data[currIdx]=item2;
 	this._data[lastIdx]=item1;
 	this.redrawItem(lastIdx);
