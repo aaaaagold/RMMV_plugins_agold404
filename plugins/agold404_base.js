@@ -2542,6 +2542,23 @@ addBase('updateChildren',function f(parent){
 getP;
 
 
+new cfc(DataManager).
+add('extractMetadata',function f(data){
+	const rtv=f.ori.apply(this,arguments);
+	this.extractMetadata_after_xmlLikeStyle.apply(this,arguments);
+	return rtv;
+}).
+addBase('extractMetadata_after_xmlLikeStyle',function f(data){
+	const meta=data&&data.meta; if(!meta) return;
+	for(let k in meta){ if(meta[k]===true&&meta['/'+k]===true){
+		const tags=["<"+k+">","</"+k+">"];
+		const res=getXmlLikeStyleContent(data.note,tags);
+		meta[k]=res.join('\n');
+	} }
+}).
+getP;
+
+
 new cfc(SceneManager).
 addBase('snap',function f(sc){
 	sc=sc||this._scene;
@@ -8174,7 +8191,8 @@ get:function f(){
 	return this.traitsPi(kwTrait,0);
 },configurable:true,
 });
-new cfc(Scene_Boot.prototype).add('modTrait1',function f(dataobj,i,arr){
+new cfc(Scene_Boot.prototype).
+add('modTrait1',function f(dataobj,i,arr){
 	this.modTrait1_tpCostRate.apply(this,arguments);
 	return f.ori.apply(this,arguments);
 }).
@@ -8185,16 +8203,35 @@ addBase('modTrait1_tpCostRate',function f(dataobj,i,arr){
 },[
 kwStr,
 kwTrait,
-]);
+]).
+getP;
 }
 
-new cfc(Game_BattlerBase.prototype).addBase('skillHpCost',function(skill) {
+new cfc(Scene_Boot.prototype).
+add('modEffect1',function f(dataobj,i,arr){
+	this.modEffect1_hpCost.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('modEffect1_hpCost',function f(dataobj,i,arr){
+	const meta=dataobj&&dataobj.meta; if(!meta) return;
+	dataobj.hpCost=useDefaultIfIsNaN(meta.hpCost-0,undefined);
+}).
+getP;
+new cfc(Game_BattlerBase.prototype).
+addBase('skillHpCost',function(skill) {
 	return ~~(skill.hpCost*this.hpcr);
-}).addBase('skillMpCost',function(skill){
+}).
+addBase('skillMpCost',function(skill){
 	return ~~(skill.mpCost*this.mpcr);
-}).addBase('skillTpCost',function(skill){
+}).
+addBase('skillTpCost',function(skill){
 	return ~~(skill.tpCost*this.tpcr);
-});
+}).
+add('paySkillCost',function f(skill){
+	this._hp-=this.skillHpCost.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+getP;
 
 new cfc(Window_Base.prototype).addBase('hpCostColor',function f(){
 	return this.textColor(21);
