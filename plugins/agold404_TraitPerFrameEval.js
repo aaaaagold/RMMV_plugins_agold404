@@ -24,7 +24,7 @@
  */
 
 (()=>{ let k,r,t;
-const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_NameField";
+const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_TraitPerFrameEval";
 const params=PluginManager.parameters(pluginName);
 
 const gbb=Game_BattlerBase,kw='perFrameEval';
