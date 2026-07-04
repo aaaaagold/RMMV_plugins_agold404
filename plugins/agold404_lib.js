@@ -1082,7 +1082,7 @@ const getXmlLikeStyleContent=window.getXmlLikeStyleContent=(text,startTagAndEndT
 	isSortingByOrderMark=!!isSortingByOrderMark;
 	isByRelativeOrderInsteadOfInsertingToPosition=isSortingByOrderMark&&!!isByRelativeOrderInsteadOfInsertingToPosition;
 	
-	const lines=text&&text.split('\n');
+	const lines=text&&text.replace(re_allR,'').split('\n');
 	if(!lines) return []; // error handle
 	
 	const rtv=[];
