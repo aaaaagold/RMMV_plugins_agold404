@@ -2,6 +2,15 @@
 /*:
  * @plugindesc adjust nums of equip slots for each type
  * @author agold404
+ * 
+ * 
+ * @param GlobalChanges
+ * @type note
+ * @text Globally change amount of each equip type
+ * @desc input a valid json
+ * @default "{\n\"1\":0,\n\"_dummy\":\"\"\n}"
+ * 
+ * 
  * @help fractions of resulting numbers are rounded toward 0 to integer. the minimum result is 0.
  * <adjustEquipSlots>
  * JSON_FORMAT_HERE
@@ -27,13 +36,6 @@
  * {"1":1,"2":-3}
  * </adjustEquipSlots>
  * this increase weapon slots by 1, and decrease equipType:2 by 3
- * 
- * 
- * @param GlobalChanges
- * @type note
- * @text Globally change amount of each equip type
- * @desc input a valid json
- * @default "{\n\"1\":0,\n\"_dummy\":\"\"\n}"
  * 
  * 
  * This plugin can be renamed as you want.
