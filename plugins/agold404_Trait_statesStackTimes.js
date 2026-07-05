@@ -2,6 +2,15 @@
 /*:
  * @plugindesc specifying a state can be stacked multiple times
  * @author agold404
+ * 
+ * 
+ * @param GlobalChanges
+ * @type note
+ * @text global change stacked times
+ * @desc input a valid json
+ * @default "0"
+ * 
+ * 
  * @help fractions of resulting numbers are rounded toward 0 to integer. the minimum final calculation result is 0.
  * 
  * 
@@ -35,11 +44,18 @@
  * also, use `global change stacked times` to make EVERY states to be stacked more or less.
  * 
  * 
- * @param GlobalChanges
- * @type note
- * @text global change stacked times
- * @desc input a valid json
- * @default "0"
+ * 
+ * 
+ * to define a state that is contrary to a state:
+ * 
+ * <contraryState: state_id >
+ * 
+ * example:
+ * 
+ * <contraryState: 3 >
+ * 
+ * a state will be erase by a state which is a contrary state of the state on addNewState.
+ * 
  * 
  * 
  * This plugin can be renamed as you want.
@@ -83,7 +99,18 @@ null,
 'string',
 key=>(key!==~~key), // 6: is invalid JSON key
 'initStackTimesAdd', // 7: static self meta key
+[
+'contraryState', // 8-0: meta key
+function f(state,metaVal){
+	let msg="["+pluginName+"] "+"<contraryState> setting error:";
+	msg+="\n "; msg+="duplicated setting on state "+state.id;
+	msg+="\n "; msg+=" already set to value "+state[f.tbl[8][0]];
+	msg+="\n "; msg+=" and set again to "+metaVal;
+	return msg;
+}, // 8-1: err msg
+], // 8: contrary state setting
 ];
+t[8][1].tbl=t;
 
 
 new cfc(Scene_Boot.prototype).
@@ -127,6 +154,25 @@ addBase('traitMultiStates_evalSetting',function f(dataobj,i,arr){
 	
 	return;
 },t).
+add('start_before',function f(){
+	this.contraryState_evalSettings.apply(this,arguments);
+	return f.ori.apply(this,arguments);
+}).
+addBase('contraryState_evalSettings',function f(){
+	$dataStates.forEach(this.contraryState_evalSetting1,this);
+}).
+addBase('contraryState_evalSetting1',function f(dataobj,i,arr){
+	const meta=dataobj&&dataobj.meta; if(!meta) return;
+	const csid=useDefaultIfIsNaN(meta[f.tbl[8][0]],undefined);
+	;
+	dataobj[f.tbl[8][0]]=useDefaultIfIsNaN(dataobj[f.tbl[8][0]],csid);
+	if(dataobj[f.tbl[8][0]]!==csid){ const msg=f.tbl[8][1](dataobj,csid); console.warn(msg); alert(msg); throw new Error(msg); }
+	;
+	const contraryState=arr[csid]; if(!contraryState) return;
+	;
+	contraryState[f.tbl[8][0]]=useDefaultIfIsNaN(contraryState[f.tbl[8][0]],i);
+	if(contraryState[f.tbl[8][0]]!==i){ const msg=f.tbl[8][1](contraryState,i); console.warn(msg); alert(msg); throw new Error(msg); }
+},t).
 getP;
 
 
@@ -149,6 +195,18 @@ new cfc(Game_Battler.prototype).
 addBase('addNewState_condOk',function f(stateId){
 	return this.traitMultiStates_getMaxStackTimes(stateId)>=this.statesContainer_cntStateId(stateId)+1;
 }).
+add('addState',function f(stateId){
+	return this.contraryState_onAddState.apply(this,arguments)||f.ori.apply(this,arguments);
+}).
+addBase('contraryState_onAddState',function f(stateId){
+	const stateObj=$dataStates[stateId];
+	const contraryStateId=stateObj&&stateObj[f.tbl[8][0]];
+	const contraryState=$dataStates[contraryStateId];
+	if(!contraryState) return;
+	if(!this.isStateAffected(contraryStateId)) return;
+	this.removeState(contraryStateId);
+	return contraryState;
+},t).
 getP;
 
 new cfc(Game_BattlerBase.prototype).
