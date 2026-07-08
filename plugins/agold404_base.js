@@ -103,8 +103,8 @@ addBase('value',function f(variableId){
 getP;
 
 new cfc(Game_Event.prototype).
-add('start',function f(triggerer){
-	const oriTriggerer=this._triggerer; this._triggerer=triggerer;
+addRoof('start',function f(triggerer){
+	const oriTriggerer=this._triggerer; this._triggerer=triggerer; // = who starts this event
 	f.ori.apply(this,arguments);
 	if(this.isStarting()) this._triggerer=triggerer;
 	else this._triggerer=oriTriggerer;
@@ -117,6 +117,9 @@ add('clearStartingFlag',function f(){
 }).
 add('isStarting',function f(triggerer){
 	return (!triggerer||this._triggerer===triggerer)&&f.ori.apply(this,arguments);
+}).
+addBase('getMaps',function f(){
+	return [$gameMap];
 }).
 getP;
 new cfc(Game_Map.prototype).
@@ -2530,6 +2533,26 @@ new cfc(p).add('_createAllParts',function f(){
 // ---- ---- ---- ---- refine for future extensions
 
 (()=>{ let k,r,t;
+
+
+Game_Battler.RemoveStatesAutoTiming_AllActionsEnd=1;
+Game_Battler.RemoveStatesAutoTiming_TurnEnd=2;
+new cfc(Game_Battler.prototype).
+addBase('onAllActionsEnd',function f(){
+	this.clearResult();
+	this.removeStatesAuto(Game_Battler.RemoveStatesAutoTiming_AllActionsEnd);
+	this.removeBuffsAuto();
+}).
+addBase('onTurnEnd',function f(){
+	this.clearResult();
+	this.regenerateAll();
+	if(!BattleManager.isForcedTurn()){
+		this.updateBuffTurns();
+		this.updateStateTurns();
+	}
+	this.removeStatesAuto(Game_Battler.RemoveStatesAutoTiming_TurnEnd);
+}).
+getP;
 
 
 new cfc(SceneManager).
@@ -5823,6 +5846,17 @@ addBase('stop_closeWindowsProc',function f(){
 getP;
 
 
+
+{ const p=Game_Map.prototype;
+p.updateInterpreter_single=p.updateInterpreter;
+new cfc(p).
+addBase('updateInterpreter',function f(){
+	return this.updateInterpreter_single.apply(this,arguments);
+}).
+getP;
+}
+
+
 })(); // refine for future extensions
 
 // ---- ---- ---- ---- Scene_HTML_base
@@ -6274,20 +6308,22 @@ evtd=>{ if(!evtd) return;
 		}
 		pg.note=noteLines.join('\n');
 		DataManager.extractMetadata(pg);
-		if(evtd.meta) pg.meta=Object.assign({},evtd.meta,pg.meta,);
+		if(evtd.meta) pg.meta=Object.freeze(Object.assign({},evtd.meta,pg.meta,));
 	}
 },
 ]);
 
-new cfc(Game_Event.prototype).addBase('page',function f(){
+new cfc(Game_Event.prototype).
+addBase('page',function f(){
 	const evtd=this.event();
 	return evtd&&evtd.pages[this._pageIndex];
-}).addBase('getMeta',function f(){
+}).
+addBase('getMeta',function f(){
 	const pg=this.page();
 	// do not edit the return value after getting it from calling this function
 	return pg&&pg.meta||f.tbl[0];
 },[
-{}, // 0: default
+Object.freeze({}), // 0: default
 ]);
 
 })(); // event page note
@@ -11849,10 +11885,12 @@ addBase('stateResistSetUniqueCnt',function f(){
 addBase('refresh_resistStates',function f(){
 	const stateSetCnt=this.statesContainer_uniqueStateIdsCnt();
 	const resistSetCnt=this.stateResistSetUniqueCnt();
-	const isArrAllStateIds=window._dbg_resistStates==null?stateSetCnt<resistSetCnt:window._dbg_resistStates;
-	const arr=isArrAllStateIds?this.statesContainer_uniqueStateIds():this.stateResistSet();
+	const resistIds=this.stateResistSet();
+	const stateIds=this.statesContainer_uniqueStateIds();
+	const usingStateSet=stateIds.length<resistIds.length;
+	const arr=usingStateSet?stateIds:resistIds;
 	for(let x=arr.length;x--;){
-		if(isArrAllStateIds && !this.isStateResist(arr[x])) continue;
+		if(usingStateSet && !resistIds.uniqueHas(arr[x])) continue;
 		for(let p,n=this.statesContainer_cntStateId(arr[x]);n&&n!==p;){
 			this.eraseState(arr[x]);
 			p=n;
@@ -12646,6 +12684,64 @@ getP;
 
 
 })(); // new feature - shop remained goods
+
+// ---- ---- ---- ---- new feature - evt start parallelly
+
+(()=>{ let k,r,t;
+
+
+new cfc(Game_Map.prototype).
+addBase('setupStartingMapEvent_setupStartParallelly',function f(evt){
+	const itp=this.getNewParallelInterpreter();
+	itp.setup(evt.list(),evt.eventId(),evt._triggerer);
+}).
+addBase('getParallelInterpreterContainer',function f(){
+	let rtv=this._interpreters; if(!rtv) rtv=this._interpreters=[];
+	return rtv;
+}).
+addBase('getNewParallelInterpreter',function f(){
+	const cont=this.getParallelInterpreterContainer();
+	const rtv=new Game_Interpreter();
+	cont.push(rtv);
+	return rtv;
+}).
+addBase('updateInterpreter_startParallelly',function f(){
+	const itp=this._interpreter;
+	const cont=this.getParallelInterpreterContainer();
+	const arr=cont.slice();
+	cont.length=0;
+	for(let x=0,xs=arr.length;x<xs;++x){
+		const itp=this._interpreter=arr[x];
+		this.updateInterpreter_single.apply(this,arguments);
+		if(itp.isRunning()) cont.push(itp);
+	}
+	this._interpreter=itp;
+}).
+add('updateInterpreter',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.updateInterpreter_startParallelly.apply(this,arguments);
+	return rtv;
+}).
+getP;
+
+new cfc(Game_Event.prototype).
+add('start_parallelly',function f(){
+	this.getMaps().forEach(f.tbl[0],this);
+},[
+function(m){
+	m.setupStartingMapEvent_setupStartParallelly(this);
+	this.clearStartingFlag();
+}, // 0: forEach
+]).
+add('start',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	if(this.isStarting()&&this.getMeta().startParallelly) this.start_parallelly.apply(this,arguments);
+	return rtv;
+}).
+getP;
+
+
+})(); // new feature - evt start parallelly
 
 // ---- ---- ---- ---- dbg
 
