@@ -12205,7 +12205,7 @@ addBase('renderWebGL',function f(renderer, useSquare){
 		var texture = textures[i].baseTexture;
 	}
 	tile.bindTextures(renderer, shader, textures);
-	const vertices=rectsCount*shader.vertPerQuad; if(!vertices===0) return;
+	const vertices=rectsCount*shader.vertPerQuad; if(vertices===0) return;
 	
 	const vbs=[];
 	if(!this.vbIds) this.vbIds=[];
