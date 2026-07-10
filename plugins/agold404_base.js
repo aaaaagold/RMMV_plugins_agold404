@@ -11883,6 +11883,11 @@ addBase('stateResistSetUniqueCnt',function f(){
 	return this.traitsUniqueIdsCnt(Game_BattlerBase.TRAIT_STATE_RESIST);
 }).
 addBase('refresh_resistStates',function f(){
+	while(this.refresh_resistStates1.apply(this,arguments))
+		;
+}).
+addBase('refresh_resistStates1',function f(){
+	let changed=false;
 	const stateSetCnt=this.statesContainer_uniqueStateIdsCnt();
 	const resistSetCnt=this.stateResistSetUniqueCnt();
 	const resistIds=this.stateResistSet();
@@ -11891,12 +11896,16 @@ addBase('refresh_resistStates',function f(){
 	const arr=usingStateSet?stateIds:resistIds;
 	for(let x=arr.length;x--;){
 		if(usingStateSet && !resistIds.uniqueHas(arr[x])) continue;
+		let ctr=0|0;
 		for(let p,n=this.statesContainer_cntStateId(arr[x]);n&&n!==p;){
+			++ctr;
 			this.eraseState(arr[x]);
 			p=n;
 			n=this.statesContainer_cntStateId(arr[x]);
 		}
+		if(1<ctr) changed=true;
 	}
+	return changed;
 }).
 addBase('traitsOpCache_statePropTrue_init',function f(propName){
 	if(!propName) return; // propName should not be false-like
