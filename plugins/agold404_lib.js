@@ -240,6 +240,11 @@ function(x){ this.uniquePush(x); },
 	}
 	return this;
 });
+p.kvClear=function(){
+	this.kvHas();
+	this._kvMap.clear();
+	this.length=0;
+};
 p.kvGetKey=function(idx){
 	return this[idx][1];
 };
