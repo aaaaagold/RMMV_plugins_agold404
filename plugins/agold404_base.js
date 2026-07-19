@@ -2567,16 +2567,21 @@ getP;
 
 new cfc(DataManager).
 add('extractMetadata',function f(data){
+	this.extractMetadata_before.apply(this,arguments);
 	const rtv=f.ori.apply(this,arguments);
-	this.extractMetadata_after_xmlLikeStyle.apply(this,arguments);
+	this.extractMetadata_after.apply(this,arguments);
 	return rtv;
+}).
+add('extractMetadata_before',none).
+add('extractMetadata_after',function f(data){
+	this.extractMetadata_after_xmlLikeStyle.apply(this,arguments);
 }).
 addBase('extractMetadata_after_xmlLikeStyle',function f(data){
 	const meta=data&&data.meta; if(!meta) return;
 	for(let k in meta){ if(meta[k]===true&&meta['/'+k]===true){
 		const tags=["<"+k+">","</"+k+">"];
-		const res=getXmlLikeStyleContent(data.note,tags);
-		meta[k]=res.join('\n');
+		const resv=getXmlLikeStyleContent(data.note,tags);
+		meta[k]=resv.map(res=>res.join('\n'));
 	} }
 }).
 getP;
@@ -11210,6 +11215,8 @@ new Set([
 //'has', // has (c,d)->value // traitsHasValue // NOT USED
 'set', // multiset dataId  // traitsSet
 'MId', // max id           // traitsMaxId ( slotType collapseType )
+'kvs', // key-val sum      // Trait_changeAddingStates // k=dataId ; vs=value (window.Map([ [v,s], ... ])) ; c will be converted to Number via `-0` : {a:x1,b:y1} + {b:y2,c:z2} => {a:x1,b:y1+y2,c:z2}
+'kvc', // key-val ctr      // BigInt ver. of the above
 ]), // 5: planned cacheVal ops. also see `traitsOpCache_addTrait` `traitsOpCache_delTrait`
 ];
 
@@ -11480,6 +11487,76 @@ addBase('traitsOpCache_getCacheVal_MId',function f(dataCode,dataId,cmp3Func){
 	// default value = undefined (empty Heap .top)
 	return this.traitsOpCache_updateVal_MId_getValObj(dataCode,undefined,cmp3Func).h.top;
 }).
+// kvs
+addBase('traitsOpCache_updateVal_kvs_getValObj',function f(dataCode,dataId,dontEnsureExist){
+	const vals=this.traitsOpCache_getContVals();
+	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'kvs');
+	let rtv=vals.get(key); if(!rtv&&!dontEnsureExist) vals.set(key,rtv=new Map());
+	return rtv;
+}).
+addBase('traitsOpCache_updateVal_kvs_delValObj',function f(dataCode,dataId){
+	const vals=this.traitsOpCache_getContVals();
+	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'kvs');
+	vals.delete(key);
+}).
+addBase('traitsOpCache_updateVal_kvs_add',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_kvs_getValObj(trait.code,trait.dataId);
+	trait.value.forEach((s,v)=>{
+		const newS=(valObj.get(v)-0||0)+s;
+		if(newS) valObj.set(v,newS);
+		else valObj.delete(v);
+	});
+	if(!valObj.size) this.traitsOpCache_updateVal_kvs_delValObj(trait.code,trait.dataId);
+}).
+addBase('traitsOpCache_updateVal_kvs_del',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_kvs_getValObj(trait.code,trait.dataId);
+	trait.value.forEach((s,v)=>{
+		const newS=(valObj.get(v)-0||0)-s;
+		if(newS) valObj.set(v,newS);
+		else valObj.delete(v);
+	});
+	if(!valObj.size) this.traitsOpCache_updateVal_kvs_delValObj(trait.code,trait.dataId);
+}).
+addBase('traitsOpCache_getCacheVal_kvs',function f(dataCode,dataId){
+	// default value = {cnt:0,val:0,}
+	const valObj=this.traitsOpCache_updateVal_kvs_getValObj(dataCode,dataId,true);
+	return valObj;
+}).
+// kvc
+addBase('traitsOpCache_updateVal_kvc_getValObj',function f(dataCode,dataId,dontEnsureExist){
+	const vals=this.traitsOpCache_getContVals();
+	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'kvc');
+	let rtv=vals.get(key); if(!rtv&&!dontEnsureExist) vals.set(key,rtv=new Map());
+	return rtv;
+}).
+addBase('traitsOpCache_updateVal_kvc_delValObj',function f(dataCode,dataId){
+	const vals=this.traitsOpCache_getContVals();
+	const key=this.traitsOpCache_genCacheKey(dataCode,dataId,'kvc');
+	vals.delete(key);
+}).
+addBase('traitsOpCache_updateVal_kvc_add',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_kvc_getValObj(trait.code,trait.dataId);
+	trait.value.forEach((c,v)=>{
+		const newC=(valObj.get(v)||0n)+c;
+		if(newC) valObj.set(v,newC);
+		else valObj.delete(v);
+	});
+	if(!valObj.size) this.traitsOpCache_updateVal_kvc_delValObj(trait.code,trait.dataId);
+}).
+addBase('traitsOpCache_updateVal_kvc_del',function f(trait){
+	const valObj=this.traitsOpCache_updateVal_kvc_getValObj(trait.code,trait.dataId);
+	trait.value.forEach((c,v)=>{
+		const newC=(valObj.get(v)||0n)-c;
+		if(newC) valObj.set(v,newC);
+		else valObj.delete(v);
+	});
+	if(!valObj.size) this.traitsOpCache_updateVal_kvc_delValObj(trait.code,trait.dataId);
+}).
+addBase('traitsOpCache_getCacheVal_kvc',function f(dataCode,dataId){
+	// default value = {cnt:0,val:0,}
+	const valObj=this.traitsOpCache_updateVal_kvc_getValObj(dataCode,dataId,true);
+	return valObj;
+}).
 // change trait
 addBase('_traitsOpCache_changeTrait_common',function f(trait,ops,tbl0){
 	for(let x=ops.length;x--;){
@@ -11500,6 +11577,8 @@ addBase('traitsOpCache_addTrait',function f(trait){
 		//['has', this.traitsOpCache_updateVal_has_add ], // NOT USED
 		['set', this.traitsOpCache_updateVal_set_add ],
 		['MId', this.traitsOpCache_updateVal_MId_add ],
+		['kvs', this.traitsOpCache_updateVal_kvs_add ],
+		['kvc', this.traitsOpCache_updateVal_kvc_add ],
 	]); }
 	this._traitsOpCache_changeTrait_common(trait,
 		this.traitsOpCache_getUsedOps(trait),
@@ -11520,6 +11599,8 @@ addBase('traitsOpCache_delTrait',function f(trait){
 		//['has', this.traitsOpCache_updateVal_has_del ], // NOT USED
 		['set', this.traitsOpCache_updateVal_set_del ],
 		['MId', this.traitsOpCache_updateVal_MId_del ],
+		['kvs', this.traitsOpCache_updateVal_kvs_del ],
+		['kvc', this.traitsOpCache_updateVal_kvc_del ],
 	]); }
 	this._traitsOpCache_changeTrait_common(trait,
 		this.traitsOpCache_getUsedOps(trait),
@@ -11826,7 +11907,11 @@ addBase('traitsOpCache_addTraitObj_state',function f(stateId){
 	this.removeStatesByTiming_add(stateId);
 	this.removeStatesBySteps_add(stateId);
 	this.traitsOpCache_statePropTrue_addTraitObj(stateId);
+	
+	this.traitsOpCache_addTraitObj_state_ext.apply(this,arguments);
+	return dataobj;
 }).
+addBase('traitsOpCache_addTraitObj_state_ext',none).
 addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	// before actually change `this._states`
 	const dataobj=$dataStates[stateId]; if(!dataobj) return;
@@ -11840,7 +11925,11 @@ addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	this.removeStatesByTiming_del(stateId);
 	this.removeStatesBySteps_del(stateId);
 	this.traitsOpCache_statePropTrue_delTraitObj(stateId);
+	
+	this.traitsOpCache_delTraitObj_state_ext.apply(this,arguments);
+	return dataobj;
 }).
+add('traitsOpCache_delTraitObj_state_ext',none).
 add('addNewState',function f(stateId){
 	this.traitsOpCache_addTraitObj_state(stateId); // before actually change `this._states`
 	return f.ori.apply(this,arguments);
