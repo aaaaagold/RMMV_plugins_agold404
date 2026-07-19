@@ -209,14 +209,15 @@ addBase('_changeAddingStates_onChangeState',function f(stateIdInfo){
 	if(!stateIdInfo) return;
 	let lastStateIds=[]; lastStateIds.kvPush(stateIdInfo[0],stateIdInfo[1]);
 	let nextStateIds=[];
+	const sortedStateIds=[];
 	const directly=[];
 	const maxDepth=Math.max(useDefaultIfIsNaN(f.tbl[1]._maxChangesDepthGetter.call(this),0),0);
 	for(let d=maxDepth;d-->=0;){
 		directly.length=0;
-		const stateIds=[]; for(let x=0,xs=lastStateIds.length;x<xs;++x) stateIds.push(lastStateIds.kvGetKeyByIdx(x)); stateIds.sort(DataManager.arrSortFunc_mostImportantStateAtFirst);
 		nextStateIds.kvClear();
-		for(let x=0,xs=stateIds.length;x<xs;++x){
-			const stateId=stateIds[x];
+		sortedStateIds.length=0; for(let x=0,xs=lastStateIds.length;x<xs;++x) sortedStateIds.push(lastStateIds.kvGetKeyByIdx(x)); sortedStateIds.sort(DataManager.arrSortFunc_mostImportantStateAtFirst);
+		for(let x=0,xs=sortedStateIds.length;x<xs;++x){
+			const stateId=sortedStateIds[x];
 			const cnt=lastStateIds.kvGetVal(stateId);
 			if(!cnt) continue;
 			const cntA=cnt<0n?-cnt:cnt;
