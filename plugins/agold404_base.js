@@ -2572,8 +2572,8 @@ add('extractMetadata',function f(data){
 	this.extractMetadata_after.apply(this,arguments);
 	return rtv;
 }).
-add('extractMetadata_before',none).
-add('extractMetadata_after',function f(data){
+addBase('extractMetadata_before',none).
+addBase('extractMetadata_after',function f(data){
 	this.extractMetadata_after_xmlLikeStyle.apply(this,arguments);
 }).
 addBase('extractMetadata_after_xmlLikeStyle',function f(data){
@@ -10884,6 +10884,8 @@ new cfc(a.prototype).addBase('initialize',function f(){
 
 (()=>{ let k,r,t;
 
+JsonEx._obj2id=new Map();
+
 new cfc(JsonEx).
 addBase('isJsonLiteral',function f(val){
 	if(val==null) return true;
@@ -10920,9 +10922,33 @@ addBase('_cleanMetadata',function f(obj,depth){
 		}
 	}
 }).
+addBase('_objId_get',function f(obj){
+	let rtv;
+	if(Object.isFrozen(obj)) rtv=this._obj2id.get(obj);
+	else{
+		rtv=obj['@c'];
+		if(rtv&&!obj.hasOwnProperty('@c')){
+			throw new Error("!");
+		}
+	}
+	return rtv;
+}).
+addBase('_objId_setNew',function f(obj){
+	{
+		const oldId=this._objId_get(obj);
+		if(oldId){
+			throw new Error("!!");
+		}
+	}
+	const newId=this._generateId();
+	if(Object.isFrozen(obj)) this._obj2id.set(obj,newId);
+	else obj['@c']=newId;
+	return newId;
+}).
 addBase('stringify',function f(obj){
 	const circular=[];
-	JsonEx._id=1|0;
+	this._id=1|0;
+	this._obj2id.clear();
 	const json=JSON.stringify(this._encode(obj,circular,0|0));
 	this._cleanMetadata(obj,0|0);
 	this._restoreCircularReference(circular);
@@ -10962,17 +10988,15 @@ addBase('_encode_chkDepth',function f(val,circular,depth,linkInfo,){
 addBase('_encode_encVal',function f(val,circular,depth,linkInfo,opt,){
 	if(this.isJsonLiteral(val)) return val;
 	
-	if(val['@c']){
-		if(!val.hasOwnProperty('@c')){
-			throw new Error("!");
-		}
+	const objId=this._objId_get(val);
+	if(objId){
 		// existing object
 		this._encode_addRestoreInfo.apply(this,arguments);
-		return ({'@r':val['@c'],});
+		return ({'@r':objId,});
 	}
 	if(!f.tbl[0].has(val.constructor.name)) val["@"]=val.constructor.name;
 	if(!f.tbl[1].has(val.constructor.name)){
-		val['@c']=this._generateId();
+		this._objId_setNew(val);
 		this._encode_encVal_nextLevel.apply(this,arguments);
 	}
 	return this._encode_encVal_handleCurrent.apply(this,arguments);
@@ -11929,7 +11953,7 @@ addBase('traitsOpCache_delTraitObj_state',function f(stateId){
 	this.traitsOpCache_delTraitObj_state_ext.apply(this,arguments);
 	return dataobj;
 }).
-add('traitsOpCache_delTraitObj_state_ext',none).
+addBase('traitsOpCache_delTraitObj_state_ext',none).
 add('addNewState',function f(stateId){
 	this.traitsOpCache_addTraitObj_state(stateId); // before actually change `this._states`
 	return f.ori.apply(this,arguments);
@@ -12823,7 +12847,7 @@ add('updateInterpreter',function f(){
 getP;
 
 new cfc(Game_Event.prototype).
-add('start_parallelly',function f(){
+addBase('start_parallelly',function f(){
 	this.getMaps().forEach(f.tbl[0],this);
 },[
 function(m){
