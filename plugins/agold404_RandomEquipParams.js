@@ -240,10 +240,35 @@ addRoof('gainItem',function f(item,amount,includeEquip){
 			item=arguments[0]=this.randomEquipParams_createNew.apply(this,arguments);
 			this.randomEquipParams_applyTo_format1.call(this,item,itemOri);
 			this.randomEquipParams_applyTo_format2.call(this,item,itemOri);
-			return f.apply(this,arguments);
+			const rtv=f.apply(this,arguments);
+			$gameSystem.randomEquipParams_adjRefCnt(new Game_Item(item).getItemKey(),this.numItems(item)); // consider union cnt
+			return rtv;
 		}
 	}
 	return f.ori.apply(this,arguments);
+}).
+getP;
+
+new cfc(Game_System.prototype).
+addBase('randomEquipParams_getRefCntCont',function f(){
+	let rtv=this._randomEquipParams_refCntCont; if(!rtv) rtv=this._randomEquipParams_refCntCont=new Map();
+	return rtv;
+}).
+addBase('randomEquipParams_adjRefCnt',function f(itemKey,adjCnt){
+	if(!item) return; // ?
+	const cont=this.randomEquipParams_getRefCntCont();
+	const oriCnt=cont.get(itemKey)||0n;
+	const newCnt=oriCnt+BigInt(adjCnt);
+	if(0n>=newCnt){
+		if(f.tbl[2]&&newCnt<0n){
+			throw new Error("[ERROR]"+'['+pluginName+']'+" cnt < 0 : "+(""+newCnt));
+		}
+		this.randomEquipParams_adjRefCnt_onLe0(itemKey);
+	}else cont.set(itemKey,newCnt);
+},t).
+addBase('randomEquipParams_adjRefCnt_onLe0',function f(itemKey){
+	const cont=this.randomEquipParams_getRefCntCont();
+	cont.delete(itemKey);
 }).
 getP;
 
