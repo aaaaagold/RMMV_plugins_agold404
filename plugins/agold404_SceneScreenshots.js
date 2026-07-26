@@ -50,7 +50,6 @@ window.isTest(),
 undefined,
 "(no screenshots)",
 [
-window.ClipboardItem&&window.navigator.clipboard&&
 ["copy","Copy",function f(){
 	if(!f.tbl){ f.tbl=[
 		function(blob){
@@ -64,6 +63,12 @@ window.ClipboardItem&&window.navigator.clipboard&&
 	]; }
 	const idx=this._listWindow.index();
 	const info=ScreenshotsManager.getI(idx);
+	if(!(window.ClipboardItem&&window.navigator.clipboard)){
+		if(info.url) open(info.url,'_blank','name='+info.name);
+		else SoundManager.playBuzzer();
+		this._itemCmdWindow.activate();
+		return;
+	}
 	info.canvas.toBlob(f.tbl[0].bind(this));
 },], // 5- : 
 ["download","Download",function f(){
