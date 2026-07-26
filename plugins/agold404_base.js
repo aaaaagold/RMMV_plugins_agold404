@@ -2599,6 +2599,38 @@ addBase('snapForBackground',function f(sc){
 getP;
 
 
+new cfc(Game_Message.prototype).
+addBase('onChoice',function f(n,chooseVia,opt){
+	if(this.onChoice_condOk.apply(this,arguments)) return this.onChoice_do.apply(this,arguments);
+}).
+addBase('onChoice_condOk',function f(n,chooseVia,opt){
+	return this._choiceCallback;
+}).
+addBase('onChoice_do',function f(n,chooseVia,opt){
+	const rtv=this._choiceCallback(n);
+	this._choiceCallback=0;
+	return rtv;
+}).
+getP;
+
+new cfc(Window_ChoiceList.prototype).
+addBase('callOkHandler',function f(){
+	$gameMessage.onChoice(this.index(),f.tbl[0]);
+	this._messageWindow.terminateMessage();
+	this.close();
+},[
+'ok',
+]).
+addBase('callCancelHandler',function f(){
+	$gameMessage.onChoice($gameMessage.choiceCancelType(),f.tbl[0]);
+	this._messageWindow.terminateMessage();
+	this.close();
+},[
+'cancel',
+]).
+getP;
+
+
 new cfc(Window_Gold.prototype).
 add('initialize',function f(){
 	this._currencyUnit=TextManager.currencyUnit;
@@ -3918,13 +3950,16 @@ new cfc(Game_Interpreter.prototype).addBase('command101',function f(){
 	this.command101_peek();
 	this.command101_tail();
 	return false;
-}).addBase('command101_condOk',function f(){
+}).
+addBase('command101_condOk',function f(){
 	return !$gameMessage.isBusy();
-}).addBase('command101_conf',function f(){
+}).
+addBase('command101_conf',function f(){
 	$gameMessage.setFaceImage(this._params[0],this._params[1]);
 	$gameMessage.setBackground(this._params[2]);
 	$gameMessage.setPositionType(this._params[3]);
-}).addBase('command101_text',function f(){
+}).
+addBase('command101_text',function f(){
 	const rtv=[];
 	while(this.command101_text_isContinueMessageString()){  // Text data
 		this._index++;
@@ -3933,35 +3968,47 @@ new cfc(Game_Interpreter.prototype).addBase('command101',function f(){
 		rtv.push(params[0]);
 	}
 	return rtv;
-}).addBase('command101_text_isContinueMessageString',function f(){
+}).
+addBase('command101_text_isContinueMessageString',function f(){
 	return this.nextEventCode()===401;
-}).addBase('command101_peek',function f(){
+}).
+addBase('command101_peek',function f(){
 	const func=Game_Interpreter.cmd101Peek_get(this.nextEventCode());
 	if(func){
 		this._index++;
 		return func.call(this,arguments);
 	}
-}).addBase('command101_tail',function f(){
+}).
+addBase('command101_tail',function f(){
 	this._index++;
 	this.setWaitMode('message');
-});
-new cfc(Game_Interpreter).addBase('cmd101Peek_getCont',function f(){
+}).
+getP;
+new cfc(Game_Interpreter).
+addBase('cmd101Peek_getCont',function f(){
 	return f.tbl[0];
 },[
 {}, // 0: container
-]).addBase('cmd101Peek_set',function f(code,func){
+]).
+addBase('cmd101Peek_set',function f(code,func){
 	this.cmd101Peek_getCont()[code]=func;
 	return this;
-}).addBase('cmd101Peek_get',function f(code){
+}).
+addBase('cmd101Peek_get',function f(code){
 	return this.cmd101Peek_getCont()[code];
-});
-Game_Interpreter.cmd101Peek_set(102,function f(argv){
+}).
+getP;
+Game_Interpreter.
+cmd101Peek_set(102,function f(argv){
 	this.setupChoices(this.currentCommand().parameters);
-}).cmd101Peek_set(103,function f(argv){
+}).
+cmd101Peek_set(103,function f(argv){
 	this.setupNumInput(this.currentCommand().parameters);
-}).cmd101Peek_set(104,function f(argv){
+}).
+cmd101Peek_set(104,function f(argv){
 	this.setupItemChoice(this.currentCommand().parameters);
-});
+}).
+$;
 
 new cfc(Game_Interpreter.prototype).
 addBase('setupChoices',function f(params){
