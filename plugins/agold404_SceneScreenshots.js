@@ -50,6 +50,22 @@ window.isTest(),
 undefined,
 "(no screenshots)",
 [
+window.ClipboardItem&&window.navigator.clipboard&&
+["copy","Copy",function f(){
+	if(!f.tbl){ f.tbl=[
+		function(blob){
+			navigator.clipboard.write([
+				new ClipboardItem({
+					[blob.type]: blob
+				})
+			]);
+			this._itemCmdWindow.activate();
+		},
+	]; }
+	const idx=this._listWindow.index();
+	const info=ScreenshotsManager.getI(idx);
+	info.canvas.toBlob(f.tbl[0].bind(this));
+},], // 5- : 
 ["download","Download",function f(){
 	const idx=this._listWindow.index();
 	const info=ScreenshotsManager.getI(idx);
@@ -119,6 +135,7 @@ function f(){
 }, // 7-1: onclosed
 ], // 7: Window_InputText setting
 ];
+t[5]=t[5].filter(filterArg0);
 
 
 { const a=class Window_Screenshots_List extends Window_Command{
