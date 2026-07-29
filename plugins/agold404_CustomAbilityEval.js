@@ -10,7 +10,7 @@
  * 
  * @param BasicBattlerParametersBase
  * @type note
- * @text base basic battler parameters: mhp,mmp,atk,def,mat,mdf,agi,luk before rate calculation.
+ * @text base basic battler parameters: mhp,mmp,atk,def,mat,mdf,agi,luk before rate calculation, including equip params plus.
  * @desc texts here has no effects
  * 
  * @param BasicBattlerParametersBaseMhp
@@ -329,7 +329,7 @@ add('param_real',function f(paramId){
 	value=value-0||0;
 	return value;
 },t).
-add('paramBase',function f(paramId){
+add('param_base',function f(paramId){
 	let value=f.ori.apply(this,arguments);
 	const s=f.tbl[1]._base[f.tbl[2][paramId]];
 	if(s){
