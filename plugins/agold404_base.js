@@ -11041,21 +11041,28 @@ addBase('_encode_encVal',function f(val,circular,depth,linkInfo,opt,){
 		this._encode_addRestoreInfo.apply(this,arguments);
 		return ({'@r':objId,});
 	}
-	if(!f.tbl[0].has(val.constructor.name)) val["@"]=val.constructor.name;
-	if(!f.tbl[1].has(val.constructor.name)){
+	if(this._encode_encVal_shouldSetCtorName.apply(this,arguments)) val["@"]=val.constructor.name;
+	if(this._encode_encVal_isImmutableButUseHandleCurrent.apply(this,arguments)){
 		this._objId_setNew(val);
 		this._encode_encVal_nextLevel.apply(this,arguments);
 	}
 	return this._encode_encVal_handleCurrent.apply(this,arguments);
+}).
+addBase('_encode_encVal_shouldSetCtorName',function f(val,circular,depth,linkInfo,opt,){
+	return !f.tbl[0].has(val.constructor.name);
 },[
 new Set([
 'Array', // save space
 'BigInt', // immutable but use handleCurrent
 'Object', // counted as basic type
 ]), // 0: bypass constructor setting
+]).
+addBase('_encode_encVal_isImmutableButUseHandleCurrent',function f(val,circular,depth,linkInfo,opt,){
+	return !f.tbl[0].has(val.constructor.name);
+},[
 new Set([
 'BigInt',
-]), // 1: is immutable but use handleCurrent
+]), // 0: is immutable but use handleCurrent
 ]).
 addBase('_encode_encVal_getKeys',function f(val){
 	const keysFunc=this._encode_getKeysFunc(val);
@@ -11134,6 +11141,47 @@ addBase('_decode_decInfo_handleCurrent',function(info,circular,references,linkIn
 	
 	return info;
 }).
+// frozen
+add('_encode_encVal',function f(val,circular,depth,linkInfo,opt,){
+	if(!(val instanceof Object) || !Object.isFrozen(val) || this._objId_get(val)) return f.ori.apply(this,arguments);
+	this._encode_addRestoreInfo.apply(this,arguments);
+	const arg0=arguments[0];
+	const oriObj=arg0;
+	const newObj=(oriObj instanceof Array)?[]:{};
+	
+	val={
+		data:Object.assign(newObj,oriObj),
+		'@z':true,
+	};
+	val.data['@c']=this._objId_setNew(oriObj);
+	arguments[0]=oriObj;
+	if(this._encode_encVal_shouldSetCtorName.apply(this,arguments)) val.data['@']=oriObj.constructor.name;
+	
+	arguments[0]=val;
+	const rtv=f.ori.apply(this,arguments);
+	
+	arguments[0]=arg0;
+	val.data=newObj; // since set "@c" at first, there's no such object
+	return rtv;
+}).
+add('_decode_decInfo_handleCurrent',function f(info,circular,references,linkInfo,opt,){
+	const isFrozen=info&&info.hasOwnProperty('@z'); if(!isFrozen) return f.ori.apply(this,arguments);
+	const arg0=arguments[0];
+	const c=info['@c'];
+	arguments[0]=info.data;
+	const rtv=f.ori.apply(this,arguments);
+	arguments[0]=arg0;
+	circular._frozenSet=circular._frozenSet||new Set();
+	circular._frozenSet.add(rtv);
+	return rtv;
+}).
+add('_linkCircularReference',function f(contents,circulars,registry){
+	const rtv=f.ori.apply(this,arguments);
+	circulars._frozenSet&&circulars._frozenSet.forEach(f.tbl[0]);
+	return rtv;
+},[
+obj=>Object.freeze(obj),
+]).
 // special num
 add('_encode',function f(val,circular,depth,linkInfo,){
 	if(this.isSpecialNumVal(val)) return this._encodeSpeicalNumVal.apply(this,arguments);
