@@ -255,7 +255,7 @@ addBase('randomEquipParams_getRefCntCont',function f(){
 	return rtv;
 }).
 addBase('randomEquipParams_adjRefCnt',function f(itemKey,adjCnt){
-	if(!item) return; // ?
+	if(!Game_Item.itemKeyToDataobj(itemKey)) return; // ?
 	const cont=this.randomEquipParams_getRefCntCont();
 	const oriCnt=cont.get(itemKey)||0n;
 	const newCnt=oriCnt+BigInt(adjCnt);
