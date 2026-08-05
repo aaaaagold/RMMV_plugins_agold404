@@ -8910,7 +8910,7 @@ addBase('_drawTableEdge',function f(bitmap,tileId,dx,dy,dw,dh){
 		}
 	}
 }).
-addBase('_drawShadow_getShadowColor',function(bitmap,shadowBits,dx,dy,dw,dh){
+addBase('_drawShadow_getShadowColor',function f(bitmap,shadowBits,dx,dy,dw,dh){
 	return f.tbl[0];
 },[
 'rgba(0,0,0,0.5)', // 0: 
