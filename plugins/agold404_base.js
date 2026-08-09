@@ -2518,11 +2518,14 @@ new cfc(p).add('_createAllParts',function f(){
 		wt.width=widthp;
 		wt.height=textState.y;
 	}
-	const w=wt.width;
-	const h=wt.height;
-	wt.position.set(-(w>>>1),-h);
 	wt.createContents();
-	wt.drawTextEx(styledText,txtpad,0);
+	const tst={};
+	wt.drawTextEx(styledText,txtpad,0,0,0,tst);
+	const w=tst.right+txtpad;
+	const h=tst.y;
+	wt.width=w;
+	wt.height=h;
+	wt.position.set(-(w>>>1),-h);
 	//console.log(measure,textState); // debug
 	return this;
 }).addBase('reApplyText',function f(isFixedWindowSize){
@@ -2533,6 +2536,18 @@ new cfc(p).add('_createAllParts',function f(){
 // ---- ---- ---- ---- refine for future extensions
 
 (()=>{ let k,r,t;
+
+
+new cfc(PIXI.Container.prototype).
+addBase('ac',function f(c){
+	this.addChild.apply(this,arguments);
+	return this;
+}).
+addBase('rf',function f(idx){
+	for(const arr=this.children;idx<arr.length;) this.removeChild(arr[arr.length-1]);
+	return this;
+}).
+getP;
 
 
 Game_Battler.RemoveStatesAutoTiming_AllActionsEnd=1;
@@ -2560,7 +2575,7 @@ addBase('updateChildren1',function f(child){
 	return child.update&&child.update();
 }).
 addBase('updateChildren',function f(parent){
-	parent.children && parent.children.forEach && parent.children.forEach(this.updateChildren1,this);
+	parent.children && parent.children.forEach && (parent.children.slice?parent.children.slice():parent.children).forEach(this.updateChildren1,this);
 }).
 getP;
 
@@ -4160,7 +4175,7 @@ new cfc(Window_SkillStatus.prototype).addBase('refresh',function f(){
 
 new cfc(Sprite.prototype).addBase('update',function f(){
 	this.update_before();
-	this.children.forEach(SceneManager.updateChildren1);
+	SceneManager.updateChildren(this);
 	this.update_after();
 }).
 addBase('update_before',none,).
@@ -4301,7 +4316,7 @@ addBase('updateAnimationFrame',function(){
 }).
 addBase('update',function f(){
 	this.updateAnimationFrame();
-	this.children.forEach(SceneManager.updateChildren1);
+	SceneManager.updateChildren(this);
 	for(let i=0,arr=this.bitmaps,sz=arr.length;i<sz;++i){
 		arr[i] && arr[i].touch();
 	}
@@ -4374,6 +4389,15 @@ getP;
 new cfc(ConfigManager).addBase('readFlag',function f(config,name,defaultValue){
 	return config[name]===undefined?!!defaultValue:config[name];
 });
+
+
+new cfc(Game_Map.prototype).
+addBase('isOutOfMap',function f(chr){
+	// complete not visible
+	// TODO: handle bigger chr
+	return chr.x<-1||chr.x>this.width()||chr.y<-1||chr.y>this.height();
+}).
+getP;
 
 
 new cfc(Game_Map.prototype).
@@ -5410,7 +5434,7 @@ addBase('makeItemList_do_forEachGoods_addItem',function f(item,info){
 }).
 addBase('makeItemList_do',function f(){
 	this.makeItemList_do_initAllData.apply(this,arguments);
-	this._shopGoods.forEach(this.makeItemList_do_forEachGoods,this);
+	(this._shopGoods.slice?this._shopGoods.slice():this._shopGoods).forEach(this.makeItemList_do_forEachGoods,this);
 }).
 addBase('drawItem_priceWidth',function(index){
 	return 96;
@@ -5910,6 +5934,34 @@ getP;
 
 
 })(); // refine for future extensions
+
+// ---- ---- ---- ---- make WebAudio not to replay if pitch changed
+
+(()=>{ let k,r,t;
+
+const info=Object.getOwnPropertyDescriptor(AudioManager._bgmBuffer.constructor.prototype,'pitch');
+const getter=info.get;
+Object.defineProperty(WebAudio.prototype,'pitch',{
+	get:getter,
+	set:function(val){
+		if(this._pitch!==value){
+			const lastPitch=this._pitch;
+			this._pitch=value;
+			if(this.isPlaying()){
+				const strt=this._startTime;
+				let offset=0;
+				if(strt&&(0<lastPitch)){
+					const dt=WebAudio._context.playbackStats.totalDuratio-strt;
+					const ds=dt*lastPitch;
+					offset=this._loopStart<ds?(ds-this._loopStart)%this._loopLength+this._loopStart:ds;
+				}
+				this.play(this._sourceNode.loop, offset);
+			}
+		}
+	},
+});
+
+})(); // make WebAudio not to replay if pitch changed
 
 // ---- ---- ---- ---- Scene_HTML_base
 
@@ -7543,6 +7595,15 @@ getP;
 
 
 new cfc(Game_Followers.prototype).
+addBase('forEach',function f(callback,thisArg){
+	const obj=this._data.slice?this._data.slice():this._data;
+	return obj.forEach.apply(obj,arguments);
+}).
+addBase('reverseEach',function f(callback,thisArg){
+	const obj=this._data.slice?this._data.slice():this._data;
+	obj.reverse();
+	obj.forEach.apply(obj,arguments);
+}).
 addBase('refresh',function f(){
 	this.forEach(f.tbl[0],this);
 },[
@@ -8554,6 +8615,34 @@ addBase('tileHeight',function f(){
 }).
 getP;
 }
+
+new cfc(Sprite_Character.prototype).
+addBase('patternType',function f(){
+	if(0<this._tileId) return 'tile';
+	if(this._isBigCharacter) return 'big';
+	return '';
+}).
+addBase('patternWidth',function f(){
+	const func=f.tbl[0][this.patternType()]||f.tbl[0]._default;
+	return func.call(this);
+},[
+{
+_default:function(){ return this.bitmap.width/12; },
+big:function(){ return this.bitmap.width/3; },
+tile:()=>$gameMap.tileWidth_src(),
+}, // 0: pattern getters
+]).
+addBase('patternHeight',function f(){
+	const func=f.tbl[0][this.patternType()]||f.tbl[0]._default;
+	return func.call(this);
+},[
+{
+_default:function(){ return this.bitmap.height/8; },
+big:function(){ return this.bitmap.height/4; },
+tile:()=>$gameMap.tileHeight_src(),
+}, // 0: pattern getters
+]).
+getP;
 
 { const p=PIXI.ObservablePoint.prototype;
 const ori=Object.getOwnPropertyDescriptors(p);
@@ -10680,6 +10769,11 @@ new cfc(Scene_Load.prototype).addBase('reloadMapIfUpdated',function f(){
 
 Input.keyMapper[18]='alter';
 for(let x=96;x<=105;++x) delete Input.keyMapper[x]; // num pad when num lock on
+
+Input.keyMapper[65]='left';
+Input.keyMapper[68]='right';
+Input.keyMapper[83]='down';
+Input.keyMapper[87]='up';
 
 })(); // modify key map
 
