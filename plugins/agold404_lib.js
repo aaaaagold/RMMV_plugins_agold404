@@ -1379,6 +1379,23 @@ const pow32gf2=window.pow32gf2=(b,e,poly,revPoly)=>{
 
 })(); // math
 
+// safer arr.forEach and related methods
+(()=>{ let k,r,t;
+
+new cfc(Array.prototype).
+addBase('immutable_filter',function f(callback,thisArg){
+	return this.filter.apply(Object.freeze(this.slice()),arguments);
+}).
+addBase('immutable_forEach',function f(callback,thisArg){
+	return this.forEach.apply(Object.freeze(this.slice()),arguments);
+}).
+addBase('immutable_map',function f(callback,thisArg){
+	return this.map.apply(Object.freeze(this.slice()),arguments);
+}).
+getP;
+
+})(); // safer arr.forEach and related methods
+
 // empty
 (()=>{ let k,r,t;
 
