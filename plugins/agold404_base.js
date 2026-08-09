@@ -5939,23 +5939,23 @@ getP;
 
 (()=>{ let k,r,t;
 
-const info=Object.getOwnPropertyDescriptor(AudioManager._bgmBuffer.constructor.prototype,'pitch');
+const info=Object.getOwnPropertyDescriptor(WebAudio.prototype,'pitch');
 const getter=info.get;
 Object.defineProperty(WebAudio.prototype,'pitch',{
 	get:getter,
 	set:function(val){
-		if(this._pitch!==value){
+		if(this._pitch!==val){
 			const lastPitch=this._pitch;
-			this._pitch=value;
+			this._pitch=val;
 			if(this.isPlaying()){
 				const strt=this._startTime;
 				let offset=0;
 				if(strt&&(0<lastPitch)){
-					const dt=WebAudio._context.playbackStats.totalDuratio-strt;
+					const dt=WebAudio._context.currentTime-strt;
 					const ds=dt*lastPitch;
 					offset=this._loopStart<ds?(ds-this._loopStart)%this._loopLength+this._loopStart:ds;
 				}
-				this.play(this._sourceNode.loop, offset);
+				this.play(this._sourceNode.loop,offset);
 			}
 		}
 	},
