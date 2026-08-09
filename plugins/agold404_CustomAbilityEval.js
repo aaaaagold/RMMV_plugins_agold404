@@ -236,6 +236,72 @@
  * @desc text here will be put to eval with variable "value" representing original value.
  * 
  * 
+ * @param SparamBattlerParametersFinal
+ * @type note
+ * @text final basic battler parameters: tgr,grd,rec,pha,mcr,tcr,pdr,mdr,fdr,exr after final calculation calculation.
+ * @desc texts here has no effects
+ * 
+ * @param SparamBattlerParametersFinalTgr
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final target rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalGrd
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final guard effect rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalRec
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final recovery effect rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalPha
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final PHArmacology, i.e. hp,mp recovery items effect rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalMcr
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final mp cost rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalTcr
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final tp charge rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalPdr
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final physical damage rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalMdr
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final magical damage rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalFdr
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final floor damage rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * @param SparamBattlerParametersFinalExr
+ * @parent SparamBattlerParametersFinal
+ * @type note
+ * @text eval-ed text for final experiance rate
+ * @desc text here will be put to eval with variable "value" representing original value.
+ * 
+ * 
  * This plugin can be renamed as you want.
  */
 
@@ -285,6 +351,18 @@ hrg:JSON.parse(params.XparamBattlerParametersFinalHrg||emptyJsonString),
 mrg:JSON.parse(params.XparamBattlerParametersFinalMrg||emptyJsonString),
 trg:JSON.parse(params.XparamBattlerParametersFinalTrg||emptyJsonString),
 };
+params._sparamFinal={
+tgr:JSON.parse(params.SparamBattlerParametersFinalTgr||emptyJsonString),
+grd:JSON.parse(params.SparamBattlerParametersFinalGrd||emptyJsonString),
+rec:JSON.parse(params.SparamBattlerParametersFinalRec||emptyJsonString),
+pha:JSON.parse(params.SparamBattlerParametersFinalPha||emptyJsonString),
+mcr:JSON.parse(params.SparamBattlerParametersFinalMcr||emptyJsonString),
+tcr:JSON.parse(params.SparamBattlerParametersFinalTcr||emptyJsonString),
+pdr:JSON.parse(params.SparamBattlerParametersFinalPdr||emptyJsonString),
+mdr:JSON.parse(params.SparamBattlerParametersFinalMdr||emptyJsonString),
+fdr:JSON.parse(params.SparamBattlerParametersFinalFdr||emptyJsonString),
+exr:JSON.parse(params.SparamBattlerParametersFinalExr||emptyJsonString),
+};
 
 t=[
 undefined, // 0: dev-reserve
@@ -293,6 +371,7 @@ params, // 1: plugin params
 Utils.isOptionValid('test')||Utils.isOptionValid('btest')||Utils.isOptionValid('etest'), // 3: isTest
 "[ERROR] [CustomAbilityEval] param error: {} {}", // 4: err msg
 ['hit','eva','cri','cev','mev','mrf','cnt','hrg','mrg','trg',], // 5: params
+['tgr','grd','rec','pha','mcr','tcr','pdr','mdr','fdr','exr',], // 6: params
 ];
 
 
@@ -355,6 +434,22 @@ add('xparam',function f(paramId){
 	}
 	if(f.tbl[3]&&s&&isNaN(value)){
 		const msg=f.tbl[4].replace("{}","xparam").replace("{}",f.tbl[5][paramId]);
+		console.error(msg);
+		alert(msg);
+	}
+	value=value-0||0;
+	return value;
+},t).
+add('sparam',function f(paramId){
+	let value=f.ori.apply(this,arguments);
+	const s=f.tbl[1]._sparamFinal[f.tbl[6][paramId]];
+	if(s){
+		const a=this,user=a;
+		let f;
+		eval(s);
+	}
+	if(f.tbl[3]&&s&&isNaN(value)){
+		const msg=f.tbl[4].replace("{}","sparam").replace("{}",f.tbl[6][paramId]);
 		console.error(msg);
 		alert(msg);
 	}
