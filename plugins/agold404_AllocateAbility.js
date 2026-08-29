@@ -280,10 +280,11 @@ Window_Command.prototype._allocateAbility_getText_termsCommand=function f(key,de
 const a=class Window_AllocateAbility_Actions extends Window_HorzCommand{
 initSelect(){ this.select(1); }
 windowWidth(){ return Graphics.boxWidth; }
-maxCols(){ return 5; }
+maxCols(){ return 6; }
 makeCommandList(){
 	this.addCommand("<", 'prevActor');
 	this.addCommand(this.getText_adjust(), 'adjust');
+	this.addCommand(this.getText_view(), 'view');
 	this.addCommand(this.getText_confirm(), 'confirm');
 	this.addCommand(this.getText_quitWithoutSaving(), 'cancel');
 	this.addCommand(">", 'nextActor');
@@ -295,21 +296,31 @@ window[a.name]=a;
 t=[
 a.ori.prototype, // 0: 
 ];
-new cfc(a.prototype).addBase('initialize',function f(x,y){
+new cfc(a.prototype).
+addBase('initialize',function f(x,y){
 	const rtv=f.tbl[0][f._funcName].apply(this,arguments);
 	this.initSelect();
 	return rtv;
-},t).addBase('getText_adjust',function f(){
+},t).
+addBase('getText_adjust',function f(){
 	return this._allocateAbility_getText_termsCommand(f.tbl[0],f.tbl[1]);
 },[
 'adjust', // 0: key
 'Adjust', // 1: default string
-]).addBase('getText_confirm',function f(){
+]).
+addBase('getText_view',function f(){
+	return this._allocateAbility_getText_termsCommand(f.tbl[0],f.tbl[1]);
+},[
+'view', // 0: key
+'View', // 1: default string
+]).
+addBase('getText_confirm',function f(){
 	return this._allocateAbility_getText_termsCommand(f.tbl[0],f.tbl[1]);
 },[
 'confirm', // 0: key
 'Confirm', // 1: default string
-]).addBase('getText_quitWithoutSaving',function f(){
+]).
+addBase('getText_quitWithoutSaving',function f(){
 	return this._allocateAbility_getText_termsCommand(f.tbl[0],f.tbl[1]);
 },[
 'quitWithoutSaving', // 0: key
@@ -446,9 +457,9 @@ new cfc(a.prototype).addBase('setActor',function f(isForcedRefresh,actor,preview
 }
 
 {
-const a=class Window_AllocateAbility_Results extends Window_Base{
+const a=class Window_AllocateAbility_Results extends Window_Command{
 };
-a.ori=Window_Base;
+a.ori=Window_Command;
 window[a.name]=a;
 t=[
 a.ori.prototype, // 0: 
@@ -463,7 +474,21 @@ pluginName, // 2:
 	{ let k,r,t,params,conf1,actr; { return eval(s); } }
 }, // 4: eval result value 
 ];
-new cfc(a.prototype).addBase('setActor',function f(isForcedRefresh,actor,previewActor){
+new cfc(a.prototype).
+addWithBaseIfNotOwn('initialize',function f(x,y,w,h){
+	this._width=w;
+	this._height=h;
+	const rtv=f.ori.apply(this,arguments);
+	this._refreshAllParts();
+	return rtv;
+}).
+addWithBaseIfNotOwn('windowWidth',function f(){
+	return useDefaultIfIsNaN(this._width,f.ori.apply(this,arguments));
+}).
+addWithBaseIfNotOwn('windowHeight',function f(){
+	return useDefaultIfIsNaN(this._height,f.ori.apply(this,arguments));
+}).
+addBase('setActor',function f(isForcedRefresh,actor,previewActor){
 	if(!isForcedRefresh&&!this.setActor_refreshCondOk(actor,previewActor)) return;
 	this.setActor_refreshCondUpdate(actor,previewActor);
 	this.redraw();
@@ -472,9 +497,14 @@ new cfc(a.prototype).addBase('setActor',function f(isForcedRefresh,actor,preview
 }).addBase('setActor_refreshCondUpdate',function f(actor,previewActor){
 	this._actor=actor;
 	this._previewActor=previewActor;
-}).addBase('redraw',function f(){
-	const bmp=this.contents; if(!bmp) return;
-	bmp.clear();
+}).
+addBase('makeCommandList',function f(){
+	// make slots only
+	// actor && previewActor might not be ready yet
+	const conf=f.tbl[1].getResultItemsSetting();
+	for(let x=0,xs=conf.length;x!==xs;++x) this.addCommand("","");
+},t).
+addBase('drawItem',function f(idx){
 	const a=this._actor;
 	const pa=this._previewActor;
 	if(!a||!pa) return;
@@ -485,36 +515,51 @@ new cfc(a.prototype).addBase('setActor',function f(isForcedRefresh,actor,preview
 	const numWidth=this.getResultNumberWidth(),tp=this.textPadding();
 	const W=~~(this.contentsWidth()-tp*2);
 	const w1=W-(prevNumWidth+arrowWidth+numWidth);
-	let padX=0;
-	let y=tp;
+	
+	const rect=this.itemRectForText(idx);
+	//const align=this.itemTextAlign();
 	this.resetTextColor();
-	for(let x=0,xs=conf.length;x!==xs;++x,y+=this.lineHeight()){
-		let ende=w1,w;
-		this.drawText(f.tbl[3](conf[x],a)+'', padX+0,y,ende);
-		const v=f.tbl[4](conf[x],a);
-		const pv=f.tbl[4](conf[x],pa);
-		if(pv===v){
-			ende+=prevNumWidth+arrowWidth;
-			this.drawText(v+'',  padX+ende,y,w=numWidth,     'right');
-		}else{
-			this.drawText(v+'',  padX+ende,y,w=prevNumWidth, 'right');
-			ende+=w;
-			this.changeTextColor(this.paramchangeTextColor(pv-v));
-			this.drawText(arrowText+'',   padX+ende,y,w=arrowWidth,'center');
-			ende+=w;
-			this.drawText(pv+'', padX+ende,y,w=numWidth,     'right');
-			ende+=w;
-			this.resetTextColor();
-		}
+	this.changePaintOpacity(true);
+	this.drawText(f.tbl[3](conf[idx],a)+'', rect.x, rect.y, w1);
+	
+	const v=f.tbl[4](conf[idx],a);
+	const pv=f.tbl[4](conf[idx],pa);
+	let x=rect.x,y=rect.y,ende=w1,w;
+	if(pv===v){
+		ende+=prevNumWidth+arrowWidth;
+		this.drawText(v+'',  x+ende,y,w=numWidth,  'right');
+	}else{
+		this.drawText(v+'',  x+ende,y,w=prevNumWidth, 'right');
+		ende+=w;
+		this.changeTextColor(this.paramchangeTextColor(pv-v));
+		this.drawText(arrowText+'', x+ende,y,w=arrowWidth, 'center');
+		ende+=w;
+		this.drawText(pv+'', x+ende,y,w=numWidth,     'right');
+		ende+=w;
+		this.resetTextColor();
 	}
-	return y;
-},t).addBase('getResultPrevNumberWidth',function f(){
+},t).
+addBase('redraw',function f(){
+	const bmp=this.contents; if(!bmp) return;
+	bmp.clear();
+	const a=this._actor;
+	const pa=this._previewActor;
+	this.clearCommandList();
+	if(!a||!pa) return;
+	this.makeCommandList();
+	const conf=f.tbl[1].getResultItemsSetting();
+	for(let x=0,xs=conf.length;x<xs;++x) this.drawItem(x);
+},t).
+addBase('getResultPrevNumberWidth',function f(){
 	return f.tbl[1].ResultPrevNumberWidth-0||0;
-},t).addBase('getResultNextArrowWidth',function f(){
+},t).
+addBase('getResultNextArrowWidth',function f(){
 	return f.tbl[1].ResultNextArrowWidth-0||0;
-},t).addBase('getResultNumberWidth',function f(){
+},t).
+addBase('getResultNumberWidth',function f(){
 	return f.tbl[1].ResultNumberWidth-0||0;
-},t);
+},t).
+getP;
 }
 
 {
@@ -588,6 +633,7 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	sp.addChild(tmp=this._window_selects=new Window_AllocateAbility_Allocate(last.x,last.y+last.height,val,Graphics.boxHeight-(last.y+last.height))); last=tmp;
 	tmp.deactivate();
 	sp.addChild(tmp=this._window_results=new Window_AllocateAbility_Results(last.x+last.width,last.y,Graphics.boxWidth-last.width,last.height)); last=tmp;
+	tmp.deactivate();
 	
 	this.addChild(this._window_finCmd=new Window_AllocateAbility_FinCmd(0,0));
 	this._window_finCmd.openness=0;
@@ -600,6 +646,7 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	this._window_actions.setHandler('prevActor', tmp=this.userInput_actionPrevActor.bind(this));
 	this._window_actions.setHandler('pageup',tmp);
 	this._window_actions.setHandler('adjust',    this.userInput_actionAdjust.bind(this));
+	this._window_actions.setHandler('view',      this.userInput_actionView.bind(this));
 	this._window_actions.setHandler('confirm',   this.userInput_actionConfirm.bind(this));
 	this._window_actions.setHandler('cancel',    this.userInput_actionCancel.bind(this));
 	this._window_actions.setHandler('nextActor', tmp=this.userInput_actionNextActor.bind(this));
@@ -607,6 +654,9 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	
 	this._window_selects.setHandler('cancel',    this.userInput_selectCancel.bind(this));
 	this._window_selects.setHandler('ok',        this.userInput_selectOk.bind(this));
+	
+	this._window_results.setHandler('cancel',    this.userInput_resultCancel.bind(this));
+	this._window_results.setHandler('ok',        this.userInput_resultOk.bind(this));
 	
 	this._window_finCmd.setHandler('confirm',    this.userInput_finCmdConfirm.bind(this));
 	this._window_finCmd.setHandler('cancel',     this.userInput_finCmdCancel.bind(this));
@@ -637,27 +687,36 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	if(this._nowFocusOn) this._nowFocusOn.deactivate();
 	this._nowFocusOn=wnd;
 	wnd.activate();
-}).addBase('userInput_actionAdjust',function f(){
+}).
+addBase('userInput_actionAdjust',function f(){
 	this.userInput_updateFocus(this._window_selects);
-}).addBase('userInput_actionConfirm',function f(){
+}).
+addBase('userInput_actionView',function f(){
+	this.userInput_updateFocus(this._window_results);
+}).
+addBase('userInput_actionConfirm',function f(){
 	const wnd=this._window_finCmd;
 	wnd.select(wnd.findSymbol('confirm'));
 	wnd.open();
 	this._layoutRoot.alpha=0.75;
 	this.userInput_updateFocus(wnd);
-}).addBase('userInput_actionCancel',function f(){
+}).
+addBase('userInput_actionCancel',function f(){
 	const wnd=this._window_finCmd;
 	wnd.select(wnd.findSymbol('quit'));
 	wnd.open();
 	this._layoutRoot.alpha=0.75;
 	this.userInput_updateFocus(wnd);
-}).addBase('userInput_actionPrevActor',function f(){
+}).
+addBase('userInput_actionPrevActor',function f(){
 	this.previousActor();
 	this.userInput_updateFocus(this._window_actions);
-}).addBase('userInput_actionNextActor',function f(){
+}).
+addBase('userInput_actionNextActor',function f(){
 	this.nextActor();
 	this.userInput_updateFocus(this._window_actions);
-}).addBase('userInput_selectCancel',function f(){
+}).
+addBase('userInput_selectCancel',function f(){
 	this.userInput_updateFocus(this._window_actions);
 }).addBase('userInput_selectGetCost',function f(itemLv,actor){
 	let func=this._window_selects.currentExt().cost;
@@ -706,7 +765,15 @@ new cfc(a.prototype).addBase('initialize',function f(){
 	const ext=this._window_selects.currentExt();
 	this.userInput_selectLevelUp(ext,this._actor,true);
 	this.userInput_updateFocus(this._window_selects);
-}).addBase('userInput_finCmdConfirm',function f(){
+}).
+addBase('userInput_resultCancel',function f(){
+	this.userInput_updateFocus(this._window_actions);
+}).
+addBase('userInput_resultOk',function f(){
+	// TODO: show detail window
+	this.userInput_updateFocus(this._window_results);
+}).
+addBase('userInput_finCmdConfirm',function f(){
 	this._replayAllocLogToActualActors();
 	this.userInput_finCmdQuit();
 }).addBase('_replayAllocLogToActualActors',function f(){
