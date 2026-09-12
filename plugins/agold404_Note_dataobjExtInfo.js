@@ -94,13 +94,23 @@ addBase('dataobjExtInfo_initSubWindows',function f(){
 	if(!this.dataobjExtInfo_hasFunc()) return;
 	this.dataobjExtInfo_getSubWindow_note(); // getter also init
 }).
+addBase('dataobjExtInfo_getSubWindowAlphas',function f(){
+	return f.tbl[0];
+},[
+[1-1.0/64,(1-1.0/64)/2,], // 0: alpha - active,deactive
+]).
 addBase('dataobjExtInfo_getSubWindow_note',function f(){
 	let rtv=this._dataobjExtInfo_getSubWindow_note;
 	if(!rtv){
 		this.addChild(rtv=this._dataobjExtInfo_getSubWindow_note=new Window_Base(0,0,1,1));
-		rtv.alpha=0.984375;
+		rtv.alpha=this.dataobjExtInfo_getSubWindowAlphas()[0];
 	}
 	return rtv;
+}).
+addBase('dataobjExtInfo_adjustSubWindowAlpha',function f(){
+	if(!this.dataobjExtInfo_hasFunc()) return;
+	const wnd=this.dataobjExtInfo_getSubWindow_note();
+	wnd.alpha=this.dataobjExtInfo_getSubWindowAlphas()[0|!this.active];
 }).
 addBase('dataobjExtInfo_adjustWindowSize',function f(wnd,infoText){
 	if(!wnd) return;
@@ -183,6 +193,7 @@ if(!Input.isPressed(f.tbl[1]._windowFloatKey)){
 	}else{
 		this.dataobjExtInfo_getSubWindow_note().close();
 	}
+	this.dataobjExtInfo_adjustSubWindowAlpha();
 },t).
 getP;
 
@@ -199,6 +210,12 @@ addBase('dataobjExtInfo_hasFunc',function f(){
 getP;
 
 new cfc(Window_ShopBuy.prototype).
+addBase('dataobjExtInfo_hasFunc',function f(){
+	return true;
+}).
+getP;
+
+new cfc(Window_EquipSlot.prototype).
 addBase('dataobjExtInfo_hasFunc',function f(){
 	return true;
 }).
