@@ -1041,6 +1041,12 @@ const useDefaultIfIsNone=window.useDefaultIfIsNone=(n,d)=>{
 	return n==null?d:n;
 };
 const isArray=window.isArray=obj=>Object.prototype.toString.call(obj)==='[object Array]'; // considering different window-frame
+const toBigInt=function f(s){
+	if(!f.tbl){ f.tbl=[
+		/^[+-]?(?:\d+|0b[01]+|0o[0-7]+|0x[\da-fA-F]+)$/,
+	]; }
+	return f.tbl[0].test(s)?BigInt(n):undefined;
+};
 const getWiderPoints=window.getWiderPoints=(pt3,width,isNormalToCoordinates,dim)=>{
 	// currently only support dim===2
 	width=width-0||0;
