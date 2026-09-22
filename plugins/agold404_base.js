@@ -7899,14 +7899,17 @@ new cfc(Sprite_Character.prototype).addBase('updateBitmap',function f(){
 	return f.ori.apply(this,arguments) || this._characterHue!==this._character.characterHue();
 });
 
-new cfc(PIXI.Container.prototype).addBase('containsGlobalPoint',function f(x,y){
+new cfc(PIXI.Container.prototype).
+addBase('containsGlobalPoint',function f(x,y){
+	// use containsPoint_global if scaled / rotated / skewed
 	const xy0=this.toGlobal(f.tbl[0]);
 	const xy1=this.toGlobal({x:this.width,y:this.height});
 	const rect=new Rectangle(xy0.x,xy0.y,xy1.x-xy0.x,xy1.y-xy0.y);
 	return rect.contains(x,y);
 },[
 {x:0,y:0},
-]).add('getChildIndex',function f(c,isNoErr,returnEndIdxIfNotFound){
+]).
+add('getChildIndex',function f(c,isNoErr,returnEndIdxIfNotFound){
 	try{
 		return f.ori.apply(this,arguments);
 	}catch(e){
