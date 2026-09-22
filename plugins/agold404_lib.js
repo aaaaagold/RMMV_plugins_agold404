@@ -979,6 +979,10 @@ p.re=function(t,f,o){ this.removeEventListener.apply(this,arguments); return thi
 { const p=HTMLCanvasElement.prototype;
 p.ptcp=function(x,y,w,h,resizeTo){
 	// partial copy ; return another canvas
+	x=useDefaultIfIsNaN(x,0);
+	y=useDefaultIfIsNaN(y,0);
+	w=useDefaultIfIsNaN(w,this.width);
+	h=useDefaultIfIsNaN(w,this.height);
 	const rtv=document.ce('canvas');
 	let targetW=w,targetH=h;
 	if(resizeTo){
