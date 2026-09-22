@@ -110,7 +110,8 @@ addBase('dataobjExtInfo_getSubWindow_note',function f(){
 addBase('dataobjExtInfo_adjustSubWindowAlpha',function f(){
 	if(!this.dataobjExtInfo_hasFunc()) return;
 	const wnd=this.dataobjExtInfo_getSubWindow_note();
-	wnd.alpha=this.dataobjExtInfo_getSubWindowAlphas()[0|!this.active];
+	wnd.toLocal(TouchInput,SceneManager._scene,undefined,true);
+	wnd.alpha=this.dataobjExtInfo_getSubWindowAlphas()[0|!(this.active||wnd.containsPoint_global(TouchInput))];
 }).
 addBase('dataobjExtInfo_adjustWindowSize',function f(wnd,infoText){
 	if(!wnd) return;
@@ -187,6 +188,16 @@ if(!Input.isPressed(f.tbl[1]._windowFloatKey)){
 				const gpRect=this.toGlobal(testPt);
 				if(gpRect.y>=wnd.height) wnd.y=testPt.y-wnd.height;
 				else wnd.y-=Math.min(gp.y,overY);
+				;
+				const gp2=wnd.getGlobalPosition();
+				if(gp2.y<0){
+					; // TBD
+				}else{
+					const overY=gp2.y+wnd.height-Graphics.height;
+					if(0<overY){
+						wnd.y-=overY;
+					}
+				}
 			}
 			if(gp.x<0) wnd.x-=gp.x;
 }
