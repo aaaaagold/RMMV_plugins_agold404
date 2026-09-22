@@ -279,7 +279,7 @@ addBase('makeItemList',function f(){
 }).
 addBase('isEnabled',function f(item){
 	const actor=this._actor;
-	return actor&&!actor.bringSkills_isSkillBrought(item.id);
+	return item&&actor&&!actor.bringSkills_isSkillBrought(item.id);
 }).
 addBase('includes',function f(skill){
 	if(!DataManager.isSkill(skill)) return;
