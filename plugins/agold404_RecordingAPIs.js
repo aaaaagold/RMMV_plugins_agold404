@@ -4,6 +4,13 @@
  * @author agold404
  * 
  * 
+ * @param RecordKey
+ * @type number
+ * @text keycode of record/stop key
+ * @desc enter the keycode. default use F9
+ * @default 120
+ * 
+ * 
  * @help APIs:
  * Graphics.recordingAPIs_start();
  * Graphics.recordingAPIs_stop();
@@ -17,6 +24,8 @@
 (()=>{ let k,r,t;
 const pluginName=getPluginNameViaSrc(document.currentScript.getAttribute('src'))||"agold404_RecordingAPIs";
 const params=PluginManager.parameters(pluginName)||{};
+params._recordKey=useDefaultIfIsNaN(params.RecordKey,120);
+params._recordKeyName="recordingStartStop";
 
 
 t=[
@@ -24,6 +33,19 @@ undefined,
 params,
 window.isTest(),
 undefined,
+{
+"zh-TW":[
+ "錄影開始",
+ "錄影結束",
+],
+_:[
+ "record started",
+ "record stopped",
+],
+}, // 4: recordKey msg
+{
+showFrame:31,
+}, // 5: recordKey msg opt
 ];
 
 
@@ -46,12 +68,13 @@ addBase('recordingAPIs_copyCanvas',function f(){
 	const ctx=this.recordingAPIs_getTmpCanvas().getContext('2d');
 	ctx.drawImage(this._canvas,0,0);
 }).
-addBase('recordingAPIs_videoRecords_add',function f(recordBlobUrl){
+addBase('recordingAPIs_videoRecords_add',function f(recordBlobUrl,previewCanvas){
 	const cont=this.recordingAPIs_videoRecords_getCont();
 	const info={
 		url:recordBlobUrl,
 		timeMs:Date.now(),
 		timeStr:new Date().toISOString(),
+		preview:previewCanvas&&previewCanvas.ptcp(),
 	};
 	cont.push(info);
 }).
@@ -142,17 +165,17 @@ function(e){
 	this._chunks.push(e.data);
 }, // 0: ondataavailable
 function(e){
-	Graphics.recordingAPIs_addVideoRecordFromChunks(this._chunks);
 	const c=Graphics.recordingAPIs_getTmpCanvas();
+	Graphics.recordingAPIs_addVideoRecordFromChunks(this._chunks,c);
 	// disable remove callbacks
 	c._mr.ondataavailable=
 	c._mr.onstop=
 	null;
 }, // 1: onstop
 ]).
-addBase('recordingAPIs_addVideoRecordFromChunks',function f(chunks){
+addBase('recordingAPIs_addVideoRecordFromChunks',function f(chunks,refCanvas){
 	const blob=new Blob(chunks,{type:'video/webm'});
-	this.recordingAPIs_videoRecords_add(URL.createObjectURL(blob));
+	this.recordingAPIs_videoRecords_add(URL.createObjectURL(blob),refCanvas);
 }).
 addBase('recordingAPIs_stop',function f(){
 	const c=this.recordingAPIs_getTmpCanvas();
@@ -162,6 +185,40 @@ addBase('recordingAPIs_stop',function f(){
 addBase('recordingAPIs_isRecording',function f(){
 	return !!this._recordingAPIs_isRecording;
 }).
+getP;
+
+
+const key='r',keyName='openFlashback';
+const f=function f(){
+	if(f._lastKey!==f.tbl[1]._recordKey){
+		if(f._lastKey!=null) delete Input.keyMapper[f._lastKey];
+		Input.addKeyName(f.tbl[1]._recordKey,f.tbl[1]._recordKeyName);
+	}
+	if(Input.isTriggered(f.tbl[1]._recordKeyName)){
+		const locale=DataManager.getLocale();
+		const msgs=f.tbl[4][locale]||f.tbl[4]._;
+		if(Graphics.recordingAPIs_isRecording()){
+			Graphics.recordingAPIs_stop();
+			if($gameTemp.popupMsg) $gameTemp.popupMsg(msgs[1],f.tbl[5],);
+		}else{
+			if($gameTemp.popupMsg) $gameTemp.popupMsg(msgs[0],f.tbl[5],);
+			Graphics.recordingAPIs_start();
+		}
+	}
+};
+f.ori=undefined;
+f.tbl=t;
+new cfc(Scene_Boot.prototype).
+add('terminate_after',function f(){
+	const rtv=f.ori.apply(this,arguments);
+	this.recordingAPIs_addKeySensor();
+	return rtv;
+}).
+addBase('recordingAPIs_addKeySensor',function f(){
+	if(f._called) return;
+	if(SceneManager.additionalUpdate_renderScene_add) SceneManager.additionalUpdate_renderScene_add(f.tbl[0],true);
+	f._called=true;
+},[f]).
 getP;
 
 
