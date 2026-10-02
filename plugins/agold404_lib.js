@@ -982,7 +982,7 @@ p.ptcp=function(x,y,w,h,resizeTo){
 	x=useDefaultIfIsNaN(x,0);
 	y=useDefaultIfIsNaN(y,0);
 	w=useDefaultIfIsNaN(w,this.width);
-	h=useDefaultIfIsNaN(w,this.height);
+	h=useDefaultIfIsNaN(h,this.height);
 	const rtv=document.ce('canvas');
 	let targetW=w,targetH=h;
 	if(resizeTo){
