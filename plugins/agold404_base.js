@@ -978,6 +978,37 @@ addBase('clear_recreateContentsIfOriginallySmaller',function f(newContentsWidth,
 	this.resetFontSettings();
 	return rtv;
 }).
+addBase('calcTextHeight',function f(textState,all){
+	const lastFontSize = this.contents.fontSize;
+	let textHeight = 0;
+	const lines = textState.text.slice(textState.index).split('\n');
+	const maxLines = all ? lines.length : 1;
+
+	for (let i = 0; i < maxLines; i++) {
+		let maxFontSize = this.contents.fontSize;
+		const regExp = /\x1b[\{\}]/g;
+		for (;;) {
+			const array = regExp.exec(lines[i]);
+			if (array) {
+				if (array[0] === '\x1b{') {
+					this.makeFontBigger();
+				}
+				if (array[0] === '\x1b}') {
+					this.makeFontSmaller();
+				}
+				if (maxFontSize < this.contents.fontSize) {
+					maxFontSize = this.contents.fontSize;
+				}
+			} else {
+				break;
+			}
+		}
+		textHeight += this.lineHeight(maxFontSize);
+	}
+
+	this.contents.fontSize = lastFontSize;
+	return textHeight;
+}).
 addBase('drawTextEx',function f(text, x, y, _3, _4, out_textState){
 	// return dx
 	const textState=out_textState||{};
@@ -1059,8 +1090,8 @@ addBase('currentFontSize',function f(){
 	const bmp=sp&&sp.bitmap;
 	return bmp?bmp.fontSize:this.standardFontSize();
 }).
-addBase('lineHeight',function f(){
-	return 3+~~(this.currentFontSize()*1.25); // 3 is a experienced value
+addBase('lineHeight',function f(byFontSize){
+	return 3+~~(useDefaultIfIsNaN(byFontSize,this.currentFontSize())*1.25); // 3 is an experienced value
 }).
 addBase('positioning',function f(setting,ref){
 	setting=setting||f.tbl;
