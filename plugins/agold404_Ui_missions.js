@@ -106,8 +106,21 @@ undefined, // 3: rsv
 [
 (typeof(none)), // 4-0: func type
 (typeof("")), // 4-1: string type
-], // 4: separater types
-undefined, // 5: new Set(t[4])
+], // 4: separator types
+function f(obj){
+	if(!f.tbl[1]){
+		f.tbl[1]=new Set(f.tbl[0][4]);
+		f.tbl[2]=new Set([
+			Array,
+		]);
+	}
+	if(obj){
+		if(false
+			||f.tbl[1].has(typeof(obj))
+			||f.tbl[2].has(obj.constructor)
+		||false) return true;
+	}
+}, // 5: is separator type
 [], // 6: createAll_parseData - default filters
 {isCalledFromMissionsScene:true,}, // 7: opt to hint it is called from the Scene
 ['mission','sep',], // 8: mission list symbols
@@ -118,7 +131,7 @@ undefined, // 5: new Set(t[4])
 16, // 13: scroll text width padding
 64, // 14: scroll end pause time (unit:frame)
 ];
-t[5]=new Set(t[4]);
+t[5].tbl=[t];
 
 
 new cfc(DataManager).
@@ -272,7 +285,7 @@ addBase('missions_current_show',function f(opt,separator0,matchFunc1){
 	for(let x=1,xs=arguments.length;x<xs;x+=2){
 		let sep=arguments[x];
 		const func=arguments[x+1];
-		if(sep&&f.tbl[5].has(typeof(sep))){
+		if(f.tbl[5](sep)){
 			if(f.tbl[4][0]===typeof(sep)) sep=sep();
 			arr.push(sep);
 		}
@@ -310,11 +323,12 @@ addBase('resetItems',function f(){
 	const itemList=this._initData_itemList;
 	const opt=this._initData_opt;
 	for(let x=0,xs=itemList&&itemList.length,currZone=-1;x<xs;++x){
-		if(f.tbl[4][1]===typeof itemList[x]){
+		if(f.tbl[5](itemList[x])){
 			// separator
 			currZone=x;
+			const s=(f.tbl[4][1]===typeof itemList[x])?itemList[x]:itemList[x][1^(currZone in this._hiddenZones)];
 			this.addCommand(
-				itemList[x],
+				s,
 				f.tbl[8][1],
 				undefined,
 				currZone,
