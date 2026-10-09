@@ -101,6 +101,35 @@ addBase('goldOptions_setMoney_do',function f(val){
 //
 getP;
 
+new cfc(SceneManager).
+addBase('openShop',function f(goodsInfos,isPurchasingOnly,opts){
+	// goods=[ {price:price,dataobj:dataobj,remained:remained,}, ... ]
+	// // price = "default" or others
+	this.push(Scene_Shop);
+	this.prepareNextScene(
+		(goodsInfos||[]).map(f.tbl[0]),
+		isPurchasingOnly,
+		opts,
+	);
+},[
+goodsInfo=>{
+	if(!goodsInfo) return [];
+	let objType;
+	if(DataManager.isItem   (goodsInfo.dataobj)) objType=0;
+	if(DataManager.isWeapon (goodsInfo.dataobj)) objType=1;
+	if(DataManager.isArmor  (goodsInfo.dataobj)) objType=2;
+	if(objType===undefined) return [];
+	return [
+		objType,
+		goodsInfo.dataobj.id,
+		goodsInfo.price==='default'?0:goodsInfo.price,
+		goodsInfo.price,
+		goodsInfo.remained,
+	];
+}, // 0: mapping goodsInfo to original format
+]).
+getP;
+
 
 })();
 
