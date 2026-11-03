@@ -10181,8 +10181,11 @@ new cfc(Bitmap.prototype).add('_makeFontNameText',function f(){
 	this.fontFace=f.tbl[0];
 	return f.ori.apply(this,arguments);
 },[
-"MBR刪節號,Consolas,'Courier New',Courier,微軟正黑體,標楷體,monospace,GameFont",
+"agold404標點符號,Consolas,'Courier New',Courier,微軟正黑體,標楷體,monospace,GameFont",
 ]);
+
+const doc=document;
+doc.body.ac(doc.ce('style').atxt("@font-face {\n\tfont-family: agold404標點符號;\n\tsrc: local('標楷體');\n\tunicode-range: U+2026;\n}"))
 
 })(); // default font
 
