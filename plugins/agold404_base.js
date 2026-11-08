@@ -4342,6 +4342,113 @@ undefined,
 
 
 new cfc(Tilemap.prototype).
+addBase('initialize_rightAfterPixiContainer',none).
+addBase('initialize',function(){
+	PIXI.Container.call(this);
+	
+	this.initialize_rightAfterPixiContainer.apply(this,arguments);
+	this._mapWidth = 0;
+	this._mapHeight = 0;
+	this._mapData = null;
+	this._layerCols=0;
+	this._layerRows=0;
+	this._layerWidth = 0;
+	this._layerHeight = 0;
+	this._lastTiles = [];
+	
+	/**
+	 * The bitmaps used as a tileset.
+	 *
+	 * @property bitmaps
+	 * @type Array
+	 */
+	this.bitmaps = [];
+	
+	/**
+	 * The origin point of the tilemap for scrolling.
+	 *
+	 * @property origin
+	 * @type Point
+	 */
+	this.origin = new Point();
+	
+	/**
+	 * The tileset flags.
+	 *
+	 * @property flags
+	 * @type Array
+	 */
+	this.flags = [];
+	
+	/**
+	 * The animation count for autotiles.
+	 *
+	 * @property animationCount
+	 * @type Number
+	 */
+	this.animationCount = 0;
+	
+	/**
+	 * Whether the tilemap loops horizontal.
+	 *
+	 * @property horizontalWrap
+	 * @type Boolean
+	 */
+	this.horizontalWrap = false;
+	
+	/**
+	 * Whether the tilemap loops vertical.
+	 *
+	 * @property verticalWrap
+	 * @type Boolean
+	 */
+	this.verticalWrap = false;
+	
+	this._createLayers();
+	this.refresh();
+}).
+add('_createLayers',function f(){
+	let c,p;
+	c=this._upperLayer;
+	p=c&&c.parent; p&&p.removeChild(c);
+	c=this._lowerLayer;
+	p=c&&c.parent; p&&p.removeChild(c);
+	return f.ori.apply(this,arguments);
+}).
+addBase('_drawTile',function(bitmap_or_layer,tileId,dx,dy,dw,dh){
+	if (Tilemap.isVisibleTile(tileId)) {
+		if (Tilemap.isAutotile(tileId)) {
+			this._drawAutotile.apply(this,arguments);
+		} else {
+			this._drawNormalTile.apply(this,arguments);
+		}
+	}
+}).
+addBase('_paintAllTiles_getBaseCols',function f(startX,startY){
+	return Math.ceil(this._width  / this._tileWidth  );
+}).
+addBase('_paintAllTiles_getBaseRows',function f(startX,startY){
+	return Math.ceil(this._height / this._tileHeight );
+}).
+addBase('_paintAllTiles_getPadding',function f(startX,startY){
+	return f.tbl[0];
+},[
+1, // 0: paint padding, edge length. unit = map grid
+]).
+addBase('_paintAllTiles',function f(startX,startY){
+	const padding=this._paintAllTiles_getPadding.apply(this,arguments);
+	const tileCols=(this._paintAllTiles_getBaseCols.apply(this,arguments)+padding)|0;
+	const tileRows=(this._paintAllTiles_getBaseRows.apply(this,arguments)+padding)|0;
+	for(let y=0|0;y<tileRows;++y){
+		for(let x=0|0;x<tileCols;++x){
+			this._paintTiles(startX,startY,x,y);
+		}
+	}
+}).
+getP;
+
+
+new cfc(Tilemap.prototype).
 addBase('updateAnimationFrame',function(){
 	this.animationFrame=++this.animationCount>>5;
 }).
@@ -8794,87 +8901,15 @@ addBase('tileScale_updateParams',function(){
 	this.update_tileScale_tileSize_fin.apply(this,arguments);
 	this._tileScaleEnabled=true; // only enabled when rendering
 }).
-addBase('initialize',function(){
-	PIXI.Container.call(this);
-	
+add('initialize_rightAfterPixiContainer',function f(){
+	const rtv=f.ori.apply(this,arguments);
 	this.tileScale_updateParams.apply(this,arguments);
-	this._mapWidth = 0;
-	this._mapHeight = 0;
-	this._mapData = null;
-	this._layerCols=0;
-	this._layerRows=0;
-	this._layerWidth = 0;
-	this._layerHeight = 0;
-	this._lastTiles = [];
-	
-	/**
-	 * The bitmaps used as a tileset.
-	 *
-	 * @property bitmaps
-	 * @type Array
-	 */
-	this.bitmaps = [];
-	
-	/**
-	 * The origin point of the tilemap for scrolling.
-	 *
-	 * @property origin
-	 * @type Point
-	 */
-	this.origin = new Point();
-	
-	/**
-	 * The tileset flags.
-	 *
-	 * @property flags
-	 * @type Array
-	 */
-	this.flags = [];
-	
-	/**
-	 * The animation count for autotiles.
-	 *
-	 * @property animationCount
-	 * @type Number
-	 */
-	this.animationCount = 0;
-	
-	/**
-	 * Whether the tilemap loops horizontal.
-	 *
-	 * @property horizontalWrap
-	 * @type Boolean
-	 */
-	this.horizontalWrap = false;
-	
-	/**
-	 * Whether the tilemap loops vertical.
-	 *
-	 * @property verticalWrap
-	 * @type Boolean
-	 */
-	this.verticalWrap = false;
-	
-	this._createLayers();
-	this.refresh();
+	return rtv;
+}).
+add('initialize',function f(){
+	const rtv=f.ori.apply(this,arguments);
 	this._tileScaleChanged=false;
-}).
-add('_createLayers',function f(){
-	let c,p;
-	c=this._upperLayer;
-	p=c&&c.parent; p&&p.removeChild(c);
-	c=this._lowerLayer;
-	p=c&&c.parent; p&&p.removeChild(c);
-	return f.ori.apply(this,arguments);
-}).
-addBase('_drawTile',function(bitmap_or_layer,tileId,dx,dy,dw,dh){
-	if (Tilemap.isVisibleTile(tileId)) {
-		if (Tilemap.isAutotile(tileId)) {
-			this._drawAutotile.apply(this,arguments);
-		} else {
-			this._drawNormalTile.apply(this,arguments);
-		}
-	}
+	return rtv;
 }).
 addBase('_drawNormalTile',function(bitmap,tileId,dx,dy,dw,dh){
 	let setNumber=0;
@@ -9265,27 +9300,6 @@ addBase('_paintTiles',function f(startX,startY,x,y){
 			this._drawTile(this._upperBitmap,upperTiles[j],dx,dy,dw,dh);
 		}
 		this._writeLastTiles(1, lx, ly, upperTiles);
-	}
-}).
-addBase('_paintAllTiles_getBaseCols',function f(startX,startY){
-	return Math.ceil(this._width  / this._tileWidth  );
-}).
-addBase('_paintAllTiles_getBaseRows',function f(startX,startY){
-	return Math.ceil(this._height / this._tileHeight );
-}).
-addBase('_paintAllTiles_getPadding',function f(startX,startY){
-	return f.tbl[0];
-},[
-1, // 0: paint padding
-]).
-addBase('_paintAllTiles',function f(startX,startY){
-	const padding=this._paintAllTiles_getPadding.apply(this,arguments);
-	const tileCols=(this._paintAllTiles_getBaseCols.apply(this,arguments)+padding)|0;
-	const tileRows=(this._paintAllTiles_getBaseRows.apply(this,arguments)+padding)|0;
-	for(let y=0|0;y<tileRows;++y){
-		for(let x=0|0;x<tileCols;++x){
-			this._paintTiles(startX,startY,x,y);
-		}
 	}
 }).
 addBase('_updateLayerPositions_setBmpFrame',function f(sp,ox,oy,x,y,w,h){
